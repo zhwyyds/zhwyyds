@@ -1,0 +1,10 @@
+{
+  "input_type": "root_generation",
+  "domain": "cust",
+  "terms": [
+    {
+      "cn_term": "客户",
+      "context": "家居卖场的消费者，包括会员和非会员"
+    }
+  ]
+}

@@ -1,0 +1,279 @@
+/**
+ * 指标信息规范表 — 复现用户参考图（Excel 指标卡片）
+ * 色板：红顶分类标签 | 浅粉标签列 | 白值 | #5B9BD5 网格 | 无圆角阴影
+ * 与 metric-spec-template.html 像素级同源；指标库共用本文件。
+ */
+:root {
+  --spec-grid: #5b9bd5;
+  --spec-cat-label: #c00000;
+  --spec-cat-value: #ff0000;
+  --spec-cat-bg: #c00000;
+  --spec-label-bg: #fce4d6;
+  --spec-label-biz: #ff9f6b;
+  --spec-label-tech: #4da3e0;
+  --spec-label-mgmt: #f5c518;
+  --spec-label-biz-accent: #b8470a;
+  --spec-label-tech-accent: #125a8a;
+  --spec-label-mgmt-accent: #8a6d00;
+  --spec-surface: #e8e8e8;
+}
+
+.metric-spec-surface {
+  padding: 10px 12px 14px;
+  background: var(--spec-surface);
+}
+
+.indicator-spec-card {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid var(--spec-grid);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  font-family: "PingFang SC", "Microsoft YaHei", "SimSun", sans-serif;
+  font-size: 13px;
+  color: #000000;
+  line-height: 1.45;
+}
+
+/* 顶部分类标签栏 — 参考图片样式 */
+.indicator-spec-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0;
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 2;
+}
+
+.indicator-spec-cat-tags {
+  display: flex;
+  gap: 4px;
+}
+
+.indicator-spec-cat-tag {
+  background: var(--spec-cat-bg);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border: none;
+  border-radius: 0;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  box-shadow: 0 -1px 2px rgba(0,0,0,0.1);
+}
+
+.indicator-spec-cat-tag .label {
+  font-weight: 700;
+}
+
+.indicator-spec-cat-tag .value {
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* 右上角指标卡片标签 — 参考图片样式 */
+.indicator-spec-card-badge {
+  background: var(--spec-cat-bg);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 20px;
+  letter-spacing: 0.15em;
+  border: none;
+  white-space: nowrap;
+  box-shadow: 0 -1px 2px rgba(0,0,0,0.1);
+}
+
+.indicator-spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.indicator-spec-table th,
+.indicator-spec-table td {
+  border: 1px solid var(--spec-grid);
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+/* 字段名 — 按属性类型分色（业务 / 技术 / 数据管理） */
+.indicator-spec-th {
+  width: 11%;
+  background: var(--spec-label-biz);
+  color: #000000;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  padding: 7px 5px;
+}
+
+.indicator-spec-th--biz {
+  background: var(--spec-label-biz);
+  box-shadow: inset 4px 0 0 var(--spec-label-biz-accent);
+}
+
+.indicator-spec-th--tech {
+  background: var(--spec-label-tech);
+  color: #0a2e4a;
+  box-shadow: inset 4px 0 0 var(--spec-label-tech-accent);
+}
+
+.indicator-spec-th--mgmt {
+  background: var(--spec-label-mgmt);
+  box-shadow: inset 4px 0 0 var(--spec-label-mgmt-accent);
+}
+
+.indicator-spec-attr-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #333;
+  border-bottom: 1px solid var(--spec-grid);
+  background: #fafafa;
+}
+
+.indicator-spec-attr-legend .legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  border: 1px solid var(--spec-grid);
+}
+
+.indicator-spec-attr-legend .legend-swatch--biz {
+  background: var(--spec-label-biz);
+  box-shadow: inset 2px 0 0 var(--spec-label-biz-accent);
+}
+
+.indicator-spec-attr-legend .legend-swatch--tech {
+  background: var(--spec-label-tech);
+  box-shadow: inset 2px 0 0 var(--spec-label-tech-accent);
+}
+
+.indicator-spec-attr-legend .legend-swatch--mgmt {
+  background: var(--spec-label-mgmt);
+  box-shadow: inset 2px 0 0 var(--spec-label-mgmt-accent);
+}
+
+.indicator-spec-formula-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.indicator-spec-formula-part-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+
+.indicator-spec-formula-cn {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #1a1a1a;
+}
+
+.indicator-spec-formula-pseudo {
+  font-family: "SF Mono", Consolas, "Microsoft YaHei", monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.indicator-spec-version-log {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.indicator-spec-version-item {
+  padding: 4px 0;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.indicator-spec-version-item:last-child {
+  border-bottom: none;
+}
+
+.indicator-spec-version-no {
+  display: inline-block;
+  min-width: 3.2em;
+  font-weight: 700;
+  font-family: var(--mono, "SF Mono", Consolas, monospace);
+  color: var(--spec-label-mgmt-accent);
+}
+
+.indicator-spec-version-date {
+  color: #64748b;
+  margin-right: 4px;
+}
+
+.indicator-spec-th-block {
+  width: 11%;
+}
+
+.indicator-spec-td {
+  width: 39%;
+  background: #ffffff;
+  color: #000000;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  padding: 7px 10px;
+}
+
+.indicator-spec-td-block {
+  width: 89%;
+  text-align: left;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.indicator-spec-row-stamp {
+  position: relative;
+}
+
+.indicator-spec-row-stamp .indicator-spec-td-block {
+  min-height: 50px;
+}
+
+/* 参考图「示例」斜章 */
+.indicator-spec-stamp {
+  position: absolute;
+  right: 16%;
+  top: 50%;
+  transform: translateY(-50%) rotate(-18deg);
+  border: 3px solid #c00000;
+  color: #c00000;
+  font-size: 26px;
+  font-weight: 900;
+  padding: 2px 16px;
+  opacity: 0.5;
+  pointer-events: none;
+  letter-spacing: 0.25em;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.metric-detail-spec-wrap {
+  padding: 0;
+  background: var(--spec-surface);
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.metric-detail-spec-wrap .metric-spec-surface {
+  padding: 10px 16px 14px;
+}

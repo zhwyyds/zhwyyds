@@ -1,0 +1,5 @@
+modifier_id,modifier_cn,modifier_en,modifier_abbr,modifier_type,time_scope,description,example_metric,sort_order
+T001,本月,mtd,month_to_date,time,current_month,自然月累计至当前日,本月订单金额,1
+T002,本年,ytd,year_to_date,time,current_year,自然年累计至当前日,本年销售额,2
+T003,环比,mom,month_over_month,compare,prior_period,与上一统计周期对比,订单金额环比,3
+T004,同比,yoy,year_over_year,compare,same_period_last_year,与去年同期对比,订单金额同比,4

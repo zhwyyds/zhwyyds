@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家居卖场租赁 · 数据治理平台</title>
+<link rel="stylesheet" href="css/metric-spec.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="app">
+<!-- ========== Sidebar ========== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">📊</div>
+    <div>数据治理平台</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-group-title">总览</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">🏠</span> 治理总览
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">指标管理</div>
+      <div class="nav-item" data-page="metrics">
+        <span class="nav-icon">📏</span> 指标库
+        <span class="nav-badge" id="nav-badge-metrics">—</span>
+      </div>
+      <div class="nav-item" data-page="metric-mgmt">
+        <span class="nav-icon">📋</span> 指标管理
+        <span class="nav-badge warning">127</span>
+      </div>
+      <div class="nav-item" data-page="roots">
+        <span class="nav-icon">🌱</span> 词根库
+        <span class="nav-badge" id="nav-badge-roots">—</span>
+      </div>
+      <div class="nav-item" data-page="batch-gen">
+        <span class="nav-icon">⚡</span> 批量生成
+      </div>
+      <div class="nav-item" data-page="review">
+        <span class="nav-icon">🤖</span> 模型评审
+        <span class="nav-badge warning">127</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">血缘管理</div>
+      <div class="nav-item" data-page="lineage">
+        <span class="nav-icon">🔗</span> 字段血缘
+      </div>
+      <div class="nav-item" data-page="table-lineage">
+        <span class="nav-icon">🗂️</span> 表血缘
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">治理看板</div>
+      <div class="nav-item" data-page="naming">
+        <span class="nav-icon">📝</span> 命名规范
+      </div>
+      <div class="nav-item" data-page="caliber">
+        <span class="nav-icon">📐</span> 口径治理
+        <span class="nav-badge danger" id="nav-badge-caliber">—</span>
+      </div>
+      <div class="nav-item" data-page="scoring">
+        <span class="nav-icon">⭐</span> 评分看板
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    v1.0 · 数分数仓团队<br>本地运行 · 文件存储
+  </div>
+</aside>
+
+<!-- ========== Main ========== -->
+<div class="main">
+  <header class="header">
+    <div class="header-title" id="pageTitle">治理总览 <span class="crumb">› 数据治理平台</span></div>
+    <div class="header-actions">
+      <button class="btn btn-sm" type="button" onclick="DG.runAcceptanceAndReload().then(function(){alert('验收已重新计算');})">🔄 刷新验收</button>
+      <button class="btn btn-sm">📥 导入</button>
+      <button class="btn btn-sm">📤 导出</button>
+      <button class="btn btn-sm btn-primary">⚙️ 设置</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+<!-- ==================== PAGE: Dashboard ==================== -->
+<div class="page active" id="page-dashboard">
+
+  <!-- Stat Cards -->
+  <div class="stat-grid">
+    <div class="stat-card blue">
+      <span class="stat-icon-deco">📏</span>
+      <div class="stat-label">指标总数</div>
+      <div class="stat-value" id="dash-stat-metrics">—<span class="unit">个</span></div>
+      <div class="stat-trend up">API 实时</div>
+    </div>
+    <div class="stat-card green">
+      <span class="stat-icon-deco">🌱</span>
+      <div class="stat-label">词根总数</div>
+      <div class="stat-value" id="dash-stat-roots">—<span class="unit">个</span></div>
+      <div class="stat-trend up">roots/*.csv</div>
+    </div>
+    <div class="stat-card purple">
+      <span class="stat-icon-deco">🗂️</span>
+      <div class="stat-label">主题域覆盖</div>
+      <div class="stat-value" id="dash-stat-domains">14<span class="unit">/ 14</span></div>
+      <div class="stat-trend up">config/domains</div>
+    </div>
+    <div class="stat-card amber">
+      <span class="stat-icon-deco">⭐</span>
+      <div class="stat-label">综合评分</div>
+      <div class="stat-value" id="dash-stat-acceptance">—<span class="unit">分</span></div>
+      <div class="stat-trend up"><a href="#" onclick="switchToPage('scoring'); return false;" class="text-sm">验收明细 →</a></div>
+    </div>
+  </div>
+
+  <div class="grid-2-1 mb-4">
+    <!-- Left: Governance Progress -->
+    <div class="card card-accent-blue">
+      <div class="card-header">
+        <div class="card-title">治理完成度</div>
+        <button class="btn btn-sm">查看明细</button>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">命名规范率</span>
+            <span class="text-sm text-bold">95.2%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:95.2%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">口径覆盖率</span>
+            <span class="text-sm text-bold">92.3%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:92.3%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">词根覆盖率</span>
+            <span class="text-sm text-bold">98.1%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:98.1%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">血缘覆盖率</span>
+            <span class="text-sm text-bold">78.5%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill amber" style="width:78.5%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">评审完成率</span>
+            <span class="text-sm text-bold">85.2%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:85.2%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">拼音清除率</span>
+            <span class="text-sm text-bold">87.5%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill amber" style="width:87.5%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Risk Alerts -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">⚠️ 风险提醒</div>
+        <span class="badge badge-fail" id="dash-risk-badge">—</span>
+      </div>
+      <div class="card-body" style="padding:0" id="dash-risk-list">
+        <div class="issue-item">
+          <span class="issue-priority p1">…</span>
+          <div class="issue-content">
+            <div class="issue-title">等待验收 API</div>
+            <div class="issue-desc">启动 serve 后自动加载风险项</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Domain Distribution + Score Distribution -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">各主题域指标数量</div>
+      </div>
+      <div class="card-body">
+        <div class="dist-row"><span class="dist-label">sale 交易</span><div class="dist-bar"><div class="dist-fill" style="width:80%;background:var(--primary)">320</div></div><span class="dist-value">320</span></div>
+        <div class="dist-row"><span class="dist-label">mall 商场</span><div class="dist-bar"><div class="dist-fill" style="width:52%;background:var(--success)">210</div></div><span class="dist-value">210</span></div>
+        <div class="dist-row"><span class="dist-label">cust 消费者</span><div class="dist-bar"><div class="dist-fill" style="width:45%;background:var(--purple)">180</div></div><span class="dist-value">180</span></div>
+        <div class="dist-row"><span class="dist-label">ptnr 商户</span><div class="dist-bar"><div class="dist-fill" style="width:37%;background:var(--teal)">150</div></div><span class="dist-value">150</span></div>
+        <div class="dist-row"><span class="dist-label">fin 财务</span><div class="dist-bar"><div class="dist-fill" style="width:32%;background:var(--warning)">130</div></div><span class="dist-value">130</span></div>
+        <div class="dist-row"><span class="dist-label">shop 店铺</span><div class="dist-bar"><div class="dist-fill" style="width:28%;background:#6366F1)">115</div></div><span class="dist-value">115</span></div>
+        <div class="dist-row"><span class="dist-label">cont 合同</span><div class="dist-bar"><div class="dist-fill" style="width:25%;background:#EC4899">100</div></div><span class="dist-value">100</span></div>
+        <div class="dist-row"><span class="dist-label">prod 商品</span><div class="dist-bar"><div class="dist-fill" style="width:22%;background:#8B5CF6">90</div></div><span class="dist-value">90</span></div>
+        <div class="dist-row"><span class="dist-label">traf 流量</span><div class="dist-bar"><div class="dist-fill" style="width:20%;background:#06B6D4">80</div></div><span class="dist-value">80</span></div>
+        <div class="dist-row"><span class="dist-label">其他 5 域</span><div class="dist-bar"><div class="dist-fill" style="width:60%;background:#94A3B8">481</div></div><span class="dist-value">481</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">指标质量评分分布</div>
+      </div>
+      <div class="card-body">
+        <div class="dist-row"><span class="dist-label">S级 ≥95</span><div class="dist-bar"><div class="dist-fill" style="width:15%;background:var(--primary)">280 (15%)</div></div><span class="dist-value">280</span></div>
+        <div class="dist-row"><span class="dist-label">A级 85-94</span><div class="dist-bar"><div class="dist-fill" style="width:35%;background:var(--success)">650 (35%)</div></div><span class="dist-value">650</span></div>
+        <div class="dist-row"><span class="dist-label">B级 70-84</span><div class="dist-bar"><div class="dist-fill" style="width:30%;background:var(--warning)">560 (30%)</div></div><span class="dist-value">560</span></div>
+        <div class="dist-row"><span class="dist-label">C级 50-69</span><div class="dist-bar"><div class="dist-fill" style="width:15%;background:var(--danger)">280 (15%)</div></div><span class="dist-value">280</span></div>
+        <div class="dist-row"><span class="dist-label">D级 <50</span><div class="dist-bar"><div class="dist-fill" style="width:4%;background:#6B7280">86 (5%)</div></div><span class="dist-value">86</span></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">平均分</span>
+            <span class="text-bold">82.3</span>
+          </div>
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-muted">中位数</span>
+            <span class="text-bold">85</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-muted">待整改指标</span>
+            <span class="text-bold" style="color:var(--danger)">836 个</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Metrics ==================== -->
+<div class="page" id="page-metrics">
+  <div class="grid-1-2">
+    <!-- Management Tree -->
+    <div class="card" style="align-self:flex-start;">
+      <div class="card-header">
+        <div class="card-title">管理树</div>
+      </div>
+      <div class="card-body" style="padding:8px;">
+        <input class="input mb-3 w-full" id="metricTreeSearch" placeholder="🔍 搜索管理树指标…" style="min-width:auto;">
+        <div class="tree" id="metricTree">
+          <div class="text-sm text-muted" style="padding:12px;">加载管理树…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single Metric Detail View -->
+    <div>
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <input class="input" id="metricLibrarySearch" placeholder="搜索指标名称、编号、英文名..." style="flex:1;min-width:auto;">
+        <button type="button" class="btn btn-sm" onclick="switchToPage('batch-gen')">⚡ 批量生成</button>
+        <button type="button" class="btn btn-sm" onclick="switchToPage('metric-mgmt')">📋 指标管理</button>
+      </div>
+
+      <!-- Navigation Bar -->
+      <div class="metric-detail-nav">
+        <div class="metric-detail-nav-info">
+          <span class="current">1</span> / <span class="metric-nav-total">—</span> &middot; <span class="metric-nav-path">—</span>
+        </div>
+        <div class="metric-detail-nav-btns">
+          <button class="btn btn-sm" onclick="prevMetric()">&#8249; 上一个</button>
+          <button class="btn btn-sm" onclick="nextMetric()">下一个 &#8250;</button>
+        </div>
+      </div>
+
+      <!-- Single Metric Detail Card -->
+      <div class="metric-detail-card">
+        <div class="metric-detail-header">
+          <div class="metric-detail-header-left">
+            <div class="metric-detail-id-row">
+              <span class="metric-detail-id" id="libMetricId">—</span>
+              <span class="badge badge-a" id="libMetricGrade">A</span>
+              <span class="badge badge-warn" id="libMetricStatus">待确认</span>
+            </div>
+            <div class="metric-detail-name" id="libMetricName">—</div>
+            <div class="metric-detail-en" id="libMetricEn">—</div>
+          </div>
+          <div class="metric-detail-header-right">
+            <button type="button" class="btn btn-sm" onclick="editCurrentMetric()">&#9999;&#65039; 编辑</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="switchToPage('metric-mgmt')">指标管理</button>
+          </div>
+        </div>
+
+        <div class="metric-detail-tags" id="libMetricTags"></div>
+
+        <div class="metric-detail-spec-wrap">
+          <div class="metric-spec-host"></div>
+        </div>
+
+        <div class="metric-detail-section" style="padding-bottom:0;border-bottom:none;">
+          <div class="metric-detail-score-toggle" onclick="toggleDetailScore(this)">
+            <span class="toggle-arrow">&#9654;</span>
+            <span class="section-icon score">&#9733;</span>
+            <span class="text-bold text-sm">AI 质量评分</span>
+            <span id="libAiScoreLabel" class="text-sm" style="margin-left:8px;color:var(--primary);font-weight:700;">—</span>
+            <span id="metricAiReviewSummary" class="text-sm text-muted" style="margin-left:8px;">—</span>
+          </div>
+          <div id="metricAiReviewSection" class="metric-detail-score-section">
+            <div class="score-summary-row">
+              <div class="score-circle-mini a" id="libScoreCircle">—</div>
+              <div class="score-summary-info">
+                <div class="score-summary-grade" id="libScoreGrade">—</div>
+                <div class="score-summary-trend" id="libScoreTrend">六维度质量评分（展开查看明细）</div>
+              </div>
+              <div style="margin-left:auto;">
+                <button type="button" class="btn btn-sm btn-primary" id="scoreRefreshBtn" onclick="MetricScore.refreshCurrent()">&#10227; 重新评分</button>
+              </div>
+            </div>
+
+            <div class="metric-detail-section-title" style="margin-top:12px;">
+              <span class="section-icon score">&#9733;</span> 六维度评分明细
+            </div>
+            <div id="scoreDimensionsHost" class="score-dim-list">
+              <div class="text-sm text-muted">展开评分区以加载六维度明细…</div>
+            </div>
+
+            <div class="metric-detail-section-title" style="margin-top:12px;">
+              <span class="section-icon dispute">&#128161;</span> 改进建议
+              <span id="scoreIssueCount" class="badge badge-neutral" style="margin-left:6px;">0</span>
+            </div>
+            <div id="scoreIssuesHost" class="score-issues-list">
+              <div class="text-sm text-muted">暂无待整改项</div>
+            </div>
+
+            <div class="metric-detail-section-title" style="margin-top:12px;">
+              <span class="section-icon score">&#129302;</span> 多模型汇总评审
+            </div>
+            <div id="metricScoreModelReviews" class="ai-review-models"></div>
+            <div id="metricReviewPanelHost"></div>
+
+            <div class="mt-3">
+              <button type="button" class="btn btn-sm btn-primary" onclick="submitReviewForCurrentMetric()">&#129302; 发起/刷新评审</button>
+              <button type="button" class="btn btn-sm" onclick="switchToPage('review')">模型评审页</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-detail-section" style="padding-bottom:0;border-bottom:none;">
+          <div class="metric-detail-score-toggle" onclick="toggleDetailScore(this)">
+            <span class="toggle-arrow">&#9654;</span>
+            <span class="section-icon">&#128225;</span>
+            <span class="text-bold text-sm">版本与发布</span>
+            <span id="libVersionChip" class="badge badge-neutral" style="margin-left:8px;">未发布</span>
+          </div>
+          <div id="metricVersionSection" class="metric-detail-score-section">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-sm btn-primary" id="publishDomainBtn" onclick="MetricScore.publishCurrentDomain()">&#128640; 发布本域</button>
+              <span id="publishDomainHint" class="text-sm text-muted">—</span>
+            </div>
+            <div class="metric-detail-section-title" style="margin-top:4px;">
+              <span class="section-icon">&#128218;</span> 发布历史
+            </div>
+            <div id="metricReleaseHistory" class="release-list">
+              <div class="text-sm text-muted">展开以查看发布历史</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dispute-section">
+          <div class="metric-detail-section-title">
+            <span class="section-icon dispute">&#9888;</span>
+            异议标记
+            <span id="libDisputeCount" class="badge badge-fail" style="margin-left:6px;display:none;">0 条</span>
+            <button type="button" class="btn btn-sm" style="margin-left:auto;" onclick="toggleDisputeForm()">+ 提交异议</button>
+          </div>
+          <div id="metricDisputeList" class="dispute-list">
+            <div class="text-sm text-muted">暂无异议</div>
+          </div>
+          <div id="disputeForm" class="dispute-form">
+            <label class="text-sm text-bold">异议字段</label>
+            <select class="modal-form-select mt-2" id="disputeFieldSelect">
+              <option value="caliber_desc">口径描述</option>
+              <option value="formula">计算公式</option>
+              <option value="metric_en">英文命名</option>
+              <option value="other">其他</option>
+            </select>
+            <label class="text-sm text-bold mt-3">异议说明</label>
+            <textarea id="disputeNoteInput" class="modal-form-textarea mt-2" placeholder="请描述异议内容与建议…"></textarea>
+            <div class="flex gap-2 mt-3">
+              <button type="button" class="btn btn-sm btn-primary" onclick="submitDispute()">提交异议</button>
+              <button type="button" class="btn btn-sm" onclick="clearMetricObjection()">清除异议</button>
+              <button type="button" class="btn btn-sm" onclick="toggleDisputeForm()">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Metric Management ==================== -->
+<div class="page" id="page-metric-mgmt">
+  <!-- Status Flow -->
+  <div class="batch-status-flow">
+    <div class="batch-status-step">
+      <div class="batch-status-dot pending">1</div>
+      <div class="batch-status-label">草稿/待评审</div>
+      <div class="batch-status-count" id="mgmt-flow-pending">—</div>
+    </div>
+    <span class="batch-status-arrow">&rarr;</span>
+    <div class="batch-status-step">
+      <div class="batch-status-dot reviewed">2</div>
+      <div class="batch-status-label">AI评审通过</div>
+      <div class="batch-status-count" style="color:var(--warning)" id="mgmt-flow-reviewed">—</div>
+    </div>
+    <span class="batch-status-arrow">&rarr;</span>
+    <div class="batch-status-step">
+      <div class="batch-status-dot published">3</div>
+      <div class="batch-status-label">已发布</div>
+      <div class="batch-status-count" style="color:var(--success)" id="mgmt-flow-published">—</div>
+    </div>
+    <span class="batch-status-arrow">&rarr;</span>
+    <div class="batch-status-step">
+      <div class="batch-status-dot published">4</div>
+      <div class="batch-status-label">已下线</div>
+      <div class="batch-status-count" id="mgmt-flow-offline">0</div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="filter-bar">
+    <select class="select" id="mgmtFilterDomain">
+      <option value="">全部主题域</option>
+      <option value="sale">sale 交易</option>
+      <option value="mall">mall 商场</option>
+      <option value="cust">cust 消费者</option>
+      <option value="ptnr">ptnr 商户</option>
+      <option value="fin">fin 财务</option>
+    </select>
+    <select class="select" id="mgmtFilterStatus">
+      <option value="">全部状态</option>
+      <option value="pending">草稿/待确认</option>
+      <option value="approved">已发布</option>
+    </select>
+    <input class="input" id="mgmtSearchInput" placeholder="搜索指标ID/名称/英文名..." style="flex:1;min-width:auto;">
+    <button type="button" class="btn btn-sm" onclick="exportMetricsCsv()">&#128194; 导出清单</button>
+    <button type="button" class="new-metric-btn" onclick="showNewMetricModal()">+ 新增指标</button>
+  </div>
+
+  <!-- Batch Toolbar (shows when items selected) -->
+  <div class="batch-toolbar" id="batchToolbar">
+    <span class="batch-toolbar-count" id="batchCount">已选择 0 个指标</span>
+    <span class="text-sm text-muted">|</span>
+    <span class="text-sm text-muted">评审状态: <span style="color:var(--warning);font-weight:600;" id="batchReviewStatus">&mdash;</span></span>
+    <div class="batch-toolbar-actions">
+      <button class="btn btn-sm" onclick="clearSelection()">取消选择</button>
+      <button class="btn btn-sm" onclick="batchOffline()">&#11015; 批量下线</button>
+      <button class="btn btn-sm btn-primary" onclick="batchPublish()">&#128640; 批量发布</button>
+    </div>
+  </div>
+
+  <!-- Metric Table with Full Lifecycle Actions -->
+  <div class="card">
+    <div class="select-all-bar">
+      <div class="custom-checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)"></div>
+      <span>全选</span>
+      <span class="text-muted">|</span>
+      <span class="text-sm text-muted">共 <span id="mgmt-total-count">—</span> 个指标，显示 <span id="mgmtPageSizeLabel">12</span> 条</span>
+      <div class="page-size-selector">
+        <span>每页</span>
+        <select onchange="changePageSize(this,'mgmt')">
+          <option value="10">10</option>
+          <option value="12" selected>12</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <span>条</span>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="selectAllReviewed()">全选已评审</button>
+        <button class="btn btn-sm">按主题域分组</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;"></th>
+            <th>指标ID</th>
+            <th>中文名</th>
+            <th>英文名</th>
+            <th>主题域</th>
+            <th>类型</th>
+            <th>评审状态</th>
+            <th>版本</th>
+            <th>质量</th>
+            <th>发布状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="batchTableBody">
+          <tr><td colspan="11" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination-bar">
+      <div class="pagination-info">
+        <span class="text-sm text-muted">共 1,856 条，显示 <span id="logPageSizeLabel">12</span> 条</span>
+        <div class="page-size-selector">
+          <span>每页</span>
+          <select onchange="changePageSize(this,'log')">
+            <option value="10">10</option>
+            <option value="12" selected>12</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span>条</span>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm">&#8249; 上一页</button>
+        <button class="btn btn-sm btn-primary">1</button>
+        <button class="btn btn-sm">2</button>
+        <button class="btn btn-sm">3</button>
+        <button class="btn btn-sm">&hellip;</button>
+        <button class="btn btn-sm">155</button>
+        <button class="btn btn-sm">下一页 &#8250;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operation Log -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <div class="card-title">操作记录</div>
+      <span class="text-sm text-muted">最近 8 条</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>时间</th><th>操作人</th><th>操作类型</th><th>指标数</th><th>主题域</th><th>批次号</th><th>状态</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-sm">08-03 11:20</td>
+            <td>张三</td>
+            <td><span class="badge badge-fail" style="background:var(--danger-light);color:var(--danger)">&#128465; 删除</span></td>
+            <td><span class="text-bold">1</span> 个</td>
+            <td><span class="badge badge-neutral">sale</span></td>
+            <td class="text-mono text-sm">DEL_20260803_001</td>
+            <td><span class="badge badge-warn">&#9203; 待审批</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-03 10:45</td>
+            <td>李四</td>
+            <td><span class="badge" style="background:#EDE9FE;color:var(--purple)">&#128230; 归档</span></td>
+            <td><span class="text-bold">3</span> 个</td>
+            <td><span class="badge badge-neutral">ptnr</span></td>
+            <td class="text-mono text-sm">ARCH_20260803_001</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-03 09:15</td>
+            <td>张三</td>
+            <td><span class="badge badge-pass">发布</span></td>
+            <td><span class="text-bold">15</span> 个</td>
+            <td><span class="badge badge-neutral">sale</span></td>
+            <td class="text-mono text-sm">BATCH_20260803_001</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-02 16:30</td>
+            <td>李四</td>
+            <td><span class="badge badge-info">新增</span></td>
+            <td><span class="text-bold">3</span> 个</td>
+            <td><span class="badge badge-neutral">mall</span></td>
+            <td class="text-mono text-sm">&mdash;</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-02 14:00</td>
+            <td>张三</td>
+            <td><span class="badge badge-pass">发布</span></td>
+            <td><span class="text-bold">23</span> 个</td>
+            <td><span class="badge badge-neutral">sale</span> <span class="badge badge-neutral">cust</span></td>
+            <td class="text-mono text-sm">BATCH_20260802_002</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-02 10:15</td>
+            <td>王五</td>
+            <td><span class="badge badge-warn">下线</span></td>
+            <td><span class="text-bold">2</span> 个</td>
+            <td><span class="badge badge-neutral">ptnr</span></td>
+            <td class="text-mono text-sm">OFFLINE_20260802_001</td>
+            <td><span class="badge badge-warn">&#9888; 1个跳过</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-01 17:45</td>
+            <td>张三</td>
+            <td><span class="badge badge-neutral">编辑</span></td>
+            <td><span class="text-bold">1</span> 个</td>
+            <td><span class="badge badge-neutral">fin</span></td>
+            <td class="text-mono text-sm">&mdash;</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+          <tr>
+            <td class="text-sm">08-01 14:20</td>
+            <td>王五</td>
+            <td><span class="badge badge-fail" style="background:var(--danger-light);color:var(--danger)">&#128465; 删除</span></td>
+            <td><span class="text-bold">1</span> 个</td>
+            <td><span class="badge badge-neutral">hr</span></td>
+            <td class="text-mono text-sm">DEL_20260801_002</td>
+            <td><span class="badge badge-pass">&#9989; 成功</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Offline Modal -->
+<div class="modal-overlay" id="offlineModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">&#11015; 指标下线申请</div>
+      <button class="modal-close" onclick="closeModal('offlineModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-warning info">
+        &#128161; 下线为软删除，指标数据保留但状态变为"已下线"，可随时恢复上线。
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">指标信息</label>
+        <div style="padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;">
+          <span id="offlineMetricId" class="text-mono text-bold">M_SALE_020</span>
+          <span class="text-muted">|</span>
+          <span id="offlineMetricName">实付订单金额</span>
+          <span class="text-muted">|</span>
+          <span id="offlineMetricEn" class="text-mono">paid_order_amount</span>
+        </div>
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">下线原因 <span style="color:var(--danger)">*</span></label>
+        <select class="modal-form-select" id="offlineReason">
+          <option value="">请选择下线原因...</option>
+          <option value="business_change">业务变更 - 指标不再适用当前业务</option>
+          <option value="deprecated">指标废弃 - 被新指标替代</option>
+          <option value="duplicate">重复定义 - 与其他指标重复</option>
+          <option value="caliber_migrate">口径迁移 - 口径已迁移至其他指标</option>
+          <option value="other">其他</option>
+        </select>
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">补充说明</label>
+        <textarea class="modal-form-textarea" id="offlineDesc" placeholder="请补充下线说明..."></textarea>
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">前置依赖检查</label>
+        <div class="impact-check-list">
+          <div class="impact-check-item ok">&#9989; 血缘检查 - 无下游表依赖</div>
+          <div class="impact-check-item ok">&#9989; 看板检查 - 无BI看板引用</div>
+          <div class="impact-check-item warn">&#9888; 派生检查 - 1个复合指标引用此指标: M_SALE_030</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('offlineModal')">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="confirmOffline()">&#11015; 确认下线</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger)">&#128465; 物理删除确认</div>
+      <button class="modal-close" onclick="closeModal('deleteModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-warning danger">
+        &#9888; <strong>此操作不可逆！</strong>物理删除将从数据文件中彻底移除该记录，无法恢复。操作日志将保留删除前的完整数据快照。
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">删除对象</label>
+        <div style="padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;">
+          <span id="deleteMetricId" class="text-mono text-bold">M_SALE_001</span>
+          <span class="text-muted">|</span>
+          <span id="deleteMetricName">订单金额</span>
+        </div>
+      </div>
+      <div class="modal-form-group" id="deleteConditionGroup" style="display:none;">
+        <label class="modal-form-label">前置条件检查</label>
+        <div class="impact-check-list">
+          <div class="impact-check-item ok">&#9989; 已下线超过30天</div>
+          <div class="impact-check-item ok">&#9989; 无活跃引用</div>
+        </div>
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">删除理由 <span style="color:var(--danger)">*</span></label>
+        <textarea class="modal-form-textarea" id="deleteReason" placeholder="请详细说明删除理由（必填）..."></textarea>
+      </div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">审批流程</label>
+        <div style="padding:8px 12px;background:var(--warning-light);border-radius:var(--radius-sm);font-size:12px;color:var(--warning);">
+          &#128274; 需双重审批：主题域负责人 + 数分治理组<br>
+          &#128197; 草稿/驳回状态可直接删除，无需审批
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('deleteModal')">取消</button>
+      <button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="confirmDelete()">&#128465; 确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Metric Modal -->
+<div class="modal-overlay" id="newMetricModal">
+  <div class="modal-dialog" style="max-width:640px;">
+    <div class="modal-header">
+      <span class="modal-title">&#10133; 新增指标</span>
+      <button class="modal-close" onclick="closeModal('newMetricModal')">&#10005;</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow:auto;">
+      <div class="modal-form-section modal-form-section--biz">
+        <div class="modal-form-section-title">业务属性</div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">中文名称 *</label><input class="modal-form-input" id="newMetricCn" placeholder="指标中文名称"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名称</label><input class="modal-form-input" id="newMetricEn" placeholder="可自动生成"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标描述</label><textarea class="modal-form-textarea" id="newMetricDesc" placeholder="业务定义"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="newMetricFormulaCn" placeholder="全中文公式说明"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 伪代码逻辑</label><textarea class="modal-form-textarea" id="newMetricFormulaLogic" placeholder="SUM(…) WHERE …" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+      </div>
+      <div class="modal-form-section modal-form-section--tech">
+        <div class="modal-form-section-title">技术属性</div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">主题域</label><select class="modal-form-select" id="newMetricDomain"><option value="sale">sale 交易</option><option value="mall">mall 商场</option><option value="cust">cust 消费者</option></select></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">指标类型</label><select class="modal-form-select" id="newMetricType"><option value="atomic">原子指标</option><option value="derived">派生指标</option></select></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">计量单位 / 时间周期</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <input class="modal-form-input" id="newMetricUnit" placeholder="元、%、笔">
+            <input class="modal-form-input" id="newMetricFrequency" placeholder="月度">
+          </div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">技术来源</label><textarea class="modal-form-textarea" id="newMetricTechCaliber" placeholder="可执行 SQL / 表达式" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">所属物理表</label><input class="modal-form-input" id="newMetricSourceTable" placeholder="dwd_…"></div>
+      </div>
+      <div class="modal-form-section modal-form-section--mgmt">
+        <div class="modal-form-section-title">数据管理属性</div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">指标负责单位</label><input class="modal-form-input" id="newMetricOwner" placeholder="部门名称"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号</label><input class="modal-form-input" id="newMetricVersion" placeholder="0.1.0"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录</label><textarea class="modal-form-textarea" id="newMetricVersionHistory" placeholder="版本|日期|操作人|说明，多条换行"></textarea></div>
+      </div>
+      <div class="modal-warning info">&#128161; 保存后写入 <code>metrics/*_metrics.csv</code>，并刷新指标库展示</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('newMetricModal')">取消</button>
+      <button class="btn btn-primary" onclick="MetricMgmt.saveNew()">保存为草稿</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Metric Modal -->
+<div class="modal-overlay" id="metricEditModal">
+  <div class="modal-dialog" style="max-width:720px;">
+    <div class="modal-header">
+      <span class="modal-title">&#9998; 编辑指标</span>
+      <button class="modal-close" onclick="closeModal('metricEditModal')">&#10005;</button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow:auto;">
+      <div class="modal-form-group"><label class="modal-form-label">指标编号</label><input class="modal-form-input" id="metricEditId" readonly></div>
+      <div class="modal-form-section modal-form-section--biz">
+        <div class="modal-form-section-title">业务属性</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标名称</label><input class="modal-form-input" id="metricEditCn"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名 / 缩写</label>
+            <input class="modal-form-input" id="metricEditEn" placeholder="metric_en" style="margin-bottom:6px;">
+            <input class="modal-form-input" id="metricEditAbbr" placeholder="abbr">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">一级分类</label><input class="modal-form-input" id="metricEditCatL1"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">二级分类</label><input class="modal-form-input" id="metricEditCatL2"></div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标描述</label><textarea class="modal-form-textarea" id="metricEditDesc"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="metricEditFormulaCn"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 伪代码逻辑</label><textarea class="modal-form-textarea" id="metricEditFormulaLogic" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">值类型</label><input class="modal-form-input" id="metricEditValueType"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">统计维度</label><input class="modal-form-input" id="metricEditDimensions"></div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">应用场景</label><input class="modal-form-input" id="metricEditScenario"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">应用报表</label><textarea class="modal-form-textarea" id="metricEditReports"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">分析方法</label><input class="modal-form-input" id="metricEditAnalysis"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">预警标准</label><textarea class="modal-form-textarea" id="metricEditAlert"></textarea></div>
+      </div>
+      <div class="modal-form-section modal-form-section--tech">
+        <div class="modal-form-section-title">技术属性</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">主题域</label><input class="modal-form-input" id="metricEditDomain"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">指标类型</label><select class="modal-form-select" id="metricEditType"><option value="atomic">atomic</option><option value="derived">derived</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">计量单位</label><input class="modal-form-input" id="metricEditUnit"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">时间周期</label><input class="modal-form-input" id="metricEditFrequency"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">精度</label><input class="modal-form-input" id="metricEditPrecision"></div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">数据来源</label><input class="modal-form-input" id="metricEditDataSources"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">技术来源</label><textarea class="modal-form-textarea" id="metricEditTechCaliber" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">所属物理表</label><input class="modal-form-input" id="metricEditSourceTable"></div>
+      </div>
+      <div class="modal-form-section modal-form-section--mgmt">
+        <div class="modal-form-section-title">数据管理属性</div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">指标负责单位</label><input class="modal-form-input" id="metricEditOwner"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号</label><input class="modal-form-input" id="metricEditVersion"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录</label><textarea class="modal-form-textarea" id="metricEditVersionHistory" placeholder="版本|日期|操作人|说明"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('metricEditModal')">取消</button>
+      <button class="btn btn-primary" onclick="MetricMgmt.saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Roots ==================== -->
+<div class="page" id="page-roots">
+  <div class="filter-bar">
+    <select class="select">
+      <option>全部主题域</option>
+      <option>sale 交易</option>
+      <option>mall 商场</option>
+      <option>cust 消费者</option>
+    </select>
+    <select class="select">
+      <option>全部类型</option>
+      <option>名词 noun</option>
+      <option>动词 verb</option>
+      <option>形容词 adj</option>
+      <option>单位 unit</option>
+      <option>时间 time</option>
+    </select>
+    <select class="select">
+      <option>全部状态</option>
+      <option>已通过</option>
+      <option>待确认</option>
+      <option>已驳回</option>
+    </select>
+    <input class="input" placeholder="搜索词根..." style="flex:1;min-width:auto;">
+    <button class="btn btn-sm">📥 批量导入</button>
+    <button class="btn btn-sm">🤖 AI生成</button>
+    <button class="btn btn-sm btn-primary">+ 新增词根</button>
+  </div>
+
+  <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card blue"><div class="stat-label">词根总数</div><div class="stat-value" id="roots-stat-total">—</div></div>
+    <div class="stat-card green"><div class="stat-label">已通过</div><div class="stat-value" id="roots-stat-approved">—</div></div>
+    <div class="stat-card amber"><div class="stat-label">待确认</div><div class="stat-value" id="roots-stat-pending">—</div></div>
+    <div class="stat-card purple"><div class="stat-label">主题域覆盖</div><div class="stat-value" id="roots-stat-domains">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">词根列表</div>
+      <span class="text-sm text-muted" id="roots-table-count">共 — 条</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>词根ID</th>
+            <th>中文词根</th>
+            <th>英文词根</th>
+            <th>缩写</th>
+            <th>类型</th>
+            <th>来源</th>
+            <th>引用数</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="roots-table-body">
+          <tr>
+            <td class="text-mono text-sm">R_SALE_001</td>
+            <td>订单</td>
+            <td class="text-mono">order</td>
+            <td class="text-mono">ord</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">12</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_001')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_002</td>
+            <td>金额</td>
+            <td class="text-mono">amount</td>
+            <td class="text-mono">amt</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">8</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_002')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_003</td>
+            <td>数量</td>
+            <td class="text-mono">count</td>
+            <td class="text-mono">cnt</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">5</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_003')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_004</td>
+            <td>退款</td>
+            <td class="text-mono">refund</td>
+            <td class="text-mono">rfd</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">3</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_004')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_005</td>
+            <td>实付</td>
+            <td class="text-mono">paid</td>
+            <td class="text-mono">paid</td>
+            <td><span class="badge badge-neutral">形容词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">2</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_005')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_006</td>
+            <td>转化</td>
+            <td class="text-mono">conversion</td>
+            <td class="text-mono">cvr</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-bold">0</span></td>
+            <td><span class="badge badge-warn">&#9203; 待确认</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm btn-primary">确认</button> <button class="btn btn-sm" onclick="showDeleteModal('R_SALE_006','root')" style="color:var(--danger)">&#128465; 删除</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_007</td>
+            <td>客单价</td>
+            <td class="text-mono">avg_order_value</td>
+            <td class="text-mono">avg_ord_val</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-neutral">manual</span></td>
+            <td><span class="text-bold">1</span></td>
+            <td><span class="badge badge-pass">&#9989; 已通过</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm" onclick="showRootOfflineModal('R_SALE_007')" style="color:var(--danger)">&#11015; 下线</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">R_SALE_008</td>
+            <td>毛利率</td>
+            <td class="text-mono">gross_margin_rate</td>
+            <td class="text-mono">gm_rte</td>
+            <td><span class="badge badge-neutral">名词</span></td>
+            <td><span class="badge badge-info">model_consensus</span></td>
+            <td><span class="text-muted">0</span></td>
+            <td><span class="badge" style="background:#F1F5F9;color:var(--text-muted)">&#11015; 已下线</span></td>
+            <td><button class="btn btn-sm" onclick="showRootEditModal(this)">编辑</button> <button class="btn btn-sm btn-primary">恢复上线</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination-bar">
+      <div class="pagination-info">
+        <span class="text-sm text-muted">共 87 条，显示 <span id="rootPageSizeLabel">8</span> 条</span>
+        <div class="page-size-selector">
+          <span>每页</span>
+          <select onchange="changePageSize(this,'root')">
+            <option value="8" selected>8</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="87">全部</option>
+          </select>
+          <span>条</span>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm">&#8249; 上一页</button>
+        <button class="btn btn-sm btn-primary">1</button>
+        <button class="btn btn-sm">2</button>
+        <button class="btn btn-sm">3</button>
+        <button class="btn btn-sm">&hellip;</button>
+        <button class="btn btn-sm">13</button>
+        <button class="btn btn-sm">下一页 &#8250;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Batch Generation ==================== -->
+<div class="page" id="page-batch-gen">
+  <div class="callout info">
+    💡 <div><strong>批量生成说明：</strong>选择原子指标 → 系统按数据类型自动过滤适用修饰词 → 大模型推荐默认组合 → 人工确认 → 一键生成派生指标。2个原子指标 × 6个修饰词 = 12个衍生指标，一键搞定。</div>
+  </div>
+
+  <div class="grid-2 mb-4">
+    <!-- Step 1: Select Atomic Metrics -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 1 · 选择原子指标</div>
+        <span class="badge badge-info">已选 2 个</span>
+      </div>
+      <div class="card-body">
+        <div class="filter-bar" style="margin-bottom:12px;">
+          <select class="select"><option>sale 交易</option></select>
+          <input class="input" placeholder="搜索..." style="flex:1;min-width:auto;">
+        </div>
+        <table>
+          <thead><tr><th></th><th>指标</th><th>数据类型</th><th>英文名</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" checked></td>
+              <td>订单金额</td>
+              <td><span class="badge badge-info">amt</span></td>
+              <td class="text-mono text-sm">order_amount</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" checked></td>
+              <td>实付订单金额</td>
+              <td><span class="badge badge-info">amt</span></td>
+              <td class="text-mono text-sm">paid_order_amount</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>订单数</td>
+              <td><span class="badge badge-neutral">cnt</span></td>
+              <td class="text-mono text-sm">order_count</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>退款金额</td>
+              <td><span class="badge badge-info">amt</span></td>
+              <td class="text-mono text-sm">refund_amount</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Step 2: Modifier Matrix -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 2 · 修饰词选择</div>
+        <span class="text-sm text-muted">数据类型: amt → 自动过滤</span>
+      </div>
+      <div class="card-body">
+        <div class="text-sm text-muted mb-2">时间修饰词</div>
+        <div class="checkbox-grid mb-3" id="batchModifierList">
+          <div class="checkbox-item checked"><div class="checkbox-box"></div> 本年 (ytd)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 累计 (cum)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 年累计 (ycum)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 上月 (lm)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 上年同期 (lysp)</div>
+          <div class="checkbox-item disabled"><div class="checkbox-box"></div> 日均 (day_avg)</div>
+        </div>
+
+        <div class="text-sm text-muted mb-2">对比修饰词</div>
+        <div class="checkbox-grid mb-3">
+          <div class="checkbox-item checked"><div class="checkbox-box"></div> 环比 (mom)</div>
+          <div class="checkbox-item checked"><div class="checkbox-box"></div> 同比 (yoy)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 环比差值 (mom_d)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 同比差值 (yoy_d)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 达成率 (ach_rte)</div>
+        </div>
+
+        <div class="text-sm text-muted mb-2">业务维度修饰词</div>
+        <div class="checkbox-grid">
+          <div class="checkbox-item"><div class="checkbox-box"></div> 按商场 (by_mall)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 按商户 (by_ptnr)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 按品类 (by_cat)</div>
+          <div class="checkbox-item"><div class="checkbox-box"></div> 按楼层 (by_flr)</div>
+        </div>
+
+        <div class="callout warning mt-4" style="margin-bottom:0;">
+          ⚠️ <div><strong>日均 (day_avg)</strong> 已被自动禁用 — 金额型指标不适用日均统计</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Preview -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">Step 3 · 生成预览</div>
+      <div class="flex gap-2">
+        <span class="text-sm text-muted" id="batchPreviewCount">2 个原子 × 4 个修饰词 = <strong style="color:var(--primary)">8 个衍生指标</strong></span>
+        <button class="btn btn-sm" type="button" onclick="refreshBatchPreview()">🔄 刷新预览</button>
+        <button class="btn btn-sm btn-primary" type="button" onclick="batchGenerate(event)">⚡ 一键生成</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="batchPreviewTable">
+        <thead>
+          <tr>
+            <th>预览</th>
+            <th>指标英文名</th>
+            <th>缩写</th>
+            <th>口径描述（AI生成）</th>
+            <th>计算公式</th>
+            <th>推荐评审</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">monthly_order_amount</td>
+            <td class="text-mono text-sm">mtd_ord_amt</td>
+            <td class="text-sm">当前自然月内已完成订单的销售总金额</td>
+            <td class="text-mono text-sm text-muted">SUM(order_amount) WHERE month=current</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">yearly_order_amount</td>
+            <td class="text-mono text-sm">ytd_ord_amt</td>
+            <td class="text-sm">当前自然年内已完成订单的销售总金额</td>
+            <td class="text-mono text-sm text-muted">SUM(order_amount) WHERE year=current</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">mom_order_amount</td>
+            <td class="text-mono text-sm">mom_ord_amt</td>
+            <td class="text-sm">本月订单金额与上月订单金额的环比增长率</td>
+            <td class="text-mono text-sm text-muted">(mtd_ord_amt - lm_ord_amt) / lm_ord_amt</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">yoy_order_amount</td>
+            <td class="text-mono text-sm">yoy_ord_amt</td>
+            <td class="text-sm">本月订单金额与上年同期订单金额的同比增长率</td>
+            <td class="text-mono text-sm text-muted">(mtd_ord_amt - lysp_ord_amt) / lysp_ord_amt</td>
+            <td><span class="badge badge-warn">需人工确认</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">monthly_paid_order_amount</td>
+            <td class="text-mono text-sm">mtd_paid_ord_amt</td>
+            <td class="text-sm">当前自然月内已完成订单的实付金额</td>
+            <td class="text-mono text-sm text-muted">SUM(paid_amount) WHERE month=current</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">yearly_paid_order_amount</td>
+            <td class="text-mono text-sm">ytd_paid_ord_amt</td>
+            <td class="text-sm">当前自然年内已完成订单的实付金额</td>
+            <td class="text-mono text-sm text-muted">SUM(paid_amount) WHERE year=current</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">mom_paid_order_amount</td>
+            <td class="text-mono text-sm">mom_paid_ord_amt</td>
+            <td class="text-sm">本月实付金额与上月实付金额的环比增长率</td>
+            <td class="text-mono text-sm text-muted">(mtd_paid_ord_amt - lm_paid_ord_amt) / lm_paid_ord_amt</td>
+            <td><span class="badge badge-pass">推荐通过</span></td>
+          </tr>
+          <tr>
+            <td>🆕</td>
+            <td class="text-mono text-sm">yoy_paid_order_amount</td>
+            <td class="text-mono text-sm">yoy_paid_ord_amt</td>
+            <td class="text-sm">本月实付金额与上年同期实付金额的同比增长率</td>
+            <td class="text-mono text-sm text-muted">(mtd_paid_ord_amt - lysp_paid_ord_amt) / lysp_paid_ord_amt</td>
+            <td><span class="badge badge-warn">需人工确认</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modifier Applicability Matrix -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">修饰词适用性矩阵（参考）</div>
+    </div>
+    <div class="table-wrap">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th>数据类型</th>
+            <th>本月</th><th>本年</th><th>累计</th><th>年累计</th><th>日均</th><th>环比</th><th>同比</th><th>达成率</th><th>按商场</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="text-bold">金额 (amt)</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-opt">○</td><td class="check-opt">○</td><td class="check-no">✕</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-opt">○</td><td class="check-yes">✅</td></tr>
+          <tr><td class="text-bold">计数 (cnt)</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td></tr>
+          <tr><td class="text-bold">比率 (rte)</td><td class="check-yes">✅</td><td class="check-opt">○</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-no">✕</td><td class="check-yes">✅</td></tr>
+          <tr><td class="text-bold">存量 (stock)</td><td class="check-yes">✅</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-no">✕</td><td class="check-yes">✅</td></tr>
+          <tr><td class="text-bold">平均值 (avg)</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-no">✕</td><td class="check-no">✕</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-yes">✅</td><td class="check-no">✕</td><td class="check-yes">✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px 20px;display:flex;gap:24px;" class="text-sm text-muted">
+      <span><span style="color:var(--success)">✅</span> 允许（默认推荐）</span>
+      <span><span style="color:var(--warning)">○</span> 允许（需手动勾选）</span>
+      <span><span style="color:var(--danger)">✕</span> 禁止（硬规则）</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Model Review ==================== -->
+<div class="page" id="page-review">
+  <div class="stat-grid">
+    <div class="stat-card blue"><div class="stat-label">评审完成率</div><div class="stat-value" id="review-stat-rate">—<span class="unit">%</span></div></div>
+    <div class="stat-card amber"><div class="stat-label">待人工确认</div><div class="stat-value" id="review-stat-pending">—<span class="unit">个</span></div></div>
+    <div class="stat-card purple"><div class="stat-label">模型冲突</div><div class="stat-value" id="review-stat-conflict">—<span class="unit">个</span></div></div>
+    <div class="stat-card green"><div class="stat-label">自动通过</div><div class="stat-value" id="review-stat-auto">—<span class="unit">个</span></div></div>
+  </div>
+
+  <div class="grid-2-1 mb-4">
+    <!-- Review Detail -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" id="reviewDetailTitle">指标评审</div>
+        <span class="badge badge-warn">⏳ 待确认</span>
+      </div>
+      <div class="card-body" id="reviewDetailHost">
+        <div class="text-sm text-muted">在指标管理点击「评审」，或从右侧队列选择指标发起 Mock 多模型评审。</div>
+      </div>
+    </div>
+
+    <!-- Review Queue -->
+    <div class="card" style="align-self:flex-start;">
+      <div class="card-header">
+        <div class="card-title">待处理队列</div>
+        <span class="badge badge-warn" id="reviewQueueBadge">—</span>
+      </div>
+      <div id="reviewQueueHost" style="padding:0;max-height:500px;overflow-y:auto;">
+        <div class="text-sm text-muted" style="padding:16px;">加载队列…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Progress by Domain -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">各主题域评审进度</div>
+    </div>
+    <div class="card-body">
+      <div class="dist-row"><span class="dist-label">sale</span><div class="dist-bar"><div class="dist-fill" style="width:92%;background:var(--success)">92%</div></div><span class="dist-value">✅</span></div>
+      <div class="dist-row"><span class="dist-label">mall</span><div class="dist-bar"><div class="dist-fill" style="width:88%;background:var(--success)">88%</div></div><span class="dist-value">✅</span></div>
+      <div class="dist-row"><span class="dist-label">cust</span><div class="dist-bar"><div class="dist-fill" style="width:80%;background:var(--primary)">80%</div></div><span class="dist-value">⚠️</span></div>
+      <div class="dist-row"><span class="dist-label">ptnr</span><div class="dist-bar"><div class="dist-fill" style="width:82%;background:var(--primary)">82%</div></div><span class="dist-value">⚠️</span></div>
+      <div class="dist-row"><span class="dist-label">fin</span><div class="dist-bar"><div class="dist-fill" style="width:75%;background:var(--warning)">75%</div></div><span class="dist-value">⚠️</span></div>
+      <div class="dist-row"><span class="dist-label">shop</span><div class="dist-bar"><div class="dist-fill" style="width:85%;background:var(--success)">85%</div></div><span class="dist-value">✅</span></div>
+      <div class="dist-row"><span class="dist-label">cont</span><div class="dist-bar"><div class="dist-fill" style="width:90%;background:var(--success)">90%</div></div><span class="dist-value">✅</span></div>
+      <div class="dist-row"><span class="dist-label">hr</span><div class="dist-bar"><div class="dist-fill" style="width:50%;background:var(--danger)">50%</div></div><span class="dist-value">❌</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Lineage ==================== -->
+<div class="page" id="page-lineage">
+  <div class="filter-bar">
+    <select class="select">
+      <option>sale 交易</option>
+      <option>mall 商场</option>
+      <option>cust 消费者</option>
+    </select>
+    <select class="select">
+      <option>表级血缘</option>
+      <option>字段级血缘</option>
+    </select>
+    <input class="input" placeholder="搜索表名..." style="flex:1;min-width:auto;">
+    <button class="btn btn-sm">📤 上传血缘JSON</button>
+  </div>
+
+  <div class="callout info mb-4">
+    🔗 <div>字段级血缘由外部项目解析后上传 JSON 文件，本平台负责读取和展示。当前展示 <strong>sale 交易</strong> 主题域的字段级血缘映射。表级血缘请前往「表血缘」页面查看。</div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">血缘关系图 · sale_lineage.json</div>
+      <div class="flex gap-2">
+        <span class="text-sm text-muted" id="lineageMetaLabel">来源: — · 更新: —</span>
+        <button class="btn btn-sm" onclick="toggleLineageAnimation(this)">⏸ 暂停动画</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="field-lineage-container" id="fieldLineageGraph">
+        <!-- SVG layer for field-to-field paths -->
+        <svg class="fl-svg-layer" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="fl-arrow-direct" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#10B981"/></marker>
+            <marker id="fl-arrow-aggregate" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#3B82F6"/></marker>
+            <marker id="fl-arrow-calc" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#F59E0B"/></marker>
+          </defs>
+          <!-- 1. order_amount → mtd_order_amount (aggregate) -->
+          <path class="lineage-path aggregate" d="M260,95 C380,95 580,95 700,95" marker-end="url(#fl-arrow-aggregate)"
+            data-id="FL_001" data-source="dwd_sale_order_df" data-target="dws_sale_order_mtd"
+            data-src-field="order_amount" data-tgt-field="mtd_order_amount"
+            data-type="aggregate" data-logic="SUM(order_amount) WHERE month=current"
+            data-fields="1→1" />
+          <path class="lineage-path-flow aggregate" d="M260,95 C380,95 580,95 700,95" />
+          <!-- 2. order_id → order_count (aggregate) -->
+          <path class="lineage-path aggregate" d="M260,135 C380,135 580,135 700,135" marker-end="url(#fl-arrow-aggregate)"
+            data-id="FL_002" data-source="dwd_sale_order_df" data-target="dws_sale_order_mtd"
+            data-src-field="order_id" data-tgt-field="order_count"
+            data-type="aggregate" data-logic="COUNT(DISTINCT order_id)"
+            data-fields="1→1" />
+          <path class="lineage-path-flow aggregate" d="M260,135 C380,135 580,135 700,135" />
+          <!-- 3. paid_amount → mtd_paid_amount (aggregate) -->
+          <path class="lineage-path aggregate" d="M260,175 C380,175 580,175 700,175" marker-end="url(#fl-arrow-aggregate)"
+            data-id="FL_003" data-source="dwd_sale_order_df" data-target="dws_sale_order_mtd"
+            data-src-field="paid_amount" data-tgt-field="mtd_paid_amount"
+            data-type="aggregate" data-logic="SUM(paid_amount) WHERE month=current"
+            data-fields="1→1" />
+          <path class="lineage-path-flow aggregate" d="M260,175 C380,175 580,175 700,175" />
+          <!-- 4. order_amount + refund_amount → net_order_amount (calc) -->
+          <path class="lineage-path calc" d="M260,215 C380,215 580,215 700,215" marker-end="url(#fl-arrow-calc)"
+            data-id="FL_004" data-source="dwd_sale_order_df" data-target="dws_sale_order_mtd"
+            data-src-field="order_amount, refund_amount" data-tgt-field="net_order_amount"
+            data-type="calc" data-logic="SUM(order_amount) - SUM(refund_amount)"
+            data-fields="2→1" />
+          <path class="lineage-path-flow calc" d="M260,215 C380,215 580,215 700,215" />
+          <!-- 5. mall_id → mall_id (direct) -->
+          <path class="lineage-path direct" d="M260,255 C380,255 580,255 700,255" marker-end="url(#fl-arrow-direct)"
+            data-id="FL_005" data-source="dwd_sale_order_df" data-target="dws_sale_order_mtd"
+            data-src-field="mall_id" data-tgt-field="mall_id"
+            data-type="direct" data-logic="直接映射，无转换"
+            data-fields="1→1" />
+          <path class="lineage-path-flow direct" d="M260,255 C380,255 580,255 700,255" />
+        </svg>
+
+        <!-- Source table: DWD -->
+        <div class="fl-table-group" style="left:20px; top:20px;">
+          <div class="fl-table-header mid">
+            <div class="fl-table-layer">DWD 明细层</div>
+            <div class="fl-table-name">dwd_sale_order_df</div>
+          </div>
+          <div class="fl-field-list" style="border-color:var(--warning);">
+            <div class="fl-field" data-field="order_amount" onclick="highlightFieldPath(this,'FL_001')">order_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="order_id" onclick="highlightFieldPath(this,'FL_002')">order_id <span class="fl-field-type">STRING</span></div>
+            <div class="fl-field" data-field="paid_amount" onclick="highlightFieldPath(this,'FL_003')">paid_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="order_amount, refund_amount" onclick="highlightFieldPath(this,'FL_004')">order_amount<span class="fl-field-type"> + </span>refund_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="mall_id" onclick="highlightFieldPath(this,'FL_005')">mall_id <span class="fl-field-type">STRING</span></div>
+          </div>
+        </div>
+
+        <!-- Target table: DWS -->
+        <div class="fl-table-group" style="right:20px; top:20px;">
+          <div class="fl-table-header target">
+            <div class="fl-table-layer">DWS 汇总层</div>
+            <div class="fl-table-name">dws_sale_order_mtd</div>
+          </div>
+          <div class="fl-field-list" style="border-color:var(--primary);">
+            <div class="fl-field" data-field="mtd_order_amount" onclick="highlightFieldPath(this,'FL_001')">mtd_order_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="order_count" onclick="highlightFieldPath(this,'FL_002')">order_count <span class="fl-field-type">INT</span></div>
+            <div class="fl-field" data-field="mtd_paid_amount" onclick="highlightFieldPath(this,'FL_003')">mtd_paid_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="net_order_amount" onclick="highlightFieldPath(this,'FL_004')">net_order_amount <span class="fl-field-type">DECIMAL</span></div>
+            <div class="fl-field" data-field="mall_id" onclick="highlightFieldPath(this,'FL_005')">mall_id <span class="fl-field-type">STRING</span></div>
+          </div>
+        </div>
+
+        <!-- Flow direction indicator -->
+        <div style="position:absolute; top:180px; left:50%; transform:translateX(-50%); z-index:3; pointer-events:none;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+            <div style="font-size:10px; color:var(--text-muted); white-space:nowrap;">数据流向</div>
+            <div style="font-size:20px; color:var(--primary); animation:flowDash 1s linear infinite;">→→→</div>
+          </div>
+        </div>
+
+        <!-- Popup -->
+        <div class="lineage-popup" id="fieldLineagePopup" style="display:none;">
+          <div class="lineage-popup-header">
+            <span class="lineage-popup-title">字段血缘详情</span>
+            <button class="btn btn-sm" onclick="closeLineagePopup('fieldLineagePopup')">✕</button>
+          </div>
+          <div class="lineage-popup-body" id="fieldLineagePopupBody"></div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="lineage-legend">
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#10B981"></span> direct 直接映射</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#3B82F6"></span> aggregate 聚合</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#F59E0B"></span> calc 计算</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-dash"></span> 动画方向 = 数据流向</div>
+        <div class="lineage-legend-item" style="margin-left:auto; color:var(--text-muted);">点击连线或字段查看详情</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Field-level mapping -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">字段级映射 · dwd_sale_order_df → dws_sale_order_mtd</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>源字段</th><th>源表</th><th>→</th><th>目标字段</th><th>目标表</th><th>转换类型</th><th>转换逻辑</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-mono">order_amount</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td>→</td>
+            <td class="text-mono">mtd_order_amount</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge badge-info">aggregate</span></td>
+            <td class="text-sm text-muted">SUM(order_amount) WHERE month=current</td>
+          </tr>
+          <tr>
+            <td class="text-mono">order_id</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td>→</td>
+            <td class="text-mono">order_count</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge badge-info">aggregate</span></td>
+            <td class="text-sm text-muted">COUNT(DISTINCT order_id)</td>
+          </tr>
+          <tr>
+            <td class="text-mono">paid_amount</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td>→</td>
+            <td class="text-mono">mtd_paid_amount</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge badge-info">aggregate</span></td>
+            <td class="text-sm text-muted">SUM(paid_amount) WHERE month=current</td>
+          </tr>
+          <tr>
+            <td class="text-mono">order_amount, refund_amount</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td>→</td>
+            <td class="text-mono">net_order_amount</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge badge-neutral">calc</span></td>
+            <td class="text-sm text-muted">SUM(order_amount) - SUM(refund_amount)</td>
+          </tr>
+          <tr>
+            <td class="text-mono">mall_id</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td>→</td>
+            <td class="text-mono">mall_id</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge badge-pass">direct</span></td>
+            <td class="text-sm text-muted">直接映射</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Table Lineage ==================== -->
+<div class="page" id="page-table-lineage">
+  <div class="filter-bar">
+    <select class="select">
+      <option>sale 交易</option>
+      <option>mall 商场</option>
+      <option>cust 消费者</option>
+      <option>ptnr 商户</option>
+      <option>fin 财务</option>
+    </select>
+    <select class="select">
+      <option>全部层级</option>
+      <option>ODS 源表层</option>
+      <option>DWD 明细层</option>
+      <option>DWS 汇总层</option>
+      <option>ADS 应用层</option>
+    </select>
+    <input class="input" placeholder="搜索表名..." style="flex:1;min-width:auto;">
+    <button class="btn btn-sm">📤 上传表血缘JSON</button>
+    <button class="btn btn-sm">📥 导入DDL</button>
+  </div>
+
+  <div class="callout info mb-4">
+    🗂️ <div>表级血缘由外部项目解析后上传 JSON 文件。当前展示 <strong>sale 交易</strong> 主题域的表间依赖关系，共 12 张表、23 条血缘关系。</div>
+  </div>
+
+  <!-- Table Lineage DAG -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">表血缘关系图 · sale_table_lineage.json</div>
+      <div class="flex gap-2">
+        <span class="text-sm text-muted">更新时间: 2026-08-02 22:00</span>
+        <button class="btn btn-sm" onclick="toggleLineageAnimation(this)">⏸ 暂停动画</button>
+        <button class="btn btn-sm">🔍 全屏</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="lineage-svg-container" id="tableLineageGraph">
+        <!-- SVG layer for end-to-end paths -->
+        <svg class="lineage-svg-bg" viewBox="0 0 1100 460" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="tl-arrow-join" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8B5CF6" class="lineage-arrow-head"/></marker>
+            <marker id="tl-arrow-aggregate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3B82F6" class="lineage-arrow-head"/></marker>
+            <marker id="tl-arrow-direct" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#10B981" class="lineage-arrow-head"/></marker>
+          </defs>
+          <g id="tableLineagePaths"></g>
+        </svg>
+
+        <!-- Node overlay layer -->
+        <div class="lineage-nodes-overlay">
+          <!-- ODS Layer -->
+          <div class="ln-node ods" style="left:20px; top:35px;" data-table="ods_sale_order_di" onclick="highlightTablePaths(this,'ods_sale_order_di')">
+            <div class="ln-node-layer">ODS</div>
+            <div class="ln-node-name">ods_sale_order_di</div>
+            <div class="ln-node-meta">5 字段 · MySQL</div>
+          </div>
+          <div class="ln-node ods" style="left:20px; top:135px;" data-table="ods_sale_payment_di" onclick="highlightTablePaths(this,'ods_sale_payment_di')">
+            <div class="ln-node-layer">ODS</div>
+            <div class="ln-node-name">ods_sale_payment_di</div>
+            <div class="ln-node-meta">4 字段 · MySQL</div>
+          </div>
+          <div class="ln-node ods" style="left:20px; top:235px;" data-table="ods_sale_refund_di" onclick="highlightTablePaths(this,'ods_sale_refund_di')">
+            <div class="ln-node-layer">ODS</div>
+            <div class="ln-node-name">ods_sale_refund_di</div>
+            <div class="ln-node-meta">3 字段 · MySQL</div>
+          </div>
+
+          <!-- DWD Layer -->
+          <div class="ln-node dwd" style="left:310px; top:80px;" data-table="dwd_sale_order_df" onclick="highlightTablePaths(this,'dwd_sale_order_df')">
+            <div class="ln-node-layer">DWD</div>
+            <div class="ln-node-name">dwd_sale_order_df</div>
+            <div class="ln-node-meta">12 字段 · 日全量</div>
+          </div>
+          <div class="ln-node dwd" style="left:310px; top:200px;" data-table="dwd_sale_payment_df" onclick="highlightTablePaths(this,'dwd_sale_payment_df')">
+            <div class="ln-node-layer">DWD</div>
+            <div class="ln-node-name">dwd_sale_payment_df</div>
+            <div class="ln-node-meta">8 字段 · 日全量</div>
+          </div>
+
+          <!-- DWS Layer -->
+          <div class="ln-node dws" style="left:600px; top:80px;" data-table="dws_sale_order_mtd" onclick="highlightTablePaths(this,'dws_sale_order_mtd')">
+            <div class="ln-node-layer">DWS</div>
+            <div class="ln-node-name">dws_sale_order_mtd</div>
+            <div class="ln-node-meta">8 字段 · 月汇总</div>
+          </div>
+          <div class="ln-node dws" style="left:600px; top:200px;" data-table="dws_sale_order_ytd" onclick="highlightTablePaths(this,'dws_sale_order_ytd')">
+            <div class="ln-node-layer">DWS</div>
+            <div class="ln-node-name">dws_sale_order_ytd</div>
+            <div class="ln-node-meta">6 字段 · 年汇总</div>
+          </div>
+
+          <!-- ADS Layer -->
+          <div class="ln-node ads" style="left:890px; top:145px;" data-table="ads_sale_dashboard" onclick="highlightTablePaths(this,'ads_sale_dashboard')">
+            <div class="ln-node-layer">ADS</div>
+            <div class="ln-node-name">ads_sale_dashboard</div>
+            <div class="ln-node-meta">看板 · 10 指标</div>
+          </div>
+        </div>
+
+        <!-- Flow direction indicator -->
+        <div style="position:absolute; bottom:8px; right:16px; z-index:3; pointer-events:none; display:flex; align-items:center; gap:6px;">
+          <span style="font-size:10px; color:var(--text-muted);">数据流向</span>
+          <span style="font-size:14px; color:var(--primary);">→</span>
+        </div>
+
+        <!-- Popup -->
+        <div class="lineage-popup" id="tableLineagePopup" style="display:none;">
+          <div class="lineage-popup-header">
+            <span class="lineage-popup-title">表血缘详情</span>
+            <button class="btn btn-sm" onclick="closeLineagePopup('tableLineagePopup')">✕</button>
+          </div>
+          <div class="lineage-popup-body" id="tableLineagePopupBody"></div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="lineage-legend">
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#8B5CF6"></span> join 关联</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#3B82F6"></span> aggregate 聚合</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-color" style="background:#10B981"></span> direct 直接引用</div>
+        <div class="lineage-legend-item"><span class="lineage-legend-dash"></span> 动画方向 = 数据流向</div>
+        <div class="lineage-legend-item" style="margin-left:auto; color:var(--text-muted);">点击连线或表节点查看详情</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Lineage List -->  <!-- Table Lineage List -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">表级血缘明细</div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm">导出 CSV</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>源表</th>
+            <th>源表层级</th>
+            <th>→</th>
+            <th>目标表</th>
+            <th>目标表层级</th>
+            <th>字段映射数</th>
+            <th>转换概要</th>
+            <th>更新时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-mono text-sm">ods_sale_order_di</td>
+            <td><span class="badge" style="background:var(--teal-light);color:#0F766E;">ODS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td><span class="text-bold">5</span> / 12</td>
+            <td class="text-sm text-muted">清洗 + 字段补全</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">ods_sale_payment_di</td>
+            <td><span class="badge" style="background:var(--teal-light);color:#0F766E;">ODS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td><span class="text-bold">4</span> / 12</td>
+            <td class="text-sm text-muted">JOIN 关联 + 支付状态补全</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">ods_sale_refund_di</td>
+            <td><span class="badge" style="background:var(--teal-light);color:#0F766E;">ODS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td><span class="text-bold">3</span> / 12</td>
+            <td class="text-sm text-muted">LEFT JOIN 退款信息</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">ods_sale_order_di</td>
+            <td><span class="badge" style="background:var(--teal-light);color:#0F766E;">ODS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dwd_sale_payment_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td><span class="text-bold">2</span> / 8</td>
+            <td class="text-sm text-muted">关联订单ID</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge" style="background:var(--primary-light);color:var(--primary-dark);">DWS</span></td>
+            <td><span class="text-bold">5</span> / 8</td>
+            <td class="text-sm text-muted">SUM + COUNT 聚合，按月分组</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">dwd_sale_payment_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge" style="background:var(--primary-light);color:var(--primary-dark);">DWS</span></td>
+            <td><span class="text-bold">3</span> / 8</td>
+            <td class="text-sm text-muted">SUM 实付金额聚合</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">dwd_sale_order_df</td>
+            <td><span class="badge" style="background:var(--warning-light);color:#92400E;">DWD</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">dws_sale_order_ytd</td>
+            <td><span class="badge" style="background:var(--primary-light);color:var(--primary-dark);">DWS</span></td>
+            <td><span class="text-bold">4</span> / 6</td>
+            <td class="text-sm text-muted">SUM + COUNT 聚合，按年分组</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">dws_sale_order_mtd</td>
+            <td><span class="badge" style="background:var(--primary-light);color:var(--primary-dark);">DWS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">ads_sale_dashboard</td>
+            <td><span class="badge" style="background:var(--purple-light);color:#6B21A8;">ADS</span></td>
+            <td><span class="text-bold">8</span> / 10</td>
+            <td class="text-sm text-muted">直接引用 + 计算字段</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">dws_sale_order_ytd</td>
+            <td><span class="badge" style="background:var(--primary-light);color:var(--primary-dark);">DWS</span></td>
+            <td>→</td>
+            <td class="text-mono text-sm">ads_sale_dashboard</td>
+            <td><span class="badge" style="background:var(--purple-light);color:#6B21A8;">ADS</span></td>
+            <td><span class="text-bold">2</span> / 10</td>
+            <td class="text-sm text-muted">直接引用</td>
+            <td class="text-sm text-muted">08-02 22:00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Table Statistics -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header"><div class="card-title">各层表数量</div></div>
+      <div class="card-body">
+        <div class="dist-row"><span class="dist-label">ODS</span><div class="dist-bar"><div class="dist-fill" style="width:60%;background:var(--teal)">3</div></div><span class="dist-value">3</span></div>
+        <div class="dist-row"><span class="dist-label">DWD</span><div class="dist-bar"><div class="dist-fill" style="width:40%;background:var(--warning)">2</div></div><span class="dist-value">2</span></div>
+        <div class="dist-row"><span class="dist-label">DWS</span><div class="dist-bar"><div class="dist-fill" style="width:40%;background:var(--primary)">2</div></div><span class="dist-value">2</span></div>
+        <div class="dist-row"><span class="dist-label">ADS</span><div class="dist-bar"><div class="dist-fill" style="width:20%;background:var(--purple)">1</div></div><span class="dist-value">1</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">血缘覆盖率</div></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="flex justify-between mb-2"><span class="text-sm text-muted">表级血缘覆盖</span><span class="text-sm text-bold">78.5%</span></div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:78.5%"></div></div>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between mb-2"><span class="text-sm text-muted">字段级血缘覆盖</span><span class="text-sm text-bold">65.2%</span></div>
+          <div class="progress-bar"><div class="progress-fill amber" style="width:65.2%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-2"><span class="text-sm text-muted">无血缘表</span><span class="text-sm text-bold" style="color:var(--danger)">2 张</span></div>
+          <div class="text-sm text-muted">ods_sale_refund_di · dwd_sale_payment_df</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">影响分析</div></div>
+      <div class="card-body" style="padding:0;">
+        <div class="issue-item">
+          <span class="issue-priority p1">P1</span>
+          <div class="issue-content">
+            <div class="issue-title">dwd_sale_order_df 变更影响 3 张下游表</div>
+            <div class="issue-desc">→ dws_sale_order_mtd → ads_sale_dashboard</div>
+          </div>
+        </div>
+        <div class="issue-item">
+          <span class="issue-priority p2">P2</span>
+          <div class="issue-content">
+            <div class="issue-title">2 张表缺少字段级血缘</div>
+            <div class="issue-desc">需补充上传</div>
+          </div>
+        </div>
+        <div class="issue-item">
+          <span class="issue-priority p2">P2</span>
+          <div class="issue-content">
+            <div class="issue-title">ads_sale_dashboard 有 2 个字段无上游</div>
+            <div class="issue-desc">可能为手写计算字段</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Naming Standards ==================== -->
+<div class="page" id="page-naming">
+  <!-- Naming Convention Rules -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">&#128218; 当前命名规范</div>
+      <span class="text-sm text-muted">Route A &middot; 英文标准化命名</span>
+    </div>
+    <div class="card-body">
+      <div class="naming-rules-grid">
+        <!-- Naming Pattern Rules -->
+        <div class="naming-rule-card">
+          <div class="naming-rule-card-header">&#127919; 命名公式</div>
+          <div class="naming-rule-card-body">
+            <div class="naming-rule-row">
+              <span class="naming-rule-pattern">[modifier_]+root</span>
+            </div>
+            <div class="naming-rule-row">
+              <span class="naming-rule-key">modifier</span>
+              <span class="naming-rule-arrow">&#8594;</span>
+              <span class="naming-rule-val">时间/对比/维度修饰词（可选，可多个）</span>
+            </div>
+            <div class="naming-rule-row">
+              <span class="naming-rule-key">root</span>
+              <span class="naming-rule-arrow">&#8594;</span>
+              <span class="naming-rule-val">词根组合（必填，至少1个）</span>
+            </div>
+            <div class="naming-rule-row">
+              <span class="naming-rule-desc" style="margin-left:0;">示例：mtd_ord_amt = 本月(mtd) + 订单(ord) + 金额(amt)</span>
+            </div>
+          </div>
+        </div>
+        <!-- Domain Abbreviation Table -->
+        <div class="naming-rule-card">
+          <div class="naming-rule-card-header">&#128193; 主题域缩写（14个）</div>
+          <div class="naming-rule-card-body" style="max-height:200px;overflow-y:auto;">
+            <div class="naming-rule-row"><span class="naming-rule-key">cust</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">消费者</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">sale</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">交易</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">prod</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">商品</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">mall</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">商场</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">mkt</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">营销</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">cont</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">合同</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">fin</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">财务</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">hr</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">人资</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">ptnr</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">商户</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">traf</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">流量</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">base</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">基础</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">fund</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">资金</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">wk</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">流程</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">shop</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">店铺</span></div>
+          </div>
+        </div>
+        <!-- Common Modifiers -->
+        <div class="naming-rule-card">
+          <div class="naming-rule-card-header">&#9201;&#65039; 常用修饰词</div>
+          <div class="naming-rule-card-body" style="max-height:200px;overflow-y:auto;">
+            <div class="naming-rule-row"><span class="naming-rule-key">mtd</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">本月 (month-to-date)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">ytd</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">本年 (year-to-date)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">qtd</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">本季 (quarter-to-date)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">cum</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">累计 (cumulative)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">mom</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">环比 (month-over-month)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">yoy</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">同比 (year-over-year)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">lm</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">上月 (last month)</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">lysp</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">上年同期</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">day_avg</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">日均</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">ach_rte</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">达成率</span></div>
+          </div>
+        </div>
+        <!-- Data Type Suffix -->
+        <div class="naming-rule-card">
+          <div class="naming-rule-card-header">&#128202; 数据类型后缀</div>
+          <div class="naming-rule-card-body">
+            <div class="naming-rule-row"><span class="naming-rule-key">amt</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">金额 (amount)</span><span class="naming-rule-desc">SUM类</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">cnt</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">计数 (count)</span><span class="naming-rule-desc">COUNT类</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">rte</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">比率 (rate)</span><span class="naming-rule-desc">百分比</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">stock</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">存量</span><span class="naming-rule-desc">时点值</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">avg</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">均值</span><span class="naming-rule-desc">AVG类</span></div>
+            <div class="naming-rule-row"><span class="naming-rule-key">val</span><span class="naming-rule-arrow">&#8594;</span><span class="naming-rule-val">数值</span><span class="naming-rule-desc">通用</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Rules Summary -->
+      <div style="margin-top:14px;padding:12px 16px;background:#F0F9FF;border-radius:6px;font-size:12px;color:var(--text-secondary);line-height:1.8;">
+        <strong>&#9989; 命名规则：</strong>
+        1. 全小写，下划线分隔 &middot;
+        2. 词根优先，修饰词前缀 &middot;
+        3. 禁止拼音（如 yuan_gong &#8594; employee） &middot;
+        4. 禁止缩写歧义（如 cnt 不写为 c） &middot;
+        5. 同名同义：同一概念全局唯一命名 &middot;
+        6. 英文名 = 完整单词，缩写名 = modifier_root 组合
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card blue"><div class="stat-label">英文命名率</div><div class="stat-value">95.2<span class="unit">%</span></div><div class="progress-bar mt-4"><div class="progress-fill blue" style="width:95.2%"></div></div></div>
+    <div class="stat-card green"><div class="stat-label">缩写规范率</div><div class="stat-value">91.8<span class="unit">%</span></div><div class="progress-bar mt-4"><div class="progress-fill green" style="width:91.8%"></div></div></div>
+    <div class="stat-card amber"><div class="stat-label">拼音清除率</div><div class="stat-value">87.5<span class="unit">%</span></div><div class="progress-bar mt-4"><div class="progress-fill amber" style="width:87.5%"></div></div></div>
+    <div class="stat-card purple"><div class="stat-label">词根可拆解率</div><div class="stat-value">93.1<span class="unit">%</span></div><div class="progress-bar mt-4"><div class="progress-fill blue" style="width:93.1%"></div></div></div>
+  </div>
+
+  <div class="grid-2 mb-4">
+    <!-- Domain Naming Rate -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">各主题域命名规范率</div></div>
+      <div class="card-body">
+        <div class="dist-row"><span class="dist-label">sale</span><div class="dist-bar"><div class="dist-fill" style="width:98%;background:var(--success)">98%</div></div><span class="dist-value">✅</span></div>
+        <div class="dist-row"><span class="dist-label">mall</span><div class="dist-bar"><div class="dist-fill" style="width:95%;background:var(--success)">95%</div></div><span class="dist-value">✅</span></div>
+        <div class="dist-row"><span class="dist-label">cust</span><div class="dist-bar"><div class="dist-fill" style="width:92%;background:var(--success)">92%</div></div><span class="dist-value">✅</span></div>
+        <div class="dist-row"><span class="dist-label">ptnr</span><div class="dist-bar"><div class="dist-fill" style="width:88%;background:var(--warning)">88%</div></div><span class="dist-value">⚠️</span></div>
+        <div class="dist-row"><span class="dist-label">fin</span><div class="dist-bar"><div class="dist-fill" style="width:82%;background:var(--warning)">82%</div></div><span class="dist-value">⚠️</span></div>
+        <div class="dist-row"><span class="dist-label">cont</span><div class="dist-bar"><div class="dist-fill" style="width:90%;background:var(--success)">90%</div></div><span class="dist-value">✅</span></div>
+        <div class="dist-row"><span class="dist-label">shop</span><div class="dist-bar"><div class="dist-fill" style="width:85%;background:var(--warning)">85%</div></div><span class="dist-value">⚠️</span></div>
+        <div class="dist-row"><span class="dist-label">hr</span><div class="dist-bar"><div class="dist-fill" style="width:70%;background:var(--danger)">70%</div></div><span class="dist-value">❌</span></div>
+      </div>
+    </div>
+
+    <!-- Pinyin Clearance -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">拼音未清除字段清单</div>
+        <span class="badge badge-fail">45 个</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>主题域</th><th>拼音字段名</th><th>拼音</th><th>建议英文名</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-fail">hr</span></td><td class="text-mono">yuan_gong</td><td class="text-sm text-muted">yuangong</td><td class="text-mono">employee</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+            <tr><td><span class="badge badge-fail">hr</span></td><td class="text-mono">bu_men</td><td class="text-sm text-muted">bumen</td><td class="text-mono">department</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+            <tr><td><span class="badge badge-fail">hr</span></td><td class="text-mono">kao_qin</td><td class="text-sm text-muted">kaoqin</td><td class="text-mono">attendance</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+            <tr><td><span class="badge badge-warn">fin</span></td><td class="text-mono">shou_ru</td><td class="text-sm text-muted">shouru</td><td class="text-mono">revenue</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+            <tr><td><span class="badge badge-warn">fin</span></td><td class="text-mono">zhi_chu</td><td class="text-sm text-muted">zhichu</td><td class="text-mono">expenditure</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+            <tr><td><span class="badge badge-warn">fin</span></td><td class="text-mono">li_run</td><td class="text-sm text-muted">lirun</td><td class="text-mono">profit</td><td><button class="btn btn-sm btn-primary">替换</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <div class="pagination-info">
+          <button class="btn btn-sm">批量替换</button>
+          <span class="text-sm text-muted">共 45 条，显示 <span id="pinyinPageSizeLabel">6</span> 条</span>
+          <div class="page-size-selector">
+            <span>每页</span>
+            <select onchange="changePageSize(this,'pinyin')">
+              <option value="6" selected>6</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="45">全部</option>
+            </select>
+            <span>条</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-sm">&#8249; 上一页</button>
+          <button class="btn btn-sm btn-primary">1</button>
+          <button class="btn btn-sm">2</button>
+          <button class="btn btn-sm">3</button>
+          <button class="btn btn-sm">&hellip;</button>
+          <button class="btn btn-sm">下一页 &#8250;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Caliber Governance ==================== -->
+<div class="page" id="page-caliber">
+  <div class="callout danger mb-4" id="caliber-veto-callout" style="display:none;">
+    ⛔ <div id="caliber-veto-text"><strong>一票否决项：</strong>检测到同名异义，必须处理后才能通过验收。</div>
+  </div>
+  <div class="callout info mb-4" id="caliber-ok-callout">
+    ✅ <div>当前扫描未发现同名异义一票否决项；下方清单来自指标 CSV 实时比对。</div>
+  </div>
+
+  <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+    <div class="stat-card teal"><span class="stat-icon-deco">📐</span><div class="stat-label">口径覆盖率</div><div class="stat-value" id="caliber-stat-coverage">—<span class="unit">%</span></div></div>
+    <div class="stat-card amber"><span class="stat-icon-deco">🔀</span><div class="stat-label">同义异名</div><div class="stat-value" id="caliber-stat-synonym">—<span class="unit">例</span></div></div>
+    <div class="stat-card rose"><span class="stat-icon-deco">⛔</span><div class="stat-label">同名异义</div><div class="stat-value" id="caliber-stat-homonym" style="color:var(--rose)">—<span class="unit">例</span></div></div>
+  </div>
+
+  <!-- Same Name Different Meaning -->
+  <div class="card mb-4 card-accent-rose">
+    <div class="card-header">
+      <div class="card-title">⛔ 同名异义清单（一票否决项）</div>
+      <span class="badge badge-fail" id="caliber-homonym-badge">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>指标英文名</th><th>口径 1</th><th>口径 2</th><th>冲突类型</th><th>操作</th></tr></thead>
+        <tbody id="caliber-homonym-tbody">
+          <tr><td colspan="5" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Same Meaning Different Name -->
+  <div class="card mb-4 card-accent-teal">
+    <div class="card-header">
+      <div class="card-title">⚠️ 同义异名清单（需统一命名）</div>
+      <span class="badge badge-warn" id="caliber-synonym-badge">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>口径描述</th><th>名称 1</th><th>名称 2</th><th>建议统一为</th><th>操作</th></tr></thead>
+        <tbody id="caliber-synonym-tbody">
+          <tr><td colspan="5" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Caliber Quality -->
+  <div class="card card-accent-blue">
+    <div class="card-header"><div class="card-title">口径质量分布</div></div>
+    <div class="card-body" id="caliber-quality-bars">
+      <div class="dist-row"><span class="dist-label">✅ 已填口径</span><div class="dist-bar"><div class="dist-fill" id="caliber-bar-filled" style="width:0%;background:linear-gradient(90deg,#22C55E,#14B8A6)">—</div></div><span class="dist-value" id="caliber-pct-filled">—</span></div>
+      <div class="dist-row"><span class="dist-label">❌ 缺失</span><div class="dist-bar"><div class="dist-fill" id="caliber-bar-empty" style="width:0%;background:linear-gradient(90deg,#EF4444,#E11D48)">—</div></div><span class="dist-value" id="caliber-pct-empty">—</span></div>
+      <div class="mt-4 text-sm text-muted">基于 metrics/*.csv 的 caliber_desc 字段；语义级「部分完整」待 M5+ 大模型评审。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Scoring Dashboard ==================== -->
+<div class="page" id="page-scoring">
+  <div class="stat-grid">
+    <div class="stat-card indigo"><span class="stat-icon-deco">🏆</span><div class="stat-label">项目验收总分</div><div class="stat-value" id="scoring-avg">—</div><div class="stat-trend up">验收评分标准.md</div></div>
+    <div class="stat-card green"><span class="stat-icon-deco">✓</span><div class="stat-label">达标 (≥85)</div><div class="stat-value" id="scoring-pass-rate">—<span class="unit">%</span></div><div class="text-sm text-muted" id="scoring-pass-sub">—</div></div>
+    <div class="stat-card teal"><span class="stat-icon-deco">💎</span><div class="stat-label">零缺陷率</div><div class="stat-value">—<span class="unit">%</span></div><div class="text-sm text-muted">指标级待接</div></div>
+    <div class="stat-card rose"><span class="stat-icon-deco">!</span><div class="stat-label">待整改</div><div class="stat-value" style="color:var(--rose)">—<span class="unit">个</span></div></div>
+  </div>
+
+  <div class="grid-2 mb-4">
+    <!-- Score Distribution -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">评分等级分布</div></div>
+      <div class="card-body">
+        <div class="dist-row"><span class="dist-label">S级 ≥95</span><div class="dist-bar"><div class="dist-fill" style="width:15%;background:var(--primary)">280</div></div><span class="dist-value">15%</span></div>
+        <div class="dist-row"><span class="dist-label">A级 85-94</span><div class="dist-bar"><div class="dist-fill" style="width:35%;background:var(--success)">650</div></div><span class="dist-value">35%</span></div>
+        <div class="dist-row"><span class="dist-label">B级 70-84</span><div class="dist-bar"><div class="dist-fill" style="width:30%;background:var(--warning)">560</div></div><span class="dist-value">30%</span></div>
+        <div class="dist-row"><span class="dist-label">C级 50-69</span><div class="dist-bar"><div class="dist-fill" style="width:15%;background:var(--danger)">280</div></div><span class="dist-value">15%</span></div>
+        <div class="dist-row"><span class="dist-label">D级 <50</span><div class="dist-bar"><div class="dist-fill" style="width:5%;background:#6B7280">86</div></div><span class="dist-value">5%</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">验收六维度得分（实时）</div><button type="button" class="btn btn-sm" onclick="DG.runAcceptanceAndReload()">重新计算</button></div>
+      <div class="card-body" id="scoring-dimension-rows">
+        <div class="mb-3 scoring-dim-row" data-dim="词根覆盖">
+          <div class="flex justify-between mb-2"><span class="text-sm">词根覆盖 <span class="text-muted">(满分20)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="mb-3 scoring-dim-row" data-dim="命名规范">
+          <div class="flex justify-between mb-2"><span class="text-sm">命名规范 <span class="text-muted">(满分20)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="mb-3 scoring-dim-row" data-dim="同名同义">
+          <div class="flex justify-between mb-2"><span class="text-sm">同名同义 <span class="text-muted">(满分25)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="mb-3 scoring-dim-row" data-dim="口径完整">
+          <div class="flex justify-between mb-2"><span class="text-sm">口径完整 <span class="text-muted">(满分15)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="mb-3 scoring-dim-row" data-dim="血缘可查">
+          <div class="flex justify-between mb-2"><span class="text-sm">血缘可查 <span class="text-muted">(满分10)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="scoring-dim-row" data-dim="模型评审">
+          <div class="flex justify-between mb-2"><span class="text-sm">模型评审 <span class="text-muted">(满分10)</span></span><span class="text-sm text-bold scoring-dim-val">—</span></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><div class="card-title">验收报告摘要</div></div>
+    <div class="card-body"><pre id="acceptanceMarkdownPreview" class="text-sm" style="white-space:pre-wrap;max-height:240px;overflow:auto;background:var(--bg);padding:12px;border-radius:8px;">加载中…</pre></div>
+  </div>
+
+  <!-- Low Score Metrics -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">低分指标清单（C/D级，需优先整改）</div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm">批量重新评分</button>
+        <button class="btn btn-sm">导出清单</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>指标ID</th><th>中文名</th><th>主题域</th><th>等级</th><th>评分</th><th>主要扣分项</th><th>待整改</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-mono text-sm">M_MALL_005</td><td>出租率</td><td>mall</td>
+            <td><span class="badge badge-c">C</span></td><td><span class="text-bold" style="color:var(--danger)">58</span></td>
+            <td class="text-sm">拼音残留(扣20) + 无血缘(扣10)</td>
+            <td><span style="color:var(--danger)">4项</span></td>
+            <td><button class="btn btn-sm">查看</button> <button class="btn btn-sm btn-primary">整改</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">M_SALE_025</td><td>退款率</td><td>sale</td>
+            <td><span class="badge badge-c">C</span></td><td><span class="text-bold" style="color:var(--danger)">58</span></td>
+            <td class="text-sm">口径冲突(扣20) + 未评审(扣10)</td>
+            <td><span style="color:var(--danger)">4项</span></td>
+            <td><button class="btn btn-sm">查看</button> <button class="btn btn-sm btn-primary">整改</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">M_HR_001</td><td>员工数</td><td>hr</td>
+            <td><span class="badge badge-c">C</span></td><td><span class="text-bold" style="color:var(--danger)">52</span></td>
+            <td class="text-sm">拼音残留(扣20) + 无词根(扣15) + 无血缘(扣10)</td>
+            <td><span style="color:var(--danger)">5项</span></td>
+            <td><button class="btn btn-sm">查看</button> <button class="btn btn-sm btn-primary">整改</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">M_HR_003</td><td>考勤率</td><td>hr</td>
+            <td><span class="badge badge-d">D</span></td><td><span class="text-bold" style="color:var(--danger)">45</span></td>
+            <td class="text-sm">拼音残留(扣20) + 无词根(扣15) + 口径空(扣25)</td>
+            <td><span style="color:var(--danger)">6项</span></td>
+            <td><button class="btn btn-sm">查看</button> <button class="btn btn-sm btn-primary">整改</button></td>
+          </tr>
+          <tr>
+            <td class="text-mono text-sm">M_FIN_010</td><td>利润率</td><td>fin</td>
+            <td><span class="badge badge-c">C</span></td><td><span class="text-bold" style="color:var(--danger)">62</span></td>
+            <td class="text-sm">拼音残留(扣20) + 口径不完整(扣10)</td>
+            <td><span style="color:var(--danger)">3项</span></td>
+            <td><button class="btn btn-sm">查看</button> <button class="btn btn-sm btn-primary">整改</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- 指标详情：居中弹层（指标管理 / 指标库「查看」） -->
+<div class="modal-overlay metric-view-overlay" id="metricDetailDrawer" onclick="if(event.target===this)closeMetricDrawer()">
+  <div class="metric-view-dialog" role="dialog" aria-label="指标详情" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">指标详情</span>
+      <button type="button" class="modal-close" onclick="closeMetricDrawer()" aria-label="关闭">&#10005;</button>
+    </div>
+    <div class="metric-view-body" id="metricDrawerBody"></div>
+  </div>
+</div>
+
+<!-- 词根编辑 -->
+<div class="modal-overlay" id="rootEditModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <span class="modal-title">&#9998; 编辑词根</span>
+      <button class="modal-close" onclick="closeModal('rootEditModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-group"><label class="modal-form-label">词根 ID</label><input class="modal-form-input" id="rootEditId" readonly></div>
+      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label><input class="modal-form-input" id="rootEditCn"></div>
+      <div class="modal-form-group"><label class="modal-form-label">英文词根 *</label><input class="modal-form-input" id="rootEditEn"></div>
+      <div class="modal-form-group"><label class="modal-form-label">缩写 *</label><input class="modal-form-input" id="rootEditAbbr" maxlength="6"></div>
+      <div class="modal-form-group"><label class="modal-form-label">类型</label>
+        <select class="modal-form-select" id="rootEditType"><option>noun</option><option>verb</option><option>adj</option><option>unit</option><option>time</option></select>
+      </div>
+      <div class="modal-form-group"><label class="modal-form-label">说明</label><textarea class="modal-form-textarea" id="rootEditDesc"></textarea></div>
+      <div class="modal-warning info">保存后写入词根 CSV；若影响已发布指标命名，建议重新跑指标评审。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('rootEditModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveRootEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script src="js/metric-spec.js"></script>
+<script src="js/metric-tree.js"></script>
+<script src="js/governance-api.js"></script>
+<script src="js/metric-mgmt.js"></script>
+<script src="js/dg-ext.js"></script>
+<script src="js/metric-library.js"></script>
+<script src="js/metric-score.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-governance"
+version = "0.2.0"
+description = "数据治理平台 — 词根驱动的指标管理体系"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "httpx>=0.24",
+  "ruff>=0.4",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+]
+api = [
+  "fastapi>=0.100",
+  "uvicorn[standard]>=0.22",
+  "httpx>=0.24",
+]
+
+[project.scripts]
+data-governance = "data_governance.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# ── Ruff: linter + formatter ──────────────────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle errors
+  "W",    # pycodestyle warnings
+  "F",    # pyflakes
+  "I",    # isort
+  "B",    # flake8-bugbear
+  "UP",   # pyupgrade
+  "SIM",  # flake8-simplify
+  "RUF",  # ruff-specific
+]
+ignore = [
+  "E501",    # line too long (formatter handles)
+  "B008",    # function call in default argument (FastAPI pattern)
+  "RUF001",  # ambiguous Chinese punctuation in strings
+  "RUF002",  # ambiguous Chinese punctuation in docstrings
+  "RUF003",  # ambiguous Chinese punctuation in comments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "E402"]  # assert False and importorskip pattern in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ── MyPy: static type checking ────────────────────────────────────────
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+files = ["src/data_governance"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# ── Pytest ────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--strict-markers -v"
+markers = [
+  "slow: marks tests as slow",
+]
+
+# ── Coverage ──────────────────────────────────────────────────────────
+[tool.coverage.run]
+source = ["src/data_governance"]
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+precision = 1
+show_missing = true
+skip_covered = false
+fail_under = 40

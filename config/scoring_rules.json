@@ -1,0 +1,81 @@
+{
+  "version": "1.0",
+  "total_max_score": 100,
+  "scored_by": "metric_scorer_v1",
+  "grade_thresholds": {
+    "S": 95,
+    "A": 85,
+    "B": 70,
+    "C": 50,
+    "D": 0
+  },
+  "dimensions": [
+    {
+      "dim_code": "naming",
+      "dim_name": "命名规范",
+      "max_score": 20,
+      "items": [
+        {"item": "英文名标准化", "max": 8, "rule": "metric_en 为纯英文、小写下划线、token 数≥2"},
+        {"item": "缩写可拆解", "max": 6, "rule": "metric_abbr 可拆解为已注册 root_abbr 组合", "partial_ratio": 0.5},
+        {"item": "无拼音残留", "max": 4, "rule": "metric_en/metric_abbr 不含拼音片段", "veto": true},
+        {"item": "命名格式一致", "max": 2, "rule": "符合 ^[a-z]+(_[a-z]+)+$ 正则"}
+      ]
+    },
+    {
+      "dim_code": "root_link",
+      "dim_name": "词根关联",
+      "max_score": 15,
+      "items": [
+        {"item": "词根非空", "max": 5, "rule": "root_ids 字段非空"},
+        {"item": "词根存在", "max": 5, "rule": "root_ids 中每个 ID 在 roots/*.csv 存在"},
+        {"item": "词根可逆推", "max": 5, "rule": "metric_en 可由关联 root_en 组合还原"}
+      ]
+    },
+    {
+      "dim_code": "caliber",
+      "dim_name": "口径完整",
+      "max_score": 25,
+      "items": [
+        {"item": "口径非空", "max": 5, "rule": "caliber_desc 非空", "veto": true},
+        {"item": "业务定义", "max": 8, "rule": "口径包含业务含义描述（≥4 字且无公式占位）"},
+        {"item": "计算公式", "max": 7, "rule": "formula 或 tech_caliber 非空且可执行"},
+        {"item": "统计周期", "max": 5, "rule": "口径或 frequency 明确统计周期"}
+      ]
+    },
+    {
+      "dim_code": "same_name",
+      "dim_name": "同名同义",
+      "max_score": 20,
+      "items": [
+        {"item": "无同名异义", "max": 10, "rule": "全库无相同 metric_en + 不同 caliber_desc", "veto": true},
+        {"item": "无同义异名", "max": 7, "rule": "全库无相同口径语义 + 不同 metric_en", "deduct_per_case": 3},
+        {"item": "名称口径一致", "max": 3, "rule": "metric_cn 与 caliber_desc 语义一致"}
+      ]
+    },
+    {
+      "dim_code": "lineage",
+      "dim_name": "血缘可查",
+      "max_score": 10,
+      "items": [
+        {"item": "血缘ID非空", "max": 3, "rule": "tree_node_id 或 source_table 非空"},
+        {"item": "血缘记录存在", "max": 4, "rule": "lineage/{domain}_lineage.json 含该指标/表记录"},
+        {"item": "字段级映射", "max": 3, "rule": "血缘记录含 column_mappings"}
+      ]
+    },
+    {
+      "dim_code": "model_review",
+      "dim_name": "模型评审",
+      "max_score": 10,
+      "items": [
+        {"item": "经过模型评审", "max": 5, "rule": "存在≥2 个模型的评审记录"},
+        {"item": "评审记录完整", "max": 3, "rule": "评审 JSON 含 model_reviews+comparison+final_decision"},
+        {"item": "评审通过", "max": 2, "rule": "final_decision.approved = true"}
+      ]
+    }
+  ],
+  "special_rules": [
+    {"rule": "同名异义", "effect": "max_grade_C", "description": "存在同名异义时最高只能评 C 级"},
+    {"rule": "口径为空", "effect": "max_grade_C", "description": "口径描述为空时最高只能评 C 级"},
+    {"rule": "拼音残留", "effect": "max_grade_B", "description": "英文名/缩写检测到拼音残留时最高只能评 B 级"}
+  ]
+}

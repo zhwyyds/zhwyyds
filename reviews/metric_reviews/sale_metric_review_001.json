@@ -1,0 +1,76 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-04T19:00:36+08:00",
+  "models_used": [
+    "gpt-4o",
+    "claude-3.5-sonnet",
+    "qwen-plus"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_001",
+      "metric_en": "monthly_sales_amt",
+      "model_reviews": [
+        {
+          "model": "claude-3.5-sonnet",
+          "naming_score": 5,
+          "naming_issues": [],
+          "caliber_score": 4,
+          "caliber_issues": [
+            "口径未明确是否含税"
+          ],
+          "conflict_risks": [],
+          "root_match": true,
+          "suggestions": "建议补充含税/不含税说明"
+        },
+        {
+          "model": "gpt-4o",
+          "naming_score": 5,
+          "naming_issues": [],
+          "caliber_score": 4,
+          "caliber_issues": [
+            "口径未明确是否含税"
+          ],
+          "conflict_risks": [],
+          "root_match": true,
+          "suggestions": "建议口径中补充是否含税说明"
+        },
+        {
+          "model": "qwen-plus",
+          "naming_score": 4,
+          "naming_issues": [
+            "建议使用 monthly_sales_amount 更完整"
+          ],
+          "caliber_score": 3,
+          "caliber_issues": [
+            "口径未明确含税、未明确统计时区"
+          ],
+          "conflict_risks": [],
+          "root_match": true,
+          "suggestions": "建议口径补充含税说明和统计时区"
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 4.67,
+        "caliber_score_avg": 3.67,
+        "consistent_issues": [
+          "口径未明确是否含税"
+        ],
+        "conflict_detected": false
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "needs_revision",
+        "action_items": [
+          "口径未明确是否含税",
+          "建议补充含税/不含税说明",
+          "建议口径中补充是否含税说明",
+          "建议口径补充含税说明和统计时区"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}

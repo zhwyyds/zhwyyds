@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>指标详情 · 数据治理平台</title>
+  <link rel="stylesheet" href="css/metric-spec.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .page-header {
+      background: #0f172a;
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-header-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-header-title .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #0D9488 100%);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .page-header-nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .page-header-nav a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+    .page-header-nav a:hover { color: #fff; }
+    .page-header-nav a.active { color: #fff; font-weight: 600; }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .metric-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .metric-nav-info {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .metric-nav-info .current {
+      font-weight: 700;
+      color: #2563eb;
+      font-size: 16px;
+    }
+    .metric-nav-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      padding: 6px 14px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #334155;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #f8fafc; border-color: #94a3b8; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .metric-header {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #F0F4FF 0%, #FAFBFC 100%);
+    }
+    .metric-header-left { flex: 1; }
+    .metric-id-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .metric-id {
+      font-family: "SF Mono", "Consolas", monospace;
+      font-size: 12px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-s { background: #dbeafe; color: #1d4ed8; }
+    .badge-a { background: #dcfce7; color: #16a34a; }
+    .badge-warn { background: #fef3c7; color: #d97706; }
+    .metric-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+    .metric-en {
+      font-family: "SF Mono", "Consolas", monospace;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .metric-en .abbr { color: #94a3b8; margin-left: 8px; }
+
+    .metric-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .tag-primary { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+
+    /* 覆盖 metric-spec.css 的 surface 背景，让卡片融入页面 */
+    .metric-detail-page .metric-spec-surface {
+      background: transparent;
+      padding: 0;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <div class="page-header-title">
+      <div class="logo-icon">&#128200;</div>
+      <span>家居卖场租赁 · 数据治理平台</span>
+    </div>
+    <div class="page-header-nav">
+      <a href="index.html">&#127968; 治理总览</a>
+      <a href="index.html#metrics" class="active">&#128203; 指标库</a>
+      <a href="metric-spec-template.html">&#128196; 视觉模板</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <a class="back-link" href="index.html">&#8249; 返回指标库</a>
+
+    <div class="metric-nav-bar">
+      <div class="metric-nav-info">
+        <span class="current" id="navCurrent">1</span> / <span id="navTotal">—</span>
+        &middot; <span id="navPath">—</span>
+      </div>
+      <div class="metric-nav-btns">
+        <button class="btn" id="btnPrev" onclick="prevMetric()">&#8249; 上一个</button>
+        <button class="btn" id="btnNext" onclick="nextMetric()">下一个 &#8250;</button>
+      </div>
+    </div>
+
+    <div class="metric-header" id="metricHeader">
+      <div class="metric-header-left">
+        <div class="metric-id-row">
+          <span class="metric-id" id="headerId">M_SALE_001</span>
+          <span class="badge badge-a" id="headerGrade">A</span>
+          <span class="badge badge-warn" id="headerStatus">&#9203; 待确认</span>
+        </div>
+        <div class="metric-name" id="headerName">订单金额</div>
+        <div class="metric-en" id="headerEn">order_amount<span class="abbr">&middot; ord_amt</span></div>
+      </div>
+    </div>
+
+    <div class="metric-tags" id="metricTags">
+      <span class="tag tag-primary">sale 交易</span>
+      <span class="tag">原子指标</span>
+      <span class="tag">规模指标</span>
+      <span class="tag">manual</span>
+    </div>
+
+    <!-- 指标信息卡片（与参考图一致） -->
+    <div class="metric-detail-page" id="specContainer">
+      <div class="empty-state">加载中…</div>
+    </div>
+  </div>
+
+  <script src="js/metric-spec.js"></script>
+  <script>
+    // 演示数据：包含参考图「小程序注册用户占比」及现有 mock 指标
+    var metricCards = [
+      {
+        id: 'M_CUST_001',
+        name: '小程序注册用户占比',
+        en: 'mini_program_registered_user_ratio',
+        abbr: 'mp_reg_usr_rto',
+        categoryL1: '用户',
+        categoryL2: '注册用户',
+        domain: 'cust',
+        unit: '%',
+        freq: '月度、年度',
+        priority: 'A 级 · 重要',
+        grade: 'A',
+        score: 88,
+        status: 'reviewed',
+        source: 'manual',
+        // 指标规范表字段
+        valueType: '时点比率、周期比率',
+        dimensions: '时间、机构、渠道、产品',
+        scenario: '运营转化分析',
+        owner: '市场品牌部',
+        reports: '小程序流量汇总报表、小程序运营转化……',
+        desc: '统计期内美凯龙和红星惠小程序新增注册会员数占全渠道新注册会员数的比重',
+        formula: '小程序注册用户占比 = [美凯龙+红星惠]小程序新增注册会员数 ÷ 全渠道新注册会员数 × 100%',
+        analysisMethods: '环比、同比、历史趋势分析、达成偏差分析',
+        alertRules: '绿灯：< 监管值/目标（25~30%）；黄灯：≥ 监管值/目标+10%；红灯：≥ 监管值/目标+20%',
+        precision: '保留两位小数',
+        dataSources: '会员系统、龙翼系统、主数据系统',
+        techCaliber: ''
+      },
+      {
+        id: 'M_SALE_001',
+        name: '订单金额',
+        en: 'order_amount',
+        abbr: 'ord_amt',
+        categoryL1: '交易',
+        categoryL2: '订单分析',
+        domain: 'sale',
+        unit: '元',
+        freq: '月',
+        priority: 'S 级 · 核心',
+        grade: 'S',
+        score: 95,
+        status: 'draft',
+        source: 'manual',
+        valueType: '',
+        dimensions: '时间、机构',
+        scenario: '经营分析',
+        owner: '张三',
+        reports: '月度经营报表',
+        desc: '自然月内所有已完成订单的原始金额汇总，不含任何折扣和退款',
+        formula: 'SUM(order_amount) WHERE order_status = \'completed\'',
+        analysisMethods: '环比、同比',
+        alertRules: '',
+        precision: '保留两位小数',
+        dataSources: '订单系统',
+        techCaliber: ''
+      },
+      {
+        id: 'M_SALE_002',
+        name: '本月订单金额',
+        en: 'monthly_order_amount',
+        abbr: 'mtd_ord_amt',
+        categoryL1: '交易',
+        categoryL2: '订单分析',
+        domain: 'sale',
+        unit: '元',
+        freq: '月',
+        priority: 'A 级 · 重要',
+        grade: 'A',
+        score: 85,
+        status: 'pending',
+        source: 'batch_generated',
+        valueType: '',
+        dimensions: '时间、机构',
+        scenario: '经营分析',
+        owner: '张三',
+        reports: '月度经营报表',
+        desc: '自然月内已完成订单的销售总金额，不含退款金额',
+        formula: 'SUM(order_amount) WHERE month = current AND order_status = \'completed\'',
+        analysisMethods: '环比、同比',
+        alertRules: '',
+        precision: '保留两位小数',
+        dataSources: '订单系统',
+        techCaliber: ''
+      },
+      {
+        id: 'M_MALL_001',
+        name: '出租率',
+        en: 'occupancy_rate',
+        abbr: 'occ_rate',
+        categoryL1: '商场',
+        categoryL2: '商场运营',
+        domain: 'mall',
+        unit: '%',
+        freq: '月',
+        priority: 'S 级 · 核心',
+        grade: 'A',
+        score: 89,
+        status: 'published',
+        source: 'manual',
+        valueType: '时点比率',
+        dimensions: '时间、楼层、区域',
+        scenario: '商场运营监控',
+        owner: '王五',
+        reports: '商场运营日报、月度经营分析',
+        desc: '已出租面积与可出租总面积的比率',
+        formula: 'SUM(rented_area) / SUM(total_rentable_area) * 100',
+        analysisMethods: '趋势分析、达成偏差',
+        alertRules: '绿灯：≥ 90%；黄灯：80%~90%；红灯：< 80%',
+        precision: '保留两位小数',
+        dataSources: '合同系统、商场管理系统',
+        techCaliber: ''
+      }
+    ];
+
+    var metricCardIndex = 0;
+
+    function escTag(s) {
+      if (!s) return '—';
+      return String(s).replace(/</g, '&lt;');
+    }
+
+    function updateMetricCard() {
+      var m = metricCards[metricCardIndex];
+      if (!m) return;
+
+      document.getElementById('navCurrent').textContent = String(metricCardIndex + 1);
+      document.getElementById('navTotal').textContent = String(metricCards.length);
+      document.getElementById('navPath').textContent = (m.categoryL1 || m.domain || '—') + ' / ' + (m.categoryL2 || '—');
+
+      document.getElementById('headerId').textContent = m.id;
+      document.getElementById('headerName').textContent = m.name;
+      document.getElementById('headerEn').innerHTML = escTag(m.en) + '<span class="abbr">&middot; ' + escTag(m.abbr) + '</span>';
+
+      var gradeBadge = document.getElementById('headerGrade');
+      gradeBadge.className = 'badge badge-' + m.grade.toLowerCase();
+      gradeBadge.textContent = m.grade;
+
+      var statusMap = {
+        draft: { cls: 'badge-warn', text: '\u23F3 草稿' },
+        pending: { cls: 'badge-warn', text: '\u23F3 待确认' },
+        reviewed: { cls: 'badge-a', text: '\u2705 已评审' },
+        published: { cls: 'badge-a', text: '\u2705 已发布' }
+      };
+      var st = statusMap[m.status] || statusMap.draft;
+      var statusBadge = document.getElementById('headerStatus');
+      statusBadge.className = 'badge ' + st.cls;
+      statusBadge.textContent = st.text;
+
+      var typeLabel = m.parentMetric ? '派生指标' : '原子指标';
+      document.getElementById('metricTags').innerHTML =
+        '<span class="tag tag-primary">' + escTag(m.domain) + '</span>' +
+        '<span class="tag">' + typeLabel + '</span>' +
+        '<span class="tag">' + escTag(m.categoryL2 || m.category || '—') + '</span>' +
+        '<span class="tag">' + escTag(m.source) + '</span>';
+
+      var container = document.getElementById('specContainer');
+      if (container && typeof MetricSpec !== 'undefined') {
+        var spec = MetricSpec.mockToSpec(m);
+        MetricSpec.renderIndicatorSpecCard(container, spec, { showExampleStamp: false });
+      }
+
+      document.getElementById('btnPrev').disabled = metricCardIndex === 0;
+      document.getElementById('btnNext').disabled = metricCardIndex === metricCards.length - 1;
+    }
+
+    function prevMetric() {
+      if (metricCardIndex > 0) { metricCardIndex--; updateMetricCard(); }
+    }
+    function nextMetric() {
+      if (metricCardIndex < metricCards.length - 1) { metricCardIndex++; updateMetricCard(); }
+    }
+
+    document.addEventListener('DOMContentLoaded', updateMetricCard);
+  </script>
+</body>
+</html>

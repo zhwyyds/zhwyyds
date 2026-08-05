@@ -1,0 +1,3 @@
+root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,source_model,review_status,created_at,updated_at
+R_SALE_001,订单,order,ord,sale,noun,交易订单,model_consensus,approved,2026-08-03,2026-08-03
+R_SALE_002,金额,amount,amt,sale,noun,金额,model_consensus,approved,2026-08-03,2026-08-03

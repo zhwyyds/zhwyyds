@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>指标信息规范表 · 视觉模板（参考样式）</title>
+  <link rel="stylesheet" href="css/metric-spec.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #d4d4d4;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .template-page {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 12px 32px;
+    }
+    .template-banner {
+      background: #fff;
+      border: 1px solid #5b9bd5;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .template-banner strong { color: #c00000; }
+  </style>
+</head>
+<body>
+  <div class="template-page">
+    <div class="template-banner">
+      <strong>指标信息规范表 · 固定视觉模板</strong><br>
+      本页为参考样式定稿，与 <code>css/metric-spec.css</code> + <code>js/metric-spec.js</code> 共用同一套 class。<br>
+      指标库「指标信息」区块应与此表视觉一致。样例数据来自企业指标卡片参考图。
+    </div>
+
+    <!-- 静态模板：与 js/metric-spec.js 生成的 DOM 完全一致 -->
+    <div class="metric-spec-surface">
+      <div class="indicator-spec-header">
+        <div class="indicator-spec-cat-tags">
+          <div class="indicator-spec-cat-tag"><span class="label">一级分类：</span><span class="value">用户</span></div>
+          <div class="indicator-spec-cat-tag"><span class="label">二级分类：</span><span class="value">注册用户</span></div>
+        </div>
+        <div class="indicator-spec-card-badge">指标卡片</div>
+      </div>
+      <div class="indicator-spec-card">
+        <div class="indicator-spec-attr-legend" aria-label="字段属性图例">
+          <span><span class="legend-swatch legend-swatch--biz"></span>业务属性</span>
+          <span><span class="legend-swatch legend-swatch--tech"></span>技术属性</span>
+          <span><span class="legend-swatch legend-swatch--mgmt"></span>数据管理属性</span>
+        </div>
+        <table class="indicator-spec-table" cellspacing="0" cellpadding="0">
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz">指标名称</th>
+            <td class="indicator-spec-td">小程序注册用户占比</td>
+            <th class="indicator-spec-th indicator-spec-th--biz">指标编号</th>
+            <td class="indicator-spec-td">XXXX_001</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech">计量单位</th>
+            <td class="indicator-spec-td">%</td>
+            <th class="indicator-spec-th indicator-spec-th--biz">值类型</th>
+            <td class="indicator-spec-td">时点比率、周期比率</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech">时间周期</th>
+            <td class="indicator-spec-td">月度、年度</td>
+            <th class="indicator-spec-th indicator-spec-th--biz">统计维度</th>
+            <td class="indicator-spec-td">时间、机构、渠道、产品</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz">应用场景</th>
+            <td class="indicator-spec-td">运营转化分析</td>
+            <th class="indicator-spec-th indicator-spec-th--mgmt">指标负责单位</th>
+            <td class="indicator-spec-td">市场品牌部</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">应用报表</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">小程序流量汇总报表、小程序运营转化……</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">指标描述</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">统计期内美凯龙和红星惠小程序新增注册会员数占全渠道新注册会员数的比重</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">计算公式</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">
+              <div class="indicator-spec-formula-block">
+                <div class="indicator-spec-formula-part">
+                  <div class="indicator-spec-formula-part-label">中文口径</div>
+                  <div class="indicator-spec-formula-cn">小程序注册用户占比 = [美凯龙+红星惠]小程序新增注册会员数 ÷ 全渠道新注册会员数 × 100%</div>
+                </div>
+                <div class="indicator-spec-formula-part">
+                  <div class="indicator-spec-formula-part-label">伪代码逻辑</div>
+                  <div class="indicator-spec-formula-pseudo">(小程序新增注册会员数 / 全渠道新注册会员数) × 100
+WHERE 统计周期 IN (当前月, 当前年)
+  AND 渠道 IN (美凯龙小程序, 红星惠小程序)</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">分析方法</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">环比、同比、历史趋势分析、达成偏差分析</td>
+          </tr>
+          <tr class="indicator-spec-row-stamp">
+            <th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">预警标准</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">
+              绿灯：&lt; 监管值/目标（25~30%）；黄灯：≥ 监管值/目标+10%；红灯：≥ 监管值/目标+20%
+              <span class="indicator-spec-stamp" aria-hidden="true">示例</span>
+            </td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech indicator-spec-th-block">精度</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">保留两位小数</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech indicator-spec-th-block">数据来源</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">会员系统、龙翼系统、主数据系统</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech indicator-spec-th-block">技术来源</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">member_reg_cnt / channel_reg_cnt × 100（汇总层指标）</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--tech indicator-spec-th-block">所属物理表</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">dws_member_register_mtd</td>
+          </tr>
+          <tr>
+            <th class="indicator-spec-th indicator-spec-th--mgmt indicator-spec-th-block">版本记录</th>
+            <td class="indicator-spec-td indicator-spec-td-block" colspan="3">
+              <div class="indicator-spec-version-log">
+                <div class="indicator-spec-version-item"><span class="indicator-spec-version-no">1.0.0</span> <span class="indicator-spec-version-date">2026-07-15</span> · 市场品牌部 · 指标卡片初版发布</div>
+                <div class="indicator-spec-version-item"><span class="indicator-spec-version-no">1.1.0</span> <span class="indicator-spec-version-date">2026-08-01</span> · 数据治理组 · 补充预警标准与物理表</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,364 @@
+"""FastAPI 应用 — 数据治理平台 API。
+
+重构要点：
+- Pydantic 请求模型替代 dict=Body()
+- CORS 收敛（配置化，不再 allow_origins=["*"]）
+- API Key 认证（可选，环境变量控制）
+- Service 层分离业务逻辑
+- 类型注解完整
+"""
+
+from __future__ import annotations
+
+import csv
+import os
+from dataclasses import asdict
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+
+from data_governance.acceptance.engine import run_acceptance
+from data_governance.acceptance.report import render_markdown
+from data_governance.acceptance.serialize import acceptance_report_to_dict
+from data_governance.api.metric_services import (
+    load_latest_metric_review,
+    load_metric_review_for_metric,
+    run_metric_review_for_id,
+)
+from data_governance.api.middleware import setup_auth, setup_cors
+from data_governance.api.schemas import (
+    HealthResponse,
+    MetricCreateRequest,
+    MetricUpdateRequest,
+    StatsResponse,
+)
+from data_governance.config_loader import load_domains
+from data_governance.io.catalog import load_catalog
+from data_governance.io.lineage_loader import list_lineage_domains, load_domain_lineage
+from data_governance.io.metric_tree import load_metric_tree
+from data_governance.llm.bootstrap import bootstrap_llm_env
+from data_governance.paths import repo_root
+from data_governance.release.registry import ReleaseRegistry
+from data_governance.release.service import publish_domain
+from data_governance.scoring.store import (
+    load_score,
+    load_summary,
+    score_and_persist,
+)
+from data_governance.services import MetricService
+
+
+def resolve_base_dir(explicit: Path | None = None) -> Path:
+    """解析项目根目录：优先参数 > 环境变量 > 自动探测。"""
+    if explicit is not None:
+        return explicit.resolve()
+    env = os.environ.get("DATA_GOV_BASE_DIR")
+    if env:
+        return Path(env).resolve()
+    return repo_root()
+
+
+def create_app(base_dir: Path | None = None) -> FastAPI:
+    """创建 FastAPI 应用实例。"""
+    base = resolve_base_dir(base_dir)
+    bootstrap_llm_env(base)
+
+    app = FastAPI(
+        title="Data Governance API",
+        version="0.2.0",
+        description="数据治理平台 — 词根驱动的指标管理体系",
+    )
+
+    # 安全中间件
+    setup_cors(app)
+    setup_auth(app)
+
+    # Service 层
+    metric_svc = MetricService(base)
+
+    # ── 基础端点 ──────────────────────────────────────────────────
+
+    @app.get("/health", response_model=HealthResponse)
+    def health() -> HealthResponse:
+        return HealthResponse(status="ok", base_dir=str(base))
+
+    @app.get("/api/meta")
+    def meta() -> dict:
+        links = {
+            "domains": "/api/domains",
+            "roots": "/api/roots",
+            "metrics": "/api/metrics",
+            "metric_tree": "/api/metric-tree",
+            "acceptance": "/api/acceptance",
+            "llm_status": "/api/llm/status",
+        }
+        ui_dir = base / "ui-prototype"
+        if (ui_dir / "index.html").is_file():
+            links["ui"] = "/ui/"
+            links["metric_spec_template"] = "/ui/metric-spec-template.html"
+        return {"base_dir": str(base), "links": links}
+
+    @app.get("/api/llm/status")
+    def llm_status() -> dict:
+        from data_governance.llm.env import llm_mode_from_env, provider_api_key, resolve_use_mock
+
+        loaded = bootstrap_llm_env(base)
+        return {
+            "mode": llm_mode_from_env(),
+            "use_mock": resolve_use_mock(None),
+            "providers_configured": {
+                "OpenAI": bool(provider_api_key("OpenAI")),
+                "Anthropic": bool(provider_api_key("Anthropic")),
+                "Qwen": bool(provider_api_key("Qwen")),
+                "ZhipuAI": bool(provider_api_key("ZhipuAI")),
+            },
+            "dotenv_present": loaded["dotenv"],
+            "secrets_file_present": loaded["secrets_json"],
+            "secrets_path": loaded["secrets_path"],
+            "secrets_template": "config/secrets.example.json",
+            "env_template": ".env.example",
+        }
+
+    # ── 域 & 词根 ────────────────────────────────────────────────
+
+    @app.get("/api/domains")
+    def list_domains() -> list[dict]:
+        path = base / "config" / "domains.csv"
+        if not path.is_file():
+            raise HTTPException(404, "domains.csv not found")
+        return [asdict(d) for d in load_domains(path)]
+
+    @app.get("/api/roots")
+    def list_roots(domain: str | None = Query(default=None)) -> list[dict]:
+        catalog = load_catalog(base)
+        rows = catalog.roots
+        if domain:
+            rows = [r for r in rows if r.domain_code == domain]
+        return [asdict(r) for r in rows]
+
+    # ── 指标 CRUD ────────────────────────────────────────────────
+
+    @app.get("/api/metrics")
+    def list_metrics(domain: str | None = Query(default=None)) -> list[dict]:
+        return metric_svc.list_metrics(domain)
+
+    @app.get("/api/metrics/stats", response_model=StatsResponse)
+    def metrics_statistics() -> StatsResponse:
+        stats = metric_svc.get_stats()
+        return StatsResponse(**stats)
+
+    @app.put("/api/metrics/{metric_id}")
+    def update_metric(
+        metric_id: str,
+        body: MetricUpdateRequest,
+    ) -> dict:
+        payload = body.model_dump(exclude_unset=True, exclude_none=True)
+        try:
+            return metric_svc.update(metric_id, payload)
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.post("/api/metrics")
+    def add_metric(body: MetricCreateRequest) -> dict:
+        payload = body.model_dump(exclude_unset=True, exclude_none=True)
+        try:
+            return metric_svc.create(payload)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    # ── 指标评审 ────────────────────────────────────────────────
+
+    @app.post("/api/metrics/{metric_id}/review")
+    def review_metric(metric_id: str) -> dict:
+        try:
+            return run_metric_review_for_id(base, metric_id)
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+        except Exception as exc:
+            raise HTTPException(500, str(exc)) from exc
+
+    @app.get("/api/metrics/export")
+    def export_metrics() -> PlainTextResponse:
+        text = metric_svc.export_csv()
+        return PlainTextResponse(
+            content=text,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="metrics_export.csv"'},
+        )
+
+    @app.get("/api/metric-reviews/latest")
+    def latest_metric_review(domain: str = Query(default="sale")) -> dict:
+        doc = load_latest_metric_review(base, domain)
+        if doc is None:
+            raise HTTPException(404, "no metric review found for domain")
+        return doc
+
+    @app.get("/api/metrics/{metric_id}/review/latest")
+    def metric_review_latest(metric_id: str) -> dict:
+        doc = load_metric_review_for_metric(base, metric_id)
+        if doc is None:
+            raise HTTPException(404, f"no review found for metric {metric_id}")
+        return doc
+
+    # ── 指标评分（六维度明细 + 多模型评审） ────────────────────
+
+    @app.get("/api/metrics/{metric_id}/score")
+    def metric_score(metric_id: str) -> dict:
+        """指标评分明细：六维度逐检查项打分 + 多模型评审明细。"""
+        cached = load_score(base, metric_id)
+        if cached is not None:
+            return cached.to_dict()
+        catalog = load_catalog(base)
+        metric = next((m for m in catalog.metrics if m.metric_id == metric_id), None)
+        if metric is None:
+            raise HTTPException(404, f"metric not found: {metric_id}")
+        from data_governance.scoring.engine import score_metric
+
+        review_detail = load_metric_review_for_metric(base, metric_id)
+        return score_metric(metric, catalog, base, model_review_detail=review_detail).to_dict()
+
+    @app.post("/api/metrics/{metric_id}/score/refresh")
+    def metric_score_refresh(metric_id: str) -> dict:
+        """重新评分并落盘（scores/{id}.json + _summary.csv）。"""
+        try:
+            result = score_and_persist(base, metric_id, trigger="manual")
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+        return result.to_dict()
+
+    @app.post("/api/scores/refresh")
+    def scores_refresh() -> dict:
+        """全量重评分所有指标。"""
+        catalog = load_catalog(base)
+        done = 0
+        for m in catalog.metrics:
+            score_and_persist(base, m.metric_id, trigger="batch")
+            done += 1
+        return {"scored": done, "summary": load_summary(base)}
+
+    @app.get("/api/scores/summary")
+    def scores_summary() -> list[dict]:
+        """评分汇总（scores/_summary.csv）。"""
+        return load_summary(base)
+
+    # ── 版本发布控制 ────────────────────────────────────────────
+
+    @app.post("/api/domains/{domain}/publish")
+    def publish_domain_endpoint(domain: str, body: dict | None = None) -> dict:
+        """按域批量发布 approved 指标，自动分配版本号（发布控制）。"""
+        note = (body or {}).get("note", "") if body else ""
+        released_by = (body or {}).get("released_by", "system") if body else "system"
+        try:
+            record = publish_domain(base, domain, note=note, released_by=released_by)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return record.to_dict()
+
+    @app.get("/api/domains/{domain}/releases")
+    def domain_releases(domain: str) -> list[dict]:
+        """某主题域的发布历史。"""
+        return [r.to_dict() for r in ReleaseRegistry(base).list_releases(domain)]
+
+    # ── 血缘 ────────────────────────────────────────────────────
+
+    @app.get("/api/lineage")
+    def get_lineage(domain: str = Query(default="sale")) -> dict:
+        payload = load_domain_lineage(base, domain)
+        if payload is None:
+            raise HTTPException(404, f"lineage not found for domain {domain}")
+        return payload
+
+    @app.get("/api/lineage/domains")
+    def lineage_domains() -> dict:
+        return {"domains": list_lineage_domains(base)}
+
+    # ── 修饰规则 & 指标树 ────────────────────────────────────────
+
+    @app.get("/api/modifier-rules")
+    def modifier_rules() -> list[dict]:
+        path = base / "config" / "modifier_rules.csv"
+        if not path.is_file():
+            return []
+        with path.open(newline="", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+
+    @app.get("/api/metric-tree")
+    def get_metric_tree() -> dict:
+        nodes_path = base / "config" / "metric_tree.csv"
+        nodes = load_metric_tree(nodes_path)
+        catalog = load_catalog(base)
+        domain_map = {d.domain_code: d.domain_name_cn for d in load_domains(base / "config" / "domains.csv")}
+        metrics_by_node: dict[str, list[dict]] = {}
+        unassigned: list[dict] = []
+        for m in catalog.metrics:
+            payload = asdict(m)
+            nid = (m.tree_node_id or "").strip()
+            if nid:
+                metrics_by_node.setdefault(nid, []).append(payload)
+            else:
+                unassigned.append(payload)
+        return {
+            "nodes": [asdict(n) for n in nodes],
+            "metrics_by_node": metrics_by_node,
+            "unassigned_metrics": unassigned,
+            "domain_names": domain_map,
+        }
+
+    # ── 验收 ────────────────────────────────────────────────────
+
+    @app.get("/api/acceptance")
+    def get_acceptance(refresh: bool = Query(default=False)) -> dict:
+        if not refresh:
+            scoring = base / "scoring"
+            if scoring.is_dir():
+                reports = sorted(scoring.glob("acceptance_report_*.md"), reverse=True)
+                if reports:
+                    return {
+                        "source": "cached_markdown",
+                        "markdown_path": str(reports[0]),
+                        "markdown": reports[0].read_text(encoding="utf-8"),
+                    }
+        report = run_acceptance(base)
+        payload = acceptance_report_to_dict(report)
+        payload["source"] = "live"
+        payload["markdown"] = render_markdown(report)
+        return payload
+
+    @app.post("/api/acceptance/run")
+    def run_acceptance_endpoint() -> dict:
+        from datetime import date
+
+        report = run_acceptance(base)
+        out = base / "scoring" / f"acceptance_report_{date.today().isoformat()}.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(render_markdown(report), encoding="utf-8")
+        payload = acceptance_report_to_dict(report)
+        payload["markdown_path"] = str(out)
+        return payload
+
+    # ── 静态资源 / UI ───────────────────────────────────────────
+
+    ui_dir = base / "ui-prototype"
+    if ui_dir.is_dir() and (ui_dir / "index.html").is_file():
+        js_dir = ui_dir / "js"
+        css_dir = ui_dir / "css"
+        if js_dir.is_dir():
+            app.mount("/js", StaticFiles(directory=str(js_dir.resolve())), name="ui-js")
+        if css_dir.is_dir():
+            app.mount("/css", StaticFiles(directory=str(css_dir.resolve())), name="ui-css")
+        app.mount("/ui", StaticFiles(directory=str(ui_dir.resolve()), html=True), name="ui")
+
+        @app.get("/")
+        def root_page() -> FileResponse:
+            return FileResponse(ui_dir / "index.html")
+    else:
+
+        @app.get("/")
+        def root_index() -> JSONResponse:
+            return JSONResponse({"message": "Data Governance API", "docs": "/docs", "meta": "/api/meta"})
+
+    return app

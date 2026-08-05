@@ -1,0 +1,42 @@
+{
+  "domain": "sale",
+  "domain_name": "交易",
+  "version": "1.0.0",
+  "parsed_at": "2026-08-03T10:00:00+08:00",
+  "source_project": "data-lineage-parser",
+  "lineages": [
+    {
+      "lineage_id": "LN_SALE_001",
+      "target_table": "dwd_sale_order_df",
+      "target_table_cn": "销售订单明细表",
+      "target_layer": "dwd",
+      "metric_ids": ["M_SALE_001", "M_SALE_002"],
+      "source_tables": [
+        {
+          "table_name": "ods_sale_order_info",
+          "table_cn": "订单信息表",
+          "source_layer": "ods",
+          "source_system": "订单系统"
+        }
+      ],
+      "column_mappings": [
+        {
+          "target_column": "sale_amt",
+          "target_column_cn": "销售金额",
+          "source_column": "order_amount",
+          "source_table": "ods_sale_order_info",
+          "transform": "直接映射",
+          "metric_id": "M_SALE_001"
+        },
+        {
+          "target_column": "order_id",
+          "target_column_cn": "订单编号",
+          "source_column": "order_id",
+          "source_table": "ods_sale_order_info",
+          "transform": "直接映射",
+          "metric_id": "M_SALE_002"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "input_type": "metric_review",
+  "domain": "sale",
+  "metrics": [
+    {
+      "metric_id": "M_SALE_001",
+      "metric_cn": "月度销售额",
+      "metric_en": "monthly_sales_amt",
+      "caliber_desc": "自然月内已完成订单的销售总金额，不含退款",
+      "root_ids": ["R_SALE_001", "R_TIME_001"],
+      "unit": "元",
+      "frequency": "月"
+    }
+  ]
+}
