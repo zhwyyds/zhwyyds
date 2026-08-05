@@ -50,7 +50,7 @@ def load_secrets_json(path: Path) -> bool:
     return True
 
 
-def bootstrap_llm_env(base_dir: Path | None = None) -> dict[str, bool]:
+def bootstrap_llm_env(base_dir: Path | None = None) -> dict[str, bool | str]:
     """Load `.env` and `config/secrets.json` under project root (once per process is enough)."""
     base = (base_dir or repo_root()).resolve()
     dotenv_ok = (base / ".env").is_file()

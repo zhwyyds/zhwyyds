@@ -46,6 +46,9 @@ class OpenAIChatClient:
             resp.raise_for_status()
             data = resp.json()
         try:
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            if not isinstance(content, str):
+                raise RuntimeError(f"unexpected OpenAI content type: {type(content).__name__}")
+            return content
         except (KeyError, IndexError, TypeError) as exc:
             raise RuntimeError(f"unexpected OpenAI response: {data!r}") from exc

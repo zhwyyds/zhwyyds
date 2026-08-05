@@ -80,4 +80,5 @@ def load_latest_metric_review(base_dir: Path, domain: str) -> dict | None:
         return None
     import json
 
-    return json.loads(files[0].read_text(encoding="utf-8"))
+    data = json.loads(files[0].read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else None

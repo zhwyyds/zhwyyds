@@ -8,7 +8,8 @@ def load_domain_lineage(base_dir: Path, domain: str) -> dict | None:
     path = base_dir / "lineage" / f"{domain.lower()}_lineage.json"
     if not path.is_file():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else None
 
 
 def list_lineage_domains(base_dir: Path) -> list[str]:

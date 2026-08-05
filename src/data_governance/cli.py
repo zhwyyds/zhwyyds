@@ -107,15 +107,15 @@ def main(argv: list[str] | None = None) -> int:
         base = args.base_dir or repo_root()
         bootstrap_llm_env(base)
         payload = json.loads(args.input.read_text(encoding="utf-8"))
-        request = MetricReviewRequest.model_validate(payload)
-        if request.domain != args.domain:
+        m_request = MetricReviewRequest.model_validate(payload)
+        if m_request.domain != args.domain:
             print("warning: --domain 与 JSON domain 不一致，以 CLI --domain 为准", file=sys.stderr)
-            request = request.model_copy(update={"domain": args.domain})
+            m_request = m_request.model_copy(update={"domain": args.domain})
         use_mock = False if args.live else None
-        doc = MetricReviewPipeline(base_dir=base, use_mock=use_mock).run(request)
-        approved = sum(1 for i in doc.items if i.final_decision.approved)
-        pending = len(doc.items) - approved
-        print(f"review_id={doc.review_id} items={len(doc.items)} approved={approved} pending={pending}")
+        m_doc = MetricReviewPipeline(base_dir=base, use_mock=use_mock).run(m_request)
+        approved = sum(1 for i in m_doc.items if i.final_decision.approved)
+        pending = len(m_doc.items) - approved
+        print(f"review_id={m_doc.review_id} items={len(m_doc.items)} approved={approved} pending={pending}")
         return 0
 
     if args.command == "acceptance" and args.acceptance_command == "run":

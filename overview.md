@@ -204,3 +204,13 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 | P2 | 前端 ES module 化 | app.js 可拆分为 import/export 模块 |
 | P3 | Repository 模式完善 | 当前 Service 层已分离，可进一步抽 Repository |
 | P3 | API v1 版本化 | 添加 /api/v1/ 前缀路由 |
+
+---
+
+## 2026-08-05 追加：IT1-1 测试与质量收尾
+
+- 新增 `tests/test_scoring.py`（7 例）：六维度齐全、拼音残留封顶 B、口径空封顶 C、拼音音节词典无英文误判、评分规则阈值、score_and_persist 落盘+历史追加
+- 新增 `tests/test_release.py`（6 例）：版本格式化、next_version、按域发布写 version/历史/注册表、二次发布版本自增、无 approved 报错、注册表持久化往返
+- 新增 `tests/test_cli.py`（4 例）：version 命令、未知命令退出、acceptance run 出报告、--json 输出
+- 修复 9 个 mypy 历史错误：cli.py pipeline 变量复用改名（m_request/m_doc）、lineage_loader/metric_services 的 json.loads 加 isinstance 校验、openai_client 校验 content 为 str、bootstrap 返回注解 `dict[str, bool | str]`
+- 结果：pytest **68 passed**（原 51 + 新 17），覆盖率 **76.6% → 80.8%**，ruff 干净，mypy **52 文件零错误**
