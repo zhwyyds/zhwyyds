@@ -32,6 +32,19 @@ class DecisionType(str, Enum):
     model_conflict = "model_conflict"
 
 
+class RootCreateRequest(BaseModel):
+    """手工创建词根（IT2-2）。"""
+
+    root_cn: str = Field(min_length=1)
+    root_en: str = Field(min_length=1)
+    root_abbr: str = ""
+    root_type: RootType = RootType.noun
+    domain_code: str = Field(min_length=1)
+    description: str = ""
+    source_model: SourceModel = SourceModel.manual
+    review_status: ReviewStatus = ReviewStatus.pending
+
+
 class TermInput(BaseModel):
     cn_term: str
     context: str = ""

@@ -42,6 +42,7 @@ from data_governance.llm.bootstrap import bootstrap_llm_env
 from data_governance.paths import repo_root
 from data_governance.release.registry import ReleaseRegistry
 from data_governance.release.service import publish_domain
+from data_governance.schemas.roots import RootCreateRequest
 from data_governance.scoring.store import (
     load_score,
     load_summary,
@@ -137,6 +138,54 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         if domain:
             rows = [r for r in rows if r.domain_code == domain]
         return [asdict(r) for r in rows]
+
+    @app.post("/api/roots")
+    def create_root(body: RootCreateRequest) -> dict:
+        """手工创建词根，自动分配 R_{DOMAIN}_{seq} ID（IT2-2）。"""
+        from data_governance.io.roots_csv import (
+            append_root_row,
+            make_root_csv_row,
+            roots_csv_path,
+        )
+
+        domain = body.domain_code.strip().lower()
+        domains = load_domains(base / "config" / "domains.csv")
+        if domain not in {d.domain_code for d in domains}:
+            raise HTTPException(400, f"unknown domain: {domain}")
+
+        path = roots_csv_path(base / "roots", domain)
+        existing = load_catalog(base).roots
+        if any(r.domain_code == domain and r.root_en == body.root_en for r in existing):
+            raise HTTPException(400, f"root_en already exists in domain {domain}: {body.root_en}")
+
+        row = make_root_csv_row(
+            domain=domain,
+            root_cn=body.root_cn,
+            root_en=body.root_en,
+            root_abbr=body.root_abbr or body.root_en,
+            root_type=body.root_type,
+            description=body.description,
+            source_model=body.source_model,
+            review_status=body.review_status,
+            roots_dir=base / "roots",
+        )
+        append_root_row(path, row)
+        return row.model_dump()
+
+    @app.put("/api/roots/{root_id}")
+    def update_root(root_id: str, body: dict) -> dict:
+        """更新词根字段（IT2-2）。"""
+        from data_governance.io.roots_csv import roots_csv_path, update_root_row
+
+        catalog = load_catalog(base)
+        target = next((r for r in catalog.roots if r.root_id == root_id), None)
+        if target is None:
+            raise HTTPException(404, f"root not found: {root_id}")
+        path = roots_csv_path(base / "roots", target.domain_code)
+        updated = update_root_row(path, root_id, body)
+        if updated is None:
+            raise HTTPException(404, f"root not found: {root_id}")
+        return updated
 
     # ── 指标 CRUD ────────────────────────────────────────────────
 

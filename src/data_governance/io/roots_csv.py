@@ -69,6 +69,32 @@ def _file_lock(path: Path) -> Iterator[None]:
             fcntl.flock(lock_fd, fcntl.LOCK_UN)
 
 
+def update_root_row(path: Path, root_id: str, payload: dict) -> dict | None:
+    """按 root_id 更新词根字段（payload 内键需属于表头），返回更新后的行；未找到返回 None。"""
+    with _file_lock(path), path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = [dict(r) for r in reader]
+        fieldnames = reader.fieldnames or ROOT_CSV_HEADER
+
+    target: dict | None = None
+    for row in rows:
+        if (row.get("root_id") or "").strip() == root_id:
+            for k, v in payload.items():
+                if k in fieldnames and v is not None:
+                    row[k] = str(v).strip()
+            row["updated_at"] = date.today().isoformat()
+            target = row
+            break
+    if target is None:
+        return None
+
+    with _file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    return target
+
+
 def append_root_row(path: Path, row: RootCsvRow) -> None:
     write_header = not path.is_file() or path.stat().st_size == 0
     with _file_lock(path), path.open("a", newline="", encoding="utf-8") as f:

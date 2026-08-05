@@ -15,8 +15,11 @@ class RootRecord:
     root_en: str
     root_abbr: str
     root_type: str
-    source_model: str
-    review_status: str
+    description: str = ""
+    source_model: str = ""
+    review_status: str = ""
+    created_at: str = ""
+    updated_at: str = ""
 
     @classmethod
     def from_row(cls, row: dict[str, str]) -> RootRecord:
