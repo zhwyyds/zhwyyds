@@ -279,6 +279,43 @@
       .catch(function (e) { alert('补全失败: ' + e.message); });
   }
 
+  /* ==================== 域级治理看板（IT3-2） ==================== */
+
+  function loadDomainDashboard() {
+    var tbody = document.getElementById('domainDashBody');
+    if (!tbody) return;
+    api('/api/dashboard/domains').then(function (rows) {
+      var count = document.getElementById('domainDashCount');
+      if (count) count.textContent = '共 ' + rows.length + ' 个域';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-sm text-muted" style="padding:16px;">暂无数据</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function (r) {
+        var g = r.grade_dist || {};
+        var lineage = r.lineage_ok ? '<span class="badge badge-pass">✓</span>' : '<span class="badge badge-warn">缺</span>';
+        var caliber = r.caliber_pending > 0
+          ? '<span class="badge badge-danger">' + r.caliber_pending + '</span>'
+          : '<span class="badge badge-pass">0</span>';
+        var ver = r.latest_version
+          ? r.latest_version + (r.latest_released_at ? '<div class="text-xs text-muted">' + r.latest_released_at + '</div>' : '')
+          : '<span class="text-muted">—</span>';
+        return '<tr>' +
+          '<td><strong>' + esc(r.domain) + '</strong></td>' +
+          '<td>' + r.roots_count + '</td>' +
+          '<td>' + r.metrics_count + '</td>' +
+          '<td>' + (r.score_avg == null ? '<span class="text-muted">—</span>' : '<span class="text-bold">' + r.score_avg + '</span>') + '</td>' +
+          '<td class="text-sm">' + ['S', 'A', 'B', 'C', 'D'].map(function (k) { return k + ':' + (g[k] || 0); }).join(' ') + '</td>' +
+          '<td>' + lineage + '</td>' +
+          '<td>' + caliber + '</td>' +
+          '<td class="text-sm">' + ver + '</td>' +
+          '</tr>';
+      }).join('');
+    }).catch(function (e) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-sm text-muted" style="padding:16px;">加载失败: ' + esc(e.message) + '</td></tr>';
+    });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -287,6 +324,7 @@
     if (target === 'batch-gen') loadBatchGenOptions();
     if (target === 'roots') loadRoots();
     if (target === 'caliber-check') loadCaliberQueue();
+    if (target === 'dashboard') loadDomainDashboard();
   };
 
   function init() {
