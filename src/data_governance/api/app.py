@@ -347,6 +347,24 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
     def lineage_domains() -> dict:
         return {"domains": list_lineage_domains(base)}
 
+    @app.post("/api/lineage/upload")
+    def upload_lineage(body: dict) -> dict:
+        """上传血缘 JSON：校验结构后写入 lineage/{domain}_lineage.json（IT2-3）。"""
+        from data_governance.io.lineage_store import save_lineage
+        from data_governance.validation import validate_lineage_data
+
+        issues = validate_lineage_data(body)
+        errors = [i.message for i in issues if i.severity == "error"]
+        if errors:
+            raise HTTPException(400, "lineage 数据校验失败: " + "; ".join(errors))
+
+        domain = str((body or {}).get("domain") or "").strip().lower()
+        if not domain:
+            raise HTTPException(400, "缺少 domain 字段")
+        lineages = body.get("lineages") or []
+        path = save_lineage(base, domain, body)
+        return {"domain": domain, "lineages": len(lineages), "written_to": path.name}
+
     # ── 修饰规则 & 指标树 ────────────────────────────────────────
 
     @app.get("/api/modifier-rules")

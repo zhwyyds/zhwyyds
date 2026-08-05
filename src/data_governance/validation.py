@@ -75,6 +75,29 @@ def _load_domain_codes(base_dir: Path) -> list[str]:
         return [r["domain_code"] for r in csv.DictReader(f) if r.get("domain_code")]
 
 
+def validate_lineage_data(data: object) -> list[ValidationIssue]:
+    """校验血缘 JSON 数据（顶层对象 + lineages 条目结构），供上传与自检共用。"""
+    issues: list[ValidationIssue] = []
+    if not isinstance(data, dict):
+        issues.append(ValidationIssue("error", "(lineage)", "JSON 顶层应为对象"))
+        return issues
+    lineages = data.get("lineages")
+    if not isinstance(lineages, list):
+        issues.append(ValidationIssue("warning", "(lineage)", "缺少 lineages 数组"))
+        return issues
+    for item in lineages:
+        if not isinstance(item, dict):
+            issues.append(ValidationIssue("error", "(lineage)", "lineages 条目应为对象"))
+            continue
+        if not (item.get("lineage_id") or "").strip():
+            issues.append(ValidationIssue("error", "(lineage)", "lineages 条目缺少 lineage_id"))
+        if not (item.get("target_table") or "").strip():
+            issues.append(
+                ValidationIssue("warning", "(lineage)", f"lineage {item.get('lineage_id')} 缺少 target_table")
+            )
+    return issues
+
+
 def _check_lineage(path: Path) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     try:
@@ -82,21 +105,9 @@ def _check_lineage(path: Path) -> list[ValidationIssue]:
     except (json.JSONDecodeError, UnicodeDecodeError, OSError) as exc:
         issues.append(ValidationIssue("error", path.name, f"JSON 无法解析: {exc}"))
         return issues
-    if not isinstance(data, dict):
-        issues.append(ValidationIssue("error", path.name, "JSON 顶层应为对象"))
-        return issues
-    lineages = data.get("lineages")
-    if not isinstance(lineages, list):
-        issues.append(ValidationIssue("warning", path.name, "缺少 lineages 数组"))
-        return issues
-    for item in lineages:
-        if not isinstance(item, dict):
-            issues.append(ValidationIssue("error", path.name, "lineages 条目应为对象"))
-            continue
-        if not (item.get("lineage_id") or "").strip():
-            issues.append(ValidationIssue("error", path.name, "lineages 条目缺少 lineage_id"))
-        if not (item.get("target_table") or "").strip():
-            issues.append(ValidationIssue("warning", path.name, f"lineage {item.get('lineage_id')} 缺少 target_table"))
+    for issue in validate_lineage_data(data):
+        issue.file = path.name
+        issues.append(issue)
     return issues
 
 
