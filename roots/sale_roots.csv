@@ -2,3 +2,8 @@ root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,synonyms,sou
 R_SALE_001,订单,order,ord,sale,noun,交易订单,,model_consensus,approved,2026-08-03,2026-08-03
 R_SALE_002,金额,amount,amt,sale,noun,金额,,model_consensus,approved,2026-08-03,2026-08-03
 R_SALE_003,租金,rent,rent,sale,noun,租金/租赁收入词根,租金|租赁|出租,manual,approved,2026-08-05,2026-08-05
+R_SALE_004,面积,area,area,sale,noun,表示平面或物体表面的大小,,manual,pending,2026-08-05,2026-08-05
+R_SALE_005,实测,measured,meas,sale,adj,表示通过实际测量得到的,,manual,pending,2026-08-05,2026-08-05
+R_SALE_006,经营,operating,oper,sale,adj,表示与日常经营活动相关,,manual,pending,2026-08-05,2026-08-05
+R_SALE_007,现金,cash,cash,sale,noun,现金及现金等价物,,manual,pending,2026-08-05,2026-08-05
+R_SALE_008,流量/流,flow,flow,sale,noun,流入或流出的量，用于现金流概念中,,manual,pending,2026-08-05,2026-08-05

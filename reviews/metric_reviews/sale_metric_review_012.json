@@ -1,0 +1,49 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-05T15:19:56+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_N559",
+      "metric_en": "rentable_area",
+      "model_reviews": [
+        {
+          "model": "deepseek-v4-flash",
+          "naming_score": 4,
+          "naming_issues": [
+            "metric_en 'rentable_area' 由标准词根 rentable 和 area 组合而成，基本符合英文命名规范",
+            "metric_id 中包含 'N559' 等非标准业务语义标识，建议核对是否有必要保留"
+          ],
+          "caliber_score": 1,
+          "caliber_issues": [
+            "caliber_desc 仅为 'das'，未提供业务定义和计算逻辑，完全无法理解指标口径",
+            "缺少可租面积的边界说明，例如是否包含公摊、是否扣除结构面积、是否含地下室等"
+          ],
+          "conflict_risks": [
+            "由于口径缺失，极易与其他同类指标如'租赁面积'、'计租面积'、'可出租面积'产生同名异义或同义异名风险"
+          ],
+          "root_match": false,
+          "suggestions": "请补充完整的业务定义和计算公式，例如：可租面积 = 建筑面积 × 得房率，并明确包含/排除范围；同时为 metric_en 关联标准词根 rentable_area 等，补全 unit（如平方米）和 frequency（如静态值/按年更新）。"
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 4.0,
+        "caliber_score_avg": 1.0,
+        "consistent_issues": [],
+        "conflict_detected": true
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "conflict_review",
+        "action_items": [
+          "请补充完整的业务定义和计算公式，例如：可租面积 = 建筑面积 × 得房率，并明确包含/排除范围；同时为 metric_en 关联标准词根 rentable_area 等，补全 unit（如平方米）和 frequency（如静态值/按年更新）。"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}

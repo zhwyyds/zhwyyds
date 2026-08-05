@@ -1,0 +1,40 @@
+{
+  "review_id": "RR_SALE_001",
+  "domain": "sale",
+  "review_type": "root_generation",
+  "created_at": "2026-08-05T15:34:57+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "items": [
+    {
+      "cn_term": "租金",
+      "context": "",
+      "model_results": [
+        {
+          "model": "deepseek-v4-flash",
+          "root_en": "rent",
+          "root_abbr": "rent",
+          "root_type": "noun",
+          "description": "租赁资产或空间所支付的费用"
+        }
+      ],
+      "comparison": {
+        "root_en_consistent": true,
+        "root_abbr_consistent": true,
+        "root_type_consistent": true,
+        "conflict_fields": []
+      },
+      "final_decision": {
+        "root_en": "rent",
+        "root_abbr": "rent",
+        "root_type": "noun",
+        "description": "租赁资产或空间所支付的费用",
+        "decision_reason": "所有模型结果完全一致",
+        "decision_type": "model_consensus",
+        "review_status": "approved"
+      },
+      "auto_approved": true
+    }
+  ]
+}

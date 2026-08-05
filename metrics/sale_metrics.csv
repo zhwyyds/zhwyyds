@@ -11,3 +11,5 @@ M_SALE_007,本月订单金额,mtd_order_amt,mtd_order_amt,sale,,derived,,本月�
 M_SALE_008,本年订单金额,ytd_order_amt,ytd_order_amt,sale,,derived,,本年：tongj,,current_year,,batch_generate,pending,,,,,,,,,,,,,,2026-08-05,2026-08-05,,,,,,,,,,,,,,,,,,,,
 M_SALE_009,环比订单金额,mom_order_amt,mom_order_amt,sale,,derived,,环比：tongj,,prior_period,,batch_generate,pending,,,,,,,,,,,,,,2026-08-05,2026-08-05,,,,,,,,,,,,,,,,,,,,
 M_SALE_010,同比订单金额,yoy_order_amt,yoy_order_amt,sale,,derived,,同比：tongj,,same_period_last_year,,batch_generate,pending,,,,,,,,,,,,,,2026-08-05,2026-08-05,,,,,,,,,,,,,,,,,,,,
+M_SALE_N196,实测面积,measured_area,,sale,R_SALE_004;R_SALE_005,atomic,,指通过实际测绘取得的面积，通常包括建筑面积或套内建筑面积，用于销售面积确认与结算。统计周期为月，仅统计已完成实测并获得测绘报告的面积，不包含预测面积或暂测面积。,平方米,月,,,,,,,,,,实测面积 = 测绘单位出具的实测建筑面积（或套内建筑面积）,,,,,,,2026-08-05,2026-08-05,取测绘报告中每个测量单元的实测建筑面积或套内建筑面积作为该指标值；若统计项目/楼栋总计，则对各户实测面积求和。,测绘报告、销售台账、房源基础信息表,,,,,,,,,,,,,,,,,,
+M_SALE_N595,经营现金流,operating_cash_flow,,sale,R_SALE_006;R_SALE_007;R_SALE_008,atomic,,统计周期内，企业日常经营活动产生的现金流入与流出相抵后的净额。仅包含经营活动，不含投资活动与筹资活动的现金流动。统计周期通常为月、季或年，可按需设定。,元,月,,,,,,,,,,经营活动现金流入 - 经营活动现金流出,,,,,,,2026-08-05,2026-08-05,经营活动现金流入小计减去经营活动现金流出小计,现金流量表/经营流水表,,,,,,,,,,,,,,,,,,
