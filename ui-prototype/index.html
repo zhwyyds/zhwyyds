@@ -759,30 +759,49 @@
       <span class="modal-title">&#10133; 新增指标</span>
       <button class="modal-close" onclick="closeModal('newMetricModal')">&#10005;</button>
     </div>
-    <div class="modal-body" style="max-height:70vh;overflow:auto;">
+    <div class="modal-body" style="max-height:72vh;overflow:auto;">
       <div class="modal-form-section modal-form-section--biz">
         <div class="modal-form-section-title">业务属性</div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">中文名称 *</label>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标名称 *</label>
           <div class="flex gap-2">
             <input class="modal-form-input" id="newMetricCn" placeholder="指标中文名称" style="flex:1;">
             <button type="button" class="btn btn-sm btn-primary" onclick="suggestMetricFields()">&#129302; AI 辅助</button>
           </div>
         </div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名称</label><input class="modal-form-input" id="newMetricEn" placeholder="可自动生成"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名 / 缩写</label>
+            <input class="modal-form-input" id="newMetricEn" placeholder="metric_en" style="margin-bottom:6px;">
+            <input class="modal-form-input" id="newMetricAbbr" placeholder="abbr">
+          </div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">一级 / 二级分类</label>
+            <input class="modal-form-input" id="newMetricCatL1" placeholder="一级分类" style="margin-bottom:6px;">
+            <input class="modal-form-input" id="newMetricCatL2" placeholder="二级分类">
+          </div>
+        </div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标描述</label><textarea class="modal-form-textarea" id="newMetricDesc" placeholder="业务定义"></textarea></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="newMetricFormulaCn" placeholder="全中文公式说明"></textarea></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 伪代码逻辑</label><textarea class="modal-form-textarea" id="newMetricFormulaLogic" placeholder="SUM(…) WHERE …" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">值类型</label><input class="modal-form-input" id="newMetricValueType" placeholder="金额 / 数量 / 比率"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">统计维度</label><input class="modal-form-input" id="newMetricDimensions" placeholder="渠道, 区域, 品类"></div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">应用场景</label><input class="modal-form-input" id="newMetricScenario"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">应用报表</label><textarea class="modal-form-textarea" id="newMetricReports"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">分析方法</label><input class="modal-form-input" id="newMetricAnalysis"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">预警标准</label><textarea class="modal-form-textarea" id="newMetricAlert"></textarea></div>
       </div>
       <div class="modal-form-section modal-form-section--tech">
         <div class="modal-form-section-title">技术属性</div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">主题域</label><select class="modal-form-select" id="newMetricDomain"><option value="sale">sale 交易</option><option value="mall">mall 商场</option><option value="cust">cust 消费者</option></select></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">指标类型</label><select class="modal-form-select" id="newMetricType"><option value="atomic">原子指标</option><option value="derived">派生指标</option></select></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">计量单位 / 时间周期</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <input class="modal-form-input" id="newMetricUnit" placeholder="元、%、笔">
-            <input class="modal-form-input" id="newMetricFrequency" placeholder="月度">
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">主题域</label><select class="modal-form-select" id="newMetricDomain"><option value="sale">sale 交易</option><option value="mall">mall 商场</option><option value="cust">cust 消费者</option></select></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">指标类型</label><select class="modal-form-select" id="newMetricType"><option value="atomic">原子指标</option><option value="derived">派生指标</option></select></div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">计量单位</label><input class="modal-form-input" id="newMetricUnit" placeholder="元"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">时间周期</label><input class="modal-form-input" id="newMetricFrequency" placeholder="月"></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">精度</label><input class="modal-form-input" id="newMetricPrecision" placeholder="2位小数"></div>
+        </div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">数据来源</label><input class="modal-form-input" id="newMetricDataSources"></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">技术来源</label><textarea class="modal-form-textarea" id="newMetricTechCaliber" placeholder="可执行 SQL / 表达式" style="font-family:var(--mono);font-size:12px;"></textarea></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--tech">所属物理表</label><input class="modal-form-input" id="newMetricSourceTable" placeholder="dwd_…"></div>
       </div>
@@ -792,22 +811,11 @@
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号（发布自动维护）</label><input class="modal-form-input" id="newMetricVersion" disabled placeholder="发布后自动分配"></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录（发布自动维护）</label><textarea class="modal-form-textarea" id="newMetricVersionHistory" disabled placeholder="发布时自动追加 v{n}|日期|操作人|说明"></textarea></div>
       </div>
-      <!-- AI 建议面板（内联展示，非弹窗） -->
-      <div class="card mb-3" id="newMetricAiPanel" style="display:none;border:1px solid var(--primary-light,#c9d8ff);">
-        <div class="card-header">
-          <div class="card-title">🤖 AI 建议 <span class="text-sm text-muted" id="newMetricAiSource" style="font-weight:400;"></span></div>
-          <div class="flex gap-2">
-            <button class="btn btn-sm" id="newMetricAiFillBtn" onclick="fillAiSuggestion()" style="display:none;">⬇ 一键填入表单</button>
-            <button class="btn btn-sm" onclick="suggestMetricFields()">🔄 重新生成</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div id="newMetricAiFields" class="text-sm text-muted" style="padding:8px 0;">生成中…</div>
-          <div id="newMetricAiRoots"></div>
-          <div class="callout info" id="newMetricAiNote" style="display:none;margin-bottom:0;">
-            <div>保存指标时，勾选的「建议新建词根」将自动创建并关联到该指标。</div>
-          </div>
-        </div>
+      <!-- AI 建议词根（普通字段行；AI 辅助后展示，保存时勾选词根自动创建并关联） -->
+      <div class="modal-form-group" id="newMetricAiRootsRow" style="display:none;">
+        <label class="modal-form-label">自动新建词根（AI 建议缺失词根，勾选保存时自动创建）</label>
+        <div id="newMetricAiRoots"></div>
+        <div id="newMetricAiStatus" class="text-sm text-muted" style="margin-top:4px;"></div>
       </div>
       <div class="modal-warning info">&#128161; 保存后写入 <code>metrics/*_metrics.csv</code>，并刷新指标库展示</div>
     </div>

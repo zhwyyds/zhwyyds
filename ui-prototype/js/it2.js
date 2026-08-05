@@ -286,13 +286,22 @@
 
   var AI_FILL_MAP = {
     newMetricEn: 'metric_en',
+    newMetricAbbr: 'metric_abbr',
     newMetricDesc: 'caliber_desc',
     newMetricFormulaLogic: 'formula',
     newMetricFormulaCn: 'formula_cn',
+    newMetricValueType: 'value_type',
+    newMetricDimensions: 'dimensions',
+    newMetricScenario: 'scenario',
+    newMetricReports: 'reports',
+    newMetricAnalysis: 'analysis_methods',
+    newMetricAlert: 'alert_rules',
+    newMetricPrecision: 'precision',
     newMetricUnit: 'unit',
     newMetricFrequency: 'frequency',
-    newMetricSourceTable: 'data_sources',
-    newMetricTechCaliber: 'tech_caliber'
+    newMetricDataSources: 'data_sources',
+    newMetricTechCaliber: 'tech_caliber',
+    newMetricSourceTable: 'source_table'
   };
 
   function flashField(el) {
@@ -351,23 +360,17 @@
     removeDiffTip(fieldId);
   }
 
-  /* ==================== 新增指标 AI 辅助（问题 2 / 内联面板） ==================== */
-
-  function showAiPanel() {
-    var panel = document.getElementById('newMetricAiPanel');
-    if (panel) panel.style.display = '';
-  }
+  /* ==================== 新增指标 AI 辅助（直接填充表单字段，无独立面板） ==================== */
 
   function suggestMetricFields() {
     var cn = document.getElementById('newMetricCn');
-    if (!cn || !cn.value.trim()) { alert('请先填写中文名称'); return; }
-    showAiPanel();
-    var status = document.getElementById('newMetricAiSource');
-    var fieldsEl = document.getElementById('newMetricAiFields');
+    if (!cn || !cn.value.trim()) { alert('请先填写指标名称'); return; }
+    var status = document.getElementById('newMetricAiStatus');
     var rootsEl = document.getElementById('newMetricAiRoots');
-    if (fieldsEl) fieldsEl.innerHTML = '<span class="text-sm text-muted">🤔 AI 生成中，请稍候…</span>';
+    var rootsRow = document.getElementById('newMetricAiRootsRow');
+    if (status) status.textContent = '🤔 AI 生成中，请稍候…';
     if (rootsEl) rootsEl.innerHTML = '';
-    if (status) status.textContent = '';
+    if (rootsRow) rootsRow.style.display = 'none';
     var domain = document.getElementById('newMetricDomain');
     var val = function (id) {
       var el = document.getElementById(id);
@@ -385,63 +388,46 @@
       })
     }).then(function (r) {
       global.__DG_AI_SUGGEST__ = r;
-      var src = { similar_metric: '· 复用同名指标', rule_hint: '· 词根组合提示(mock)', llm: '· AI 生成', llm_multi: '· AI 多模型生成' }[r.source] || '';
-      if (status) status.textContent = src;
-      // H2：AI 直接填充表单字段（空字段填值+高亮；非空字段行内差异提示）
+      var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || '';
+      // AI 直接填充表单字段（空字段填值+高亮；非空字段行内差异提示）
       var fills = [
-        ['newMetricEn', r.metric_en, '英文名称'],
+        ['newMetricEn', r.metric_en, '英文名'],
+        ['newMetricAbbr', r.metric_abbr, '缩写'],
         ['newMetricDesc', r.caliber_desc, '指标描述'],
-        ['newMetricFormulaLogic', r.formula, '计算公式'],
         ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
-        ['newMetricUnit', r.unit, '单位'],
-        ['newMetricFrequency', r.frequency, '统计频率'],
-        ['newMetricSourceTable', r.data_sources, '来源表'],
-        ['newMetricTechCaliber', r.tech_caliber, '技术口径']
+        ['newMetricFormulaLogic', r.formula, '计算公式'],
+        ['newMetricValueType', r.value_type, '值类型'],
+        ['newMetricDimensions', r.dimensions, '统计维度'],
+        ['newMetricScenario', r.scenario, '应用场景'],
+        ['newMetricReports', r.reports, '应用报表'],
+        ['newMetricAnalysis', r.analysis_methods, '分析方法'],
+        ['newMetricAlert', r.alert_rules, '预警标准'],
+        ['newMetricPrecision', r.precision, '精度'],
+        ['newMetricUnit', r.unit, '计量单位'],
+        ['newMetricFrequency', r.frequency, '时间周期'],
+        ['newMetricDataSources', r.data_sources, '数据来源'],
+        ['newMetricTechCaliber', r.tech_caliber, '技术来源'],
+        ['newMetricSourceTable', r.source_table || r.data_sources, '所属物理表']
       ];
       fills.forEach(function (f) { applyAiFill(f[0], f[1], f[2]); });
-      renderAiFields(r);
       renderAiRoots(r.suggested_roots || []);
+      if (status) {
+        status.innerHTML = r.metric_en_warning
+          ? '⚠️ ' + esc(r.metric_en_warning)
+          : '已生成（' + src + '）：空字段已自动填充，黄色差异提示请确认';
+      }
     }).catch(function (e) {
-      if (fieldsEl) fieldsEl.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + esc(e.message) + '</span>';
+      if (status) status.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + esc(e.message) + '</span>';
     });
-  }
-
-  function renderAiFields(r) {
-    var el = document.getElementById('newMetricAiFields');
-    if (!el) return;
-    var rows = [
-      ['英文名称', r.metric_en, 'newMetricEn'],
-      ['指标描述', r.caliber_desc, 'newMetricDesc'],
-      ['公式中文说明', r.formula_cn, 'newMetricFormulaCn'],
-      ['计算公式', r.formula, 'newMetricFormulaLogic'],
-      ['单位', r.unit, 'newMetricUnit'],
-      ['统计频率', r.frequency, 'newMetricFrequency'],
-      ['来源表', r.data_sources, 'newMetricSourceTable'],
-      ['技术口径', r.tech_caliber, 'newMetricTechCaliber']
-    ].filter(function (x) { return x[1]; });
-    if (!rows.length) {
-      el.innerHTML = '<span class="text-sm text-muted">（无建议字段）</span>';
-      return;
-    }
-    var warn = r.metric_en_warning ? '<div class="callout warning mb-2" style="margin-bottom:8px;"><div>⚠️ ' + esc(r.metric_en_warning) + '</div></div>' : '';
-    el.innerHTML = warn + rows.map(function (x) {
-      return '<div class="revision-item" style="cursor:default;">' +
-        '<span class="revision-label" style="min-width:84px;">' + x[0] + '</span>' +
-        '<code class="revision-value">' + esc(x[1]) + '</code></div>';
-    }).join('') +
-      '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="fillAiSuggestion()">⬇ 一键填入表单</button>' +
-      '<span class="text-xs text-muted" style="margin-left:8px;">填入后可修改，确认后保存</span></div>';
-    var fillBtn = document.getElementById('newMetricAiFillBtn');
-    if (fillBtn) fillBtn.style.display = '';
   }
 
   function renderAiRoots(roots) {
     var el = document.getElementById('newMetricAiRoots');
-    var note = document.getElementById('newMetricAiNote');
+    var row = document.getElementById('newMetricAiRootsRow');
     if (!el) return;
     if (!roots || !roots.length) {
       el.innerHTML = '';
-      if (note) note.style.display = 'none';
+      if (row) row.style.display = 'none';
       return;
     }
     var rows = roots.map(function (rt, i) {
@@ -453,36 +439,8 @@
         (rt.description ? '<div class="text-xs text-muted" style="flex-basis:100%;padding-left:24px;">' + esc(rt.description) + '</div>' : '') +
         '</label>';
     }).join('');
-    el.innerHTML = '<div class="text-sm" style="font-weight:600;margin:8px 0 4px;">将同步新建词根（勾选保存时自动创建）</div>' + rows;
-    if (note) note.style.display = '';
-  }
-
-  function fillAiSuggestion() {
-    var r = global.__DG_AI_SUGGEST__;
-    if (!r) return;
-    var map = {
-      newMetricDesc: r.caliber_desc,
-      newMetricFormulaLogic: r.formula,
-      newMetricFormulaCn: r.formula_cn,
-      newMetricUnit: r.unit,
-      newMetricFrequency: r.frequency,
-      newMetricSourceTable: r.data_sources,
-      newMetricTechCaliber: r.tech_caliber
-    };
-    Object.keys(map).forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el && map[id]) el.value = map[id];
-    });
-    // metric_en 为空时只清空不覆盖（让用户手填），有警告则提示
-    var enEl = document.getElementById('newMetricEn');
-    if (enEl) {
-      if (r.metric_en) {
-        enEl.value = r.metric_en;
-      } else if (!enEl.value.trim()) {
-        enEl.value = '';
-        enEl.placeholder = 'AI 未生成，请手动填写 snake_case 英文名';
-      }
-    }
+    el.innerHTML = rows;
+    if (row) row.style.display = '';
   }
 
   /* ==================== 词根 AI 字段填充（H1/H2） ==================== */
@@ -1018,7 +976,6 @@
   global.openRootEdit = openRootEdit;
   global.saveRootEdit = saveRootEdit;
   global.suggestMetricFields = suggestMetricFields;
-  global.fillAiSuggestion = fillAiSuggestion;
   global.applyAiFill = applyAiFill;
   global.adoptAiValue = adoptAiValue;
   global.dismissAiDiff = dismissAiDiff;

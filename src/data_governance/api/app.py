@@ -497,8 +497,11 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             "你是数据治理平台的指标定义专家。根据指标名称【并结合业务定义/计算公式】生成标准化的指标定义，只输出 JSON：\n"
             f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
             f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
-            f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
-            f'"formula_cn":"公式中文说明","data_sources":"来源表","tech_caliber":"技术口径",'
+            f'"value_type":"值类型(如 金额/数量/比率/百分数)","dimensions":"常用维度(逗号分隔)",'
+            f'"scenario":"适用场景","formula":"计算公式","formula_cn":"公式中文说明",'
+            f'"reports":"应用报表","analysis_methods":"分析方法",'
+            f'"alert_rules":"预警标准(可为空)","precision":"精度(如 2位小数)",'
+            f'"data_sources":"来源表/数仓层","source_table":"所属物理表(dwd/dws表名)","tech_caliber":"技术口径",'
             f'"suggestions":["需人工确认的点"],'
             f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
             f'"root_type":"noun/verb/adj/unit/time","description":"说明"}}]}}\n\n'
@@ -530,8 +533,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 continue
             for key in (
                 "metric_en", "metric_abbr", "caliber_desc", "unit", "frequency",
-                "dimensions", "scenario", "formula", "formula_cn", "data_sources",
-                "tech_caliber", "suggestions", "suggested_roots",
+                "value_type", "dimensions", "scenario", "formula", "formula_cn",
+                "reports", "analysis_methods", "alert_rules", "precision",
+                "data_sources", "source_table", "tech_caliber", "suggestions", "suggested_roots",
             ):
                 v = data.get(key)
                 if v not in (None, "") and key not in merged:

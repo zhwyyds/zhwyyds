@@ -357,7 +357,7 @@
       metric_id: newId,
       metric_cn: cn,
       metric_en: getFormValue('newMetricEn') || 'pending_naming',
-      metric_abbr: '',
+      metric_abbr: getFormValue('newMetricAbbr'),
       domain_code: dom,
       metric_type: getFormValue('newMetricType') || 'atomic',
       caliber_desc: getFormValue('newMetricDesc'),
@@ -371,8 +371,16 @@
         getFormValue('newMetricVersionHistory') ||
         '0.1.0|' + new Date().toISOString().slice(0, 10) + '|—|新建草稿',
       review_status: 'pending',
-      category_l1: '',
-      category_l2: '',
+      category_l1: getFormValue('newMetricCatL1'),
+      category_l2: getFormValue('newMetricCatL2'),
+      value_type: getFormValue('newMetricValueType'),
+      dimensions: getFormValue('newMetricDimensions'),
+      scenario: getFormValue('newMetricScenario'),
+      reports: getFormValue('newMetricReports'),
+      analysis_methods: getFormValue('newMetricAnalysis'),
+      alert_rules: getFormValue('newMetricAlert'),
+      precision: getFormValue('newMetricPrecision'),
+      data_sources: getFormValue('newMetricDataSources'),
       unit: getFormValue('newMetricUnit'),
       frequency: getFormValue('newMetricFrequency')
     };
@@ -427,8 +435,10 @@
       .then(function () {
         closeModal('newMetricModal');
         global.__DG_AI_SUGGEST__ = null;
-        var panel = document.getElementById('newMetricAiPanel');
-        if (panel) panel.style.display = 'none';
+        var rootsRow = document.getElementById('newMetricAiRootsRow');
+        if (rootsRow) rootsRow.style.display = 'none';
+        var rootsEl = document.getElementById('newMetricAiRoots');
+        if (rootsEl) rootsEl.innerHTML = '';
         return reloadFromServer();
       })
       .catch(function (e) {
