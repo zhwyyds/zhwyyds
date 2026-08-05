@@ -422,6 +422,10 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             f'"suggestions":["需人工确认的点"],'
             f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
             f'"root_type":"noun/verb/adj/unit/time","description":"说明"}}]}}\n\n'
+            "强制要求（必须遵守，缺失将视为生成失败）：\n"
+            "- metric_en 必须是非空 snake_case 英文名（如 monthly_rent_amount），绝不能为空、不能含中文、不能是单字母占位\n"
+            "- 如确实难以命名（中文名极含糊），可用 <英文占位>_pending_<序号> 并在 suggestions 中说明\n"
+            "- suggested_roots 只列出 metric_en 用到的词根中【词根库缺失】的部分，词根库已有的绝不要列\n\n"
             f"参考词根库（该域的既有标准词根，含同义词）：\n{root_text}\n\n"
             "语义判定规则（必须遵守）：\n"
             "0. 【名称可能不规范】中文名可能口语化/含糊/不符合命名规范，请以【业务定义/计算公式】为准理解指标真实语义，"
@@ -453,10 +457,10 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 if v not in (None, "") and key not in merged:
                     merged[key] = v
         if not merged.get("metric_en"):
-            raise HTTPException(
-                500,
-                "模型未返回有效的指标定义（响应解析失败或缺少 metric_en 字段），请重试或检查 Key 余额/网络",
-            )
+            # 降级容错（G6）：DeepSeek 偶发格式漂移 → 返回 200 + 警告，不让用户卡死；
+            # metric_en 留空，前端提示用户手填，其他字段正常展示
+            merged["metric_en"] = ""
+            merged["metric_en_warning"] = "AI 未能生成有效英文名，请手动填写"
         merged.setdefault("metric_cn", metric_cn)
         merged.setdefault("frequency", "月")
         merged.setdefault("suggestions", [])

@@ -342,7 +342,8 @@
       el.innerHTML = '<span class="text-sm text-muted">（无建议字段）</span>';
       return;
     }
-    el.innerHTML = rows.map(function (x) {
+    var warn = r.metric_en_warning ? '<div class="callout warning mb-2" style="margin-bottom:8px;"><div>⚠️ ' + esc(r.metric_en_warning) + '</div></div>' : '';
+    el.innerHTML = warn + rows.map(function (x) {
       return '<div class="revision-item" style="cursor:default;">' +
         '<span class="revision-label" style="min-width:84px;">' + x[0] + '</span>' +
         '<code class="revision-value">' + esc(x[1]) + '</code></div>';
@@ -379,7 +380,6 @@
     var r = global.__DG_AI_SUGGEST__;
     if (!r) return;
     var map = {
-      newMetricEn: r.metric_en,
       newMetricDesc: r.caliber_desc,
       newMetricFormulaLogic: r.formula,
       newMetricFormulaCn: r.formula_cn,
@@ -392,6 +392,16 @@
       var el = document.getElementById(id);
       if (el && map[id]) el.value = map[id];
     });
+    // metric_en 为空时只清空不覆盖（让用户手填），有警告则提示
+    var enEl = document.getElementById('newMetricEn');
+    if (enEl) {
+      if (r.metric_en) {
+        enEl.value = r.metric_en;
+      } else if (!enEl.value.trim()) {
+        enEl.value = '';
+        enEl.placeholder = 'AI 未生成，请手动填写 snake_case 英文名';
+      }
+    }
   }
 
   /* ==================== 域级治理看板（IT3-2） ==================== */
