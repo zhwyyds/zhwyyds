@@ -300,12 +300,19 @@
     if (rootsEl) rootsEl.innerHTML = '';
     if (status) status.textContent = '';
     var domain = document.getElementById('newMetricDomain');
+    var val = function (id) {
+      var el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    };
     api('/api/metrics/suggest', {
       method: 'POST',
       body: JSON.stringify({
         metric_cn: cn.value.trim(),
         domain_code: domain ? domain.value : 'sale',
-        caliber_desc: document.getElementById('newMetricDesc') ? document.getElementById('newMetricDesc').value : ''
+        caliber_desc: val('newMetricDesc'),
+        formula: val('newMetricFormulaLogic'),
+        unit: val('newMetricUnit'),
+        frequency: val('newMetricFrequency')
       })
     }).then(function (r) {
       global.__DG_AI_SUGGEST__ = r;

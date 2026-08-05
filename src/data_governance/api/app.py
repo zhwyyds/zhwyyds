@@ -349,6 +349,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         metric_cn = str((body or {}).get("metric_cn") or "").strip()
         domain = str((body or {}).get("domain_code") or "").strip().lower()
         desc = str((body or {}).get("caliber_desc") or "").strip()
+        formula = str((body or {}).get("formula") or "").strip()
+        unit = str((body or {}).get("unit") or "").strip()
+        frequency = str((body or {}).get("frequency") or "").strip()
         if not metric_cn:
             raise HTTPException(400, "metric_cn 必填")
         catalog = load_catalog(base)
@@ -397,8 +400,21 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
 
         entries = build_root_dictionary(catalog.roots, domain=domain)
         root_text = dictionary_to_prompt_text(entries)
+        context_lines = [
+            f"中文名：{metric_cn}",
+            f"主题域：{domain}",
+        ]
+        if desc:
+            context_lines.append(f"业务定义/描述：{desc}")
+        if formula:
+            context_lines.append(f"计算公式：{formula}")
+        if unit:
+            context_lines.append(f"计量单位：{unit}")
+        if frequency:
+            context_lines.append(f"统计频率：{frequency}")
+        context_block = "\n".join(context_lines)
         prompt = (
-            "你是数据治理平台的指标定义专家。根据中文指标名生成指标定义，只输出 JSON：\n"
+            "你是数据治理平台的指标定义专家。根据指标名称【并结合业务定义/计算公式】生成标准化的指标定义，只输出 JSON：\n"
             f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
             f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
             f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
@@ -407,13 +423,15 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
             f'"root_type":"noun/verb/adj/unit/time","description":"说明"}}]}}\n\n'
             f"参考词根库（该域的既有标准词根，含同义词）：\n{root_text}\n\n"
-            "词根强制复用规则（必须遵守）：\n"
+            "语义判定规则（必须遵守）：\n"
+            "0. 【名称可能不规范】中文名可能口语化/含糊/不符合命名规范，请以【业务定义/计算公式】为准理解指标真实语义，"
+            "再生成规范英文名与口径；有定义/公式时，metric_en 与 caliber_desc 必须与其语义一致，不得照抄口语化名称\n"
             "1. metric_en 必须由词根库中的词根组合而成（使用 root_en 原词）\n"
             "2. 术语语义若已被词根库覆盖（包括其同义词），必须复用对应词根，禁止自创新词根\n"
             "3. 例如词根库已有 rent（同义词：租金/租赁/出租），则「租赁收入」必须用 rent，不能写 lease\n"
             "4. suggested_roots 只列出 metric_en 用到的词根中【词根库缺失】的部分（供同步新建），"
             "词根库已有的绝不要列；无缺失则为空数组 []\n"
-            f"\n中文名：{metric_cn}\n域：{domain}"
+            f"\n{context_block}"
         )
         from data_governance.llm.parallel import run_models_parallel_prompt
 
