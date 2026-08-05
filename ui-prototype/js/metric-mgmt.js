@@ -376,9 +376,59 @@
       unit: getFormValue('newMetricUnit'),
       frequency: getFormValue('newMetricFrequency')
     };
+
+    // 同步补词根（G5）：勾选的「建议新建词根」先创建，再关联到指标 root_ids
+    var suggest = global.__DG_AI_SUGGEST__;
+    var chosenRoots = [];
+    if (suggest && suggest.suggested_roots && suggest.suggested_roots.length) {
+      var boxes = document.querySelectorAll('#newMetricAiRoots input[type="checkbox"]:checked');
+      for (var i = 0; i < boxes.length; i++) {
+        var rt = suggest.suggested_roots[parseInt(boxes[i].getAttribute('data-idx'), 10)];
+        if (rt) chosenRoots.push(rt);
+      }
+    }
+    if (chosenRoots.length) {
+      var chain = Promise.resolve();
+      var rootIds = [];
+      var firstErr = null;
+      chosenRoots.forEach(function (rt) {
+        chain = chain
+          .then(function () {
+            return apiFetch('/api/roots', {
+              method: 'POST',
+              body: JSON.stringify({
+                root_cn: rt.root_cn,
+                root_en: rt.root_en,
+                root_abbr: rt.root_abbr || rt.root_en,
+                root_type: rt.root_type || 'noun',
+                domain_code: dom,
+                description: rt.description || '',
+                synonyms: ''
+              })
+            });
+          })
+          .then(function (created) {
+            rootIds.push(created.root_id || created.rootId);
+          })
+          .catch(function (e) { firstErr = e; });
+      });
+      chain.then(function () {
+        if (firstErr) { alert('部分词根创建失败: ' + firstErr.message + '（指标未保存）'); return; }
+        if (rootIds.length) row.root_ids = rootIds.join(';');
+        createMetricRow(row);
+      });
+    } else {
+      createMetricRow(row);
+    }
+  }
+
+  function createMetricRow(row) {
     apiFetch('/api/metrics', { method: 'POST', body: JSON.stringify(row) })
       .then(function () {
         closeModal('newMetricModal');
+        global.__DG_AI_SUGGEST__ = null;
+        var panel = document.getElementById('newMetricAiPanel');
+        if (panel) panel.style.display = 'none';
         return reloadFromServer();
       })
       .catch(function (e) {

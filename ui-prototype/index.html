@@ -792,6 +792,23 @@
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号（发布自动维护）</label><input class="modal-form-input" id="newMetricVersion" disabled placeholder="发布后自动分配"></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录（发布自动维护）</label><textarea class="modal-form-textarea" id="newMetricVersionHistory" disabled placeholder="发布时自动追加 v{n}|日期|操作人|说明"></textarea></div>
       </div>
+      <!-- AI 建议面板（内联展示，非弹窗） -->
+      <div class="card mb-3" id="newMetricAiPanel" style="display:none;border:1px solid var(--primary-light,#c9d8ff);">
+        <div class="card-header">
+          <div class="card-title">🤖 AI 建议 <span class="text-sm text-muted" id="newMetricAiSource" style="font-weight:400;"></span></div>
+          <div class="flex gap-2">
+            <button class="btn btn-sm" id="newMetricAiFillBtn" onclick="fillAiSuggestion()" style="display:none;">⬇ 一键填入表单</button>
+            <button class="btn btn-sm" onclick="suggestMetricFields()">🔄 重新生成</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="newMetricAiFields" class="text-sm text-muted" style="padding:8px 0;">生成中…</div>
+          <div id="newMetricAiRoots"></div>
+          <div class="callout info" id="newMetricAiNote" style="display:none;margin-bottom:0;">
+            <div>保存指标时，勾选的「建议新建词根」将自动创建并关联到该指标。</div>
+          </div>
+        </div>
+      </div>
       <div class="modal-warning info">&#128161; 保存后写入 <code>metrics/*_metrics.csv</code>，并刷新指标库展示</div>
     </div>
     <div class="modal-footer">
@@ -2308,6 +2325,7 @@
       <div class="callout info" id="rootGenResultWrap" style="display:none;">
         <div style="font-weight:600;margin-bottom:8px;">生成结果（勾选后确认入库）</div>
         <div id="rootGenResult"></div>
+        <div id="rootGenStatus" class="text-sm" style="margin-top:8px;"></div>
       </div>
     </div>
     <div class="modal-footer">

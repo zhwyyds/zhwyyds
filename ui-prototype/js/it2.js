@@ -282,11 +282,23 @@
       .catch(function (e) { alert('补全失败: ' + e.message); });
   }
 
-  /* ==================== 新增指标 AI 辅助（问题 2） ==================== */
+  /* ==================== 新增指标 AI 辅助（问题 2 / 内联面板） ==================== */
+
+  function showAiPanel() {
+    var panel = document.getElementById('newMetricAiPanel');
+    if (panel) panel.style.display = '';
+  }
 
   function suggestMetricFields() {
     var cn = document.getElementById('newMetricCn');
     if (!cn || !cn.value.trim()) { alert('请先填写中文名称'); return; }
+    showAiPanel();
+    var status = document.getElementById('newMetricAiSource');
+    var fieldsEl = document.getElementById('newMetricAiFields');
+    var rootsEl = document.getElementById('newMetricAiRoots');
+    if (fieldsEl) fieldsEl.innerHTML = '<span class="text-sm text-muted">🤔 AI 生成中，请稍候…</span>';
+    if (rootsEl) rootsEl.innerHTML = '';
+    if (status) status.textContent = '';
     var domain = document.getElementById('newMetricDomain');
     api('/api/metrics/suggest', {
       method: 'POST',
@@ -296,23 +308,83 @@
         caliber_desc: document.getElementById('newMetricDesc') ? document.getElementById('newMetricDesc').value : ''
       })
     }).then(function (r) {
-      var map = {
-        newMetricEn: r.metric_en,
-        newMetricDesc: r.caliber_desc,
-        newMetricFormulaLogic: r.formula,
-        newMetricFormulaCn: r.formula_cn,
-        newMetricUnit: r.unit,
-        newMetricFrequency: r.frequency,
-        newMetricSourceTable: r.data_sources,
-        newMetricTechCaliber: r.tech_caliber
-      };
-      Object.keys(map).forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el && map[id]) el.value = map[id];
-      });
-      var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || r.source;
-      alert('🤖 AI 建议已生成（来源: ' + src + '）' + ((r.suggestions || []).length ? '\n提示: ' + r.suggestions.join('；') : '') + '\n请核查后保存。');
-    }).catch(function (e) { alert('AI 辅助失败: ' + e.message); });
+      global.__DG_AI_SUGGEST__ = r;
+      var src = { similar_metric: '· 复用同名指标', rule_hint: '· 词根组合提示(mock)', llm: '· AI 生成', llm_multi: '· AI 多模型生成' }[r.source] || '';
+      if (status) status.textContent = src;
+      renderAiFields(r);
+      renderAiRoots(r.suggested_roots || []);
+    }).catch(function (e) {
+      if (fieldsEl) fieldsEl.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + esc(e.message) + '</span>';
+    });
+  }
+
+  function renderAiFields(r) {
+    var el = document.getElementById('newMetricAiFields');
+    if (!el) return;
+    var rows = [
+      ['英文名称', r.metric_en, 'newMetricEn'],
+      ['指标描述', r.caliber_desc, 'newMetricDesc'],
+      ['公式中文说明', r.formula_cn, 'newMetricFormulaCn'],
+      ['计算公式', r.formula, 'newMetricFormulaLogic'],
+      ['单位', r.unit, 'newMetricUnit'],
+      ['统计频率', r.frequency, 'newMetricFrequency'],
+      ['来源表', r.data_sources, 'newMetricSourceTable'],
+      ['技术口径', r.tech_caliber, 'newMetricTechCaliber']
+    ].filter(function (x) { return x[1]; });
+    if (!rows.length) {
+      el.innerHTML = '<span class="text-sm text-muted">（无建议字段）</span>';
+      return;
+    }
+    el.innerHTML = rows.map(function (x) {
+      return '<div class="revision-item" style="cursor:default;">' +
+        '<span class="revision-label" style="min-width:84px;">' + x[0] + '</span>' +
+        '<code class="revision-value">' + esc(x[1]) + '</code></div>';
+    }).join('') +
+      '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="fillAiSuggestion()">⬇ 一键填入表单</button>' +
+      '<span class="text-xs text-muted" style="margin-left:8px;">填入后可修改，确认后保存</span></div>';
+    var fillBtn = document.getElementById('newMetricAiFillBtn');
+    if (fillBtn) fillBtn.style.display = '';
+  }
+
+  function renderAiRoots(roots) {
+    var el = document.getElementById('newMetricAiRoots');
+    var note = document.getElementById('newMetricAiNote');
+    if (!el) return;
+    if (!roots || !roots.length) {
+      el.innerHTML = '';
+      if (note) note.style.display = 'none';
+      return;
+    }
+    var rows = roots.map(function (rt, i) {
+      return '<label class="revision-item">' +
+        '<input type="checkbox" data-idx="' + i + '" checked> ' +
+        '<span class="revision-label" style="min-width:64px;">' + esc(rt.root_cn) + '</span>' +
+        ' → <code class="revision-value">' + esc(rt.root_en) + ' (' + esc(rt.root_abbr || rt.root_en) + ')</code>' +
+        '<span class="badge badge-warn">缺失·将新建</span>' +
+        (rt.description ? '<div class="text-xs text-muted" style="flex-basis:100%;padding-left:24px;">' + esc(rt.description) + '</div>' : '') +
+        '</label>';
+    }).join('');
+    el.innerHTML = '<div class="text-sm" style="font-weight:600;margin:8px 0 4px;">将同步新建词根（勾选保存时自动创建）</div>' + rows;
+    if (note) note.style.display = '';
+  }
+
+  function fillAiSuggestion() {
+    var r = global.__DG_AI_SUGGEST__;
+    if (!r) return;
+    var map = {
+      newMetricEn: r.metric_en,
+      newMetricDesc: r.caliber_desc,
+      newMetricFormulaLogic: r.formula,
+      newMetricFormulaCn: r.formula_cn,
+      newMetricUnit: r.unit,
+      newMetricFrequency: r.frequency,
+      newMetricSourceTable: r.data_sources,
+      newMetricTechCaliber: r.tech_caliber
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && map[id]) el.value = map[id];
+    });
   }
 
   /* ==================== 域级治理看板（IT3-2） ==================== */
@@ -710,6 +782,8 @@
     var btn = document.getElementById('rootGenRunBtn');
     btn.disabled = true;
     btn.textContent = '生成中…';
+    var st = document.getElementById('rootGenStatus');
+    if (st) st.innerHTML = '<span class=\"text-muted\">🤔 多模型生成中，请稍候…</span>';
     api('/api/roots/generate', { method: 'POST', body: JSON.stringify({ domain: domain, terms: terms }) })
       .then(function (doc) {
         global.__DG_ROOT_GEN_REVIEW__ = doc;
@@ -744,7 +818,8 @@
       .catch(function (e) {
         btn.disabled = false;
         btn.textContent = '🤖 生成';
-        alert('生成失败: ' + e.message);
+        var st = document.getElementById('rootGenStatus');
+        if (st) st.innerHTML = '<span style=\'color:var(--danger);\'>生成失败: ' + esc(e.message) + '</span>';
       });
   }
 
@@ -761,12 +836,15 @@
       body: JSON.stringify({ review_id: doc.review_id, cn_terms: cn })
     })
       .then(function (res) {
-        alert('已入库 ' + res.created.length + ' 个词根' + (res.skipped.length ? '，跳过 ' + res.skipped.length + ' 个' : ''));
-        closeModal('rootGenModal');
+        var st = document.getElementById('rootGenStatus');
+        if (st) st.innerHTML = '<span style=\'color:var(--success,#16a34a);font-weight:600;\'>✅ 已入库 ' + res.created.length + ' 个词根' + (res.skipped.length ? '，跳过 ' + res.skipped.length + ' 个' : '') + '</span>';
         loadRoots();
         if (global.DG && global.DG.refresh) global.DG.refresh();
       })
-      .catch(function (e) { alert('入库失败: ' + e.message); });
+      .catch(function (e) {
+        var st = document.getElementById('rootGenStatus');
+        if (st) st.innerHTML = '<span style=\'color:var(--danger);\'>入库失败: ' + esc(e.message) + '</span>';
+      });
   }
 
   /* ==================== 初始化 & 页面切换联动 ==================== */
@@ -803,6 +881,7 @@
   global.openRootEdit = openRootEdit;
   global.saveRootEdit = saveRootEdit;
   global.suggestMetricFields = suggestMetricFields;
+  global.fillAiSuggestion = fillAiSuggestion;
   global.loadCaliberQueue = loadCaliberQueue;
   global.caliberApprove = caliberApprove;
   global.caliberReject = caliberReject;

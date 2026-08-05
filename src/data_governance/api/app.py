@@ -369,6 +369,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                     "formula": same.formula,
                     "data_sources": same.data_sources,
                     "suggestions": ["已复用同名指标的既有定义，请核查后确认"],
+                    "suggested_roots": [],
                 }
             hits = [r.root_en for r in catalog.roots if r.domain_code == domain and r.root_cn and r.root_cn in metric_cn]
             return {
@@ -384,6 +385,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 "formula": "",
                 "data_sources": "",
                 "suggestions": ["mock 模式给出词根组合提示；配置 ≥2 个 LLM Key 后可生成完整定义"],
+                "suggested_roots": [],
             }
 
         # live：单模型生成指标定义
@@ -401,13 +403,16 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
             f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
             f'"formula_cn":"公式中文说明","data_sources":"来源表","tech_caliber":"技术口径",'
-            f'"suggestions":["需人工确认的点"]}}\n\n'
+            f'"suggestions":["需人工确认的点"],'
+            f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
+            f'"root_type":"noun/verb/adj/unit/time","description":"说明"}}]}}\n\n'
             f"参考词根库（该域的既有标准词根，含同义词）：\n{root_text}\n\n"
             "词根强制复用规则（必须遵守）：\n"
             "1. metric_en 必须由词根库中的词根组合而成（使用 root_en 原词）\n"
             "2. 术语语义若已被词根库覆盖（包括其同义词），必须复用对应词根，禁止自创新词根\n"
             "3. 例如词根库已有 rent（同义词：租金/租赁/出租），则「租赁收入」必须用 rent，不能写 lease\n"
-            "4. 仅当词根库确无对应语义时，才可在 suggestions 中说明缺失的词根\n"
+            "4. suggested_roots 只列出 metric_en 用到的词根中【词根库缺失】的部分（供同步新建），"
+            "词根库已有的绝不要列；无缺失则为空数组 []\n"
             f"\n中文名：{metric_cn}\n域：{domain}"
         )
         from data_governance.llm.parallel import run_models_parallel_prompt
@@ -424,7 +429,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             for key in (
                 "metric_en", "metric_abbr", "caliber_desc", "unit", "frequency",
                 "dimensions", "scenario", "formula", "formula_cn", "data_sources",
-                "tech_caliber", "suggestions",
+                "tech_caliber", "suggestions", "suggested_roots",
             ):
                 v = data.get(key)
                 if v not in (None, "") and key not in merged:
@@ -435,6 +440,32 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         merged.setdefault("frequency", "月")
         merged.setdefault("suggestions", [])
         merged.setdefault("source", "llm_multi" if len(raws) > 1 else "llm")
+
+        # 同步补词根（G5）：suggested_roots 过滤掉词根库已有的，仅返回缺失的
+        from data_governance.roots.dictionary import find_root_for_term
+
+        missing_roots: list[dict] = []
+        for sr in merged.get("suggested_roots") or []:
+            if not isinstance(sr, dict):
+                continue
+            en = str(sr.get("root_en") or "").strip().lower()
+            cn = str(sr.get("root_cn") or "").strip()
+            if not en or not cn:
+                continue
+            if find_root_for_term(catalog.roots, en) is not None:
+                continue
+            if find_root_for_term(catalog.roots, cn) is not None:
+                continue
+            missing_roots.append(
+                {
+                    "root_cn": cn,
+                    "root_en": en,
+                    "root_abbr": str(sr.get("root_abbr") or "").strip() or en,
+                    "root_type": str(sr.get("root_type") or "noun").strip() or "noun",
+                    "description": str(sr.get("description") or "").strip(),
+                }
+            )
+        merged["suggested_roots"] = missing_roots
         return merged
 
     @app.get("/api/metrics/stats", response_model=StatsResponse)
