@@ -64,6 +64,13 @@ def main(argv: list[str] | None = None) -> int:
         help="项目根目录（默认自动查找 config/domains.csv）",
     )
 
+    mgen = metric_sub.add_parser("generate", help="批量生成派生指标（原子×修饰词）")
+    mgen.add_argument("--domain", required=True, help="主题域代码，如 sale")
+    mgen.add_argument("--atomics", required=True, help="逗号分隔的原子指标 ID，如 M_SALE_001,M_SALE_002")
+    mgen.add_argument("--modifiers", required=True, help="逗号分隔的修饰词 ID，如 T001,T002")
+    mgen.add_argument("--write", action="store_true", help="写入指标库（默认 dry-run 预览）")
+    mgen.add_argument("--base-dir", type=Path, default=None)
+
     acc_p = sub.add_parser("acceptance", help="项目验收评分（M5）")
     acc_sub = acc_p.add_subparsers(dest="acceptance_command")
     acc_run = acc_sub.add_parser("run", help="扫描数据目录并生成验收报告")
@@ -120,6 +127,24 @@ def main(argv: list[str] | None = None) -> int:
         approved = sum(1 for i in m_doc.items if i.final_decision.approved)
         pending = len(m_doc.items) - approved
         print(f"review_id={m_doc.review_id} items={len(m_doc.items)} approved={approved} pending={pending}")
+        return 0
+
+    if args.command == "metric" and args.metric_command == "generate":
+        from data_governance.generate import generate_derived_metrics
+
+        base = args.base_dir or repo_root()
+        atomics = [x.strip() for x in args.atomics.split(",") if x.strip()]
+        modifiers = [x.strip() for x in args.modifiers.split(",") if x.strip()]
+        result = generate_derived_metrics(base, atomics, modifiers, dry_run=not args.write)
+        mode = "dry-run（未写盘）" if result.dry_run else "已写入"
+        print(
+            f"generate: 生成 {len(result.generated)} 个（{mode}）"
+            f" 已存在跳过 {len(result.existing)}"
+            f" 无效原子 {len(result.invalid_atomics)}"
+            f" 无效修饰词 {len(result.invalid_modifiers)}"
+        )
+        for m in result.generated:
+            print(f"  {m.metric_id}  {m.metric_cn}  {m.metric_en}")
         return 0
 
     if args.command == "acceptance" and args.acceptance_command == "run":

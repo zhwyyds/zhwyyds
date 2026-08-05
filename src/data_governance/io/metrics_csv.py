@@ -143,6 +143,67 @@ def upsert_metric(base_dir: Path, metric_id: str, payload: dict) -> MetricRecord
     return row_to_record(updated_row)
 
 
+def next_metric_id(existing_ids: list[str], domain: str) -> str:
+    """为指定域生成下一个 M_{DOMAIN}_{seq} 指标 ID。"""
+    domain_upper = domain.upper()
+    prefix = f"M_{domain_upper}_"
+    max_seq = 0
+    for mid in existing_ids:
+        if mid.startswith(prefix):
+            tail = mid[len(prefix):]
+            if tail.isdigit():
+                max_seq = max(max_seq, int(tail))
+    return f"{prefix}{max_seq + 1:03d}"
+
+
+def batch_create_metrics(base_dir: Path, payloads: list[dict]) -> tuple[list[MetricRecord], list[str]]:
+    """批量创建指标：同一文件一次读、一次写（避免 N 次全量写盘）。
+
+    返回 (created_records, skipped_ids)；metric_id 已存在则跳过。
+    """
+    metrics_dir = base_dir / "metrics"
+    by_domain: dict[str, list[dict]] = {}
+    for p in payloads:
+        domain = str(p.get("domain_code") or "").strip().lower()
+        if not domain:
+            mid = str(p.get("metric_id") or "")
+            domain = infer_domain_from_metric_id(mid) if mid else "base"
+        by_domain.setdefault(domain, []).append(p)
+
+    created: list[MetricRecord] = []
+    skipped: list[str] = []
+    today = date.today().isoformat()
+    for domain, items in by_domain.items():
+        path = metrics_csv_path(metrics_dir, domain)
+        rows = _read_rows(path)
+        existing_ids = {r.get("metric_id") for r in rows}
+        new_rows: list[dict[str, str]] = []
+        for p in items:
+            mid = str(p.get("metric_id") or "").strip()
+            if not mid:
+                mid = next_metric_id(
+                    [r.get("metric_id") or "" for r in rows] + [n["metric_id"] for n in new_rows],
+                    domain,
+                )
+            if mid in existing_ids:
+                skipped.append(mid)
+                continue
+            row = {k: "" for k in METRIC_CSV_FIELDS}
+            row.update({k: str(v).strip() for k, v in p.items() if v is not None})
+            row["metric_id"] = mid
+            row["domain_code"] = domain
+            row.setdefault("review_status", "pending")
+            row.setdefault("source_model", "manual")
+            row["created_at"] = today
+            row["updated_at"] = today
+            new_rows.append(row)
+            existing_ids.add(mid)
+        if new_rows:
+            _write_rows(path, rows + new_rows)
+            created.extend(row_to_record(r) for r in new_rows)
+    return created, skipped
+
+
 def create_metric(base_dir: Path, payload: dict) -> MetricRecord:
     metrics_dir = base_dir / "metrics"
     metric_id = str(payload.get("metric_id") or "").strip()

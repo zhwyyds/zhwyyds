@@ -170,6 +170,28 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
 
+    @app.post("/api/metrics/batch-generate")
+    def metrics_batch_generate(body: dict) -> dict:
+        """批量生成派生指标：原子指标 × 修饰词组合，dry_run 可预览不落盘。"""
+        atomic_ids = [str(x).strip() for x in (body or {}).get("atomic_ids", []) if str(x).strip()]
+        modifier_ids = [str(x).strip() for x in (body or {}).get("modifier_ids", []) if str(x).strip()]
+        dry_run = bool((body or {}).get("dry_run", False))
+        if not atomic_ids or not modifier_ids:
+            raise HTTPException(400, "atomic_ids 与 modifier_ids 必填")
+        from data_governance.generate import generate_derived_metrics
+
+        result = generate_derived_metrics(base, atomic_ids, modifier_ids, dry_run=dry_run)
+        return {
+            "dry_run": dry_run,
+            "generated": [
+                {"metric_id": m.metric_id, "metric_cn": m.metric_cn, "metric_en": m.metric_en}
+                for m in result.generated
+            ],
+            "existing": result.existing,
+            "invalid_atomics": result.invalid_atomics,
+            "invalid_modifiers": result.invalid_modifiers,
+        }
+
     # ── 指标评审 ────────────────────────────────────────────────
 
     @app.post("/api/metrics/{metric_id}/review")
