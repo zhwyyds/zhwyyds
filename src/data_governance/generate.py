@@ -56,6 +56,21 @@ def _derive_payload(atomic: MetricRecord, mod: ModifierRecord, metric_id: str) -
     """单个原子 × 修饰词的派生指标 payload。"""
     abbr = atomic.metric_abbr or atomic.metric_en
     en = f"{mod.modifier_en}_{abbr}"
+    inherit = {
+        # 派生指标继承原子的业务属性（修饰词不改变这些维度）
+        "category_l1": atomic.category_l1,
+        "category_l2": atomic.category_l2,
+        "value_type": atomic.value_type,
+        "dimensions": atomic.dimensions,
+        "scenario": atomic.scenario,
+        "reports": atomic.reports,
+        "analysis_methods": atomic.analysis_methods,
+        "alert_rules": atomic.alert_rules,
+        "precision": atomic.precision,
+        "data_sources": atomic.data_sources,
+        "tree_node_id": atomic.tree_node_id,
+        "data_type": atomic.data_type,
+    }
     return {
         "metric_id": metric_id,
         "metric_cn": f"{mod.modifier_cn}{atomic.metric_cn}",
@@ -70,6 +85,10 @@ def _derive_payload(atomic: MetricRecord, mod: ModifierRecord, metric_id: str) -
         "owner": atomic.owner,
         "source_model": "batch_generate",
         "review_status": "pending",
+        "formula": atomic.formula,
+        "tech_caliber": atomic.tech_caliber,
+        "source_table": atomic.source_table,
+        **inherit,
     }
 
 

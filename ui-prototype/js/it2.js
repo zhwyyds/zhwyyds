@@ -300,7 +300,7 @@
         var ver = r.latest_version
           ? r.latest_version + (r.latest_released_at ? '<div class="text-xs text-muted">' + r.latest_released_at + '</div>' : '')
           : '<span class="text-muted">—</span>';
-        return '<tr>' +
+        return '<tr style="cursor:pointer;" onclick="drillDomain(\'' + esc(r.domain) + '\')" title="点击查看该域指标">' +
           '<td><strong>' + esc(r.domain) + '</strong></td>' +
           '<td>' + r.roots_count + '</td>' +
           '<td>' + r.metrics_count + '</td>' +
@@ -316,6 +316,29 @@
     });
   }
 
+  /* 治理总览下探：统计卡与域行点击跳转对应页面 */
+  function drillDomain(domain) {
+    if (global.MetricMgmt && MetricMgmt.setDomainFilter) MetricMgmt.setDomainFilter(domain);
+    switchToPage('metric-mgmt');
+  }
+
+  function bindDashboardDrilldown() {
+    var map = {
+      'dash-stat-metrics': 'metrics',
+      'dash-stat-roots': 'roots',
+      'dash-stat-domains': 'scoring'
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && !el.getAttribute('data-drill')) {
+        el.setAttribute('data-drill', '1');
+        el.style.cursor = 'pointer';
+        el.title = '点击查看明细';
+        el.addEventListener('click', function () { switchToPage(map[id]); });
+      }
+    });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -328,6 +351,7 @@
   };
 
   function init() {
+    bindDashboardDrilldown();
     if (document.querySelector('.nav-item[data-page="caliber-check"]')) {
       loadCaliberQueue(); // nav 徽标常驻
     }
@@ -346,6 +370,8 @@
   global.caliberApprove = caliberApprove;
   global.caliberReject = caliberReject;
   global.caliberBackfill = caliberBackfill;
+  global.loadDomainDashboard = loadDomainDashboard;
+  global.drillDomain = drillDomain;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

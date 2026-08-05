@@ -100,6 +100,18 @@ def test_metric_offline_and_objection(api_client: TestClient):
     assert r.json()["objection_status"] == "open"
 
 
+def test_metric_review_mock_fallback_for_unknown(api_client: TestClient):
+    """不在 mock fixture 里的指标评审应返回中性结果而非 404（问题修复回归保护）。"""
+    r = api_client.post(
+        "/api/metrics",
+        json={"metric_id": "M_SALE_999", "metric_cn": "测试指标", "metric_en": "test_metric", "domain_code": "sale"},
+    )
+    assert r.status_code == 200
+    r = api_client.post("/api/metrics/M_SALE_999/review")
+    assert r.status_code == 200
+    assert r.json().get("items")
+
+
 def test_lineage_and_modifiers(project_root: Path):
     if not (project_root / "lineage" / "sale_lineage.json").is_file():
         pytest.skip("sale_lineage.json not in repo")

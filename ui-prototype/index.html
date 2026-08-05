@@ -779,8 +779,8 @@
       <div class="modal-form-section modal-form-section--mgmt">
         <div class="modal-form-section-title">数据管理属性</div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">指标负责单位</label><input class="modal-form-input" id="newMetricOwner" placeholder="部门名称"></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号</label><input class="modal-form-input" id="newMetricVersion" placeholder="0.1.0"></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录</label><textarea class="modal-form-textarea" id="newMetricVersionHistory" placeholder="版本|日期|操作人|说明，多条换行"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号（发布自动维护）</label><input class="modal-form-input" id="newMetricVersion" disabled placeholder="发布后自动分配"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录（发布自动维护）</label><textarea class="modal-form-textarea" id="newMetricVersionHistory" disabled placeholder="发布时自动追加 v{n}|日期|操作人|说明"></textarea></div>
       </div>
       <div class="modal-warning info">&#128161; 保存后写入 <code>metrics/*_metrics.csv</code>，并刷新指标库展示</div>
     </div>
@@ -843,8 +843,8 @@
       <div class="modal-form-section modal-form-section--mgmt">
         <div class="modal-form-section-title">数据管理属性</div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">指标负责单位</label><input class="modal-form-input" id="metricEditOwner"></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号</label><input class="modal-form-input" id="metricEditVersion"></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录</label><textarea class="modal-form-textarea" id="metricEditVersionHistory" placeholder="版本|日期|操作人|说明"></textarea></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本号（发布自动维护）</label><input class="modal-form-input" id="metricEditVersion" disabled></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--mgmt">版本记录（发布自动维护）</label><textarea class="modal-form-textarea" id="metricEditVersionHistory" disabled placeholder="发布/撤销时自动追加"></textarea></div>
       </div>
     </div>
     <div class="modal-footer">

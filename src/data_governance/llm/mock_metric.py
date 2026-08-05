@@ -61,7 +61,20 @@ def metric_clients_from_fixture(
             out = []
             for m in metrics:
                 if m.metric_id not in per_metric:
-                    raise KeyError(f"{name}: no data for {m.metric_id!r}")
+                    # mock 未覆盖的指标：返回中性评审（避免 404，提示配置 live）
+                    out.append(
+                        {
+                            "metric_id": m.metric_id,
+                            "naming_score": 3,
+                            "naming_issues": ["mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审"],
+                            "caliber_score": 3,
+                            "caliber_issues": [],
+                            "conflict_risks": [],
+                            "root_match": False,
+                            "suggestions": "配置 LLM Key（config/models.csv + .env）后启用 live 多模型评审",
+                        }
+                    )
+                    continue
                 row = dict(per_metric[m.metric_id])
                 row["metric_id"] = m.metric_id
                 out.append(row)
