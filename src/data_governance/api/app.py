@@ -326,6 +326,53 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             "ai_by": result.ai_by,
         }
 
+    # ── 口径助手：核查流 ────────────────────────────────────────
+
+    @app.get("/api/caliber/pending")
+    def caliber_pending(domain: str | None = Query(default=None)) -> list[dict]:
+        """待核查口径队列（status ∈ pending/rejected）。"""
+        from data_governance.caliber.review import pending_queue
+
+        return pending_queue(base, domain)
+
+    @app.post("/api/metrics/{metric_id}/caliber/approve")
+    def caliber_approve(metric_id: str, body: dict | None = None) -> dict:
+        """批准口径草稿，触发重新评分（IT2-5）。"""
+        from data_governance.caliber.review import approve_caliber
+
+        checked_by = (body or {}).get("checked_by", "system") if body else "system"
+        try:
+            return approve_caliber(base, metric_id, checked_by=checked_by)
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+
+    @app.post("/api/metrics/{metric_id}/caliber/reject")
+    def caliber_reject(metric_id: str, body: dict | None = None) -> dict:
+        """打回口径草稿，附原因（IT2-5）。"""
+        from data_governance.caliber.review import reject_caliber
+
+        reason = ((body or {}).get("reason") or "") if body else ""
+        if not reason.strip():
+            raise HTTPException(400, "reason 必填")
+        checked_by = (body or {}).get("checked_by", "system") if body else "system"
+        try:
+            return reject_caliber(base, metric_id, reason, checked_by=checked_by)
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+
+    @app.put("/api/metrics/{metric_id}/caliber")
+    def caliber_update(metric_id: str, body: dict) -> dict:
+        """人工修改口径，改后 status=edited 并重评分（IT2-5）。"""
+        from data_governance.caliber.review import update_caliber
+
+        checked_by = (body or {}).get("checked_by", "system") if body else "system"
+        try:
+            return update_caliber(base, metric_id, body or {}, checked_by=checked_by)
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
     @app.post("/api/scores/refresh")
     def scores_refresh() -> dict:
         """全量重评分所有指标。"""
