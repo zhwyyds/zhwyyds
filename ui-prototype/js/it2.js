@@ -427,7 +427,8 @@
           '<td class="text-sm">' + esc(m.use_case) + '</td>' +
           '<td>' + esc(m.priority) + '</td>' +
           '<td><span class="badge ' + (m.enabled === 'true' ? 'badge-pass' : 'badge-neutral') + '">' + (m.enabled === 'true' ? '启用' : '停用') + '</span></td>' +
-          '<td><button class="btn btn-sm" onclick="toggleModel(\'' + esc(m.model_id) + '\',\'' + (m.enabled === 'true' ? 'false' : 'true') + '\')">' + (m.enabled === 'true' ? '停用' : '启用') + '</button> ' +
+          '<td><button class="btn btn-sm" onclick="editModel(\'' + esc(m.model_id) + '\')">编辑</button> ' +
+          '<button class="btn btn-sm" onclick="toggleModel(\'' + esc(m.model_id) + '\',\'' + (m.enabled === 'true' ? 'false' : 'true') + '\')">' + (m.enabled === 'true' ? '停用' : '启用') + '</button> ' +
           '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteModel(\'' + esc(m.model_id) + '\')">删除</button></td></tr>';
       }).join('');
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
@@ -445,22 +446,50 @@
   }
 
   function openModelModal() {
-    var cn = prompt('新增模型，格式：模型名,厂商,场景(root_generation|metric_review),优先级,启用(true|false),endpoint,key环境变量\n例：deepseek-chat,DeepSeek,metric_review,5,true,https://api.deepseek.com,DEEPSEEK_API_KEY');
-    if (!cn) return;
-    var p = cn.split(',');
+    var modal = document.getElementById('modelEditModal');
+    if (!modal) return;
+    ['modelEditId', 'modelEditName', 'modelEditProvider', 'modelEditPriority', 'modelEditEndpoint', 'modelEditKeyEnv', 'modelEditRemark'].forEach(function (id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    var uc = document.getElementById('modelEditUseCase'); if (uc) uc.value = 'metric_review';
+    var en = document.getElementById('modelEditEnabled'); if (en) en.value = 'true';
+    modal.classList.add('show');
+  }
+
+  function editModel(id) {
+    api('/api/models').then(function (rows) {
+      var m = null;
+      rows.forEach(function (r) { if (r.model_id === id) m = r; });
+      if (!m) return;
+      var map = { modelEditId: m.model_id, modelEditName: m.model_name, modelEditProvider: m.provider, modelEditPriority: m.priority, modelEditEndpoint: m.api_endpoint, modelEditKeyEnv: m.api_key_env, modelEditRemark: m.remark };
+      Object.keys(map).forEach(function (k) { var el = document.getElementById(k); if (el) el.value = map[k] || ''; });
+      var uc = document.getElementById('modelEditUseCase'); if (uc) uc.value = m.use_case || 'metric_review';
+      var en = document.getElementById('modelEditEnabled'); if (en) en.value = m.enabled === 'true' ? 'true' : 'false';
+      document.getElementById('modelEditModal').classList.add('show');
+    }).catch(function (e) { alert('加载失败: ' + e.message); });
+  }
+
+  function saveModelEdit() {
+    var id = document.getElementById('modelEditId').value.trim();
     var payload = {
-      model_name: (p[0] || '').trim(),
-      provider: (p[1] || '').trim(),
-      use_case: (p[2] || 'metric_review').trim(),
-      priority: (p[3] || '9').trim(),
-      enabled: (p[4] || 'true').trim(),
-      api_endpoint: (p[5] || '').trim(),
-      api_key_env: (p[6] || '').trim()
+      model_name: document.getElementById('modelEditName').value.trim(),
+      provider: document.getElementById('modelEditProvider').value.trim(),
+      use_case: document.getElementById('modelEditUseCase').value,
+      priority: document.getElementById('modelEditPriority').value.trim(),
+      enabled: document.getElementById('modelEditEnabled').value,
+      api_endpoint: document.getElementById('modelEditEndpoint').value.trim(),
+      api_key_env: document.getElementById('modelEditKeyEnv').value.trim(),
+      remark: document.getElementById('modelEditRemark').value.trim()
     };
     if (!payload.model_name || !payload.provider) { alert('模型名/厂商必填'); return; }
-    api('/api/models', { method: 'POST', body: JSON.stringify(payload) })
-      .then(function () { alert('模型已新增'); loadSettingsModels(); })
-      .catch(function (e) { alert('新增失败: ' + e.message); });
+    var path = id ? '/api/models/' + encodeURIComponent(id) : '/api/models';
+    api(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) })
+      .then(function () {
+        alert(id ? '模型已更新' : '模型已新增');
+        closeModal('modelEditModal');
+        loadSettingsModels();
+      })
+      .catch(function (e) { alert('保存失败: ' + e.message); });
   }
 
   /* ==================== 系统设置：修饰词管理（问题 11） ==================== */
@@ -476,7 +505,8 @@
           '<td class="text-sm"><strong>' + esc(m.modifier_cn) + '</strong><br><span class="text-mono" style="font-size:11px;">' + esc(m.modifier_id) + '</span></td>' +
           '<td class="text-mono text-sm">' + esc(m.modifier_en) + '</td>' +
           '<td><span class="badge badge-info">' + esc(m.modifier_type) + '</span></td>' +
-          '<td><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteModifier(\'' + esc(m.modifier_id) + '\')">删除</button></td></tr>';
+          '<td><button class="btn btn-sm" onclick="editModifier(\'' + esc(m.modifier_id) + '\')">编辑</button> ' +
+          '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteModifier(\'' + esc(m.modifier_id) + '\')">删除</button></td></tr>';
       }).join('');
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
   }
@@ -488,21 +518,48 @@
   }
 
   function openModifierModal() {
-    var cn = prompt('新增修饰词，格式：中文,英文,缩写,类型(time|compare|business),时间范围,说明\n例：上月,last_month,lm,time,prior_period,上一自然月');
-    if (!cn) return;
-    var p = cn.split(',');
+    var modal = document.getElementById('modifierEditModal');
+    if (!modal) return;
+    ['modifierEditId', 'modifierEditCn', 'modifierEditEn', 'modifierEditAbbr', 'modifierEditScope', 'modifierEditDesc', 'modifierEditExample'].forEach(function (id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    var t = document.getElementById('modifierEditType'); if (t) t.value = 'time';
+    modal.classList.add('show');
+  }
+
+  function editModifier(id) {
+    api('/api/modifier-rules').then(function (rows) {
+      var m = null;
+      rows.forEach(function (r) { if (r.modifier_id === id) m = r; });
+      if (!m) return;
+      var map = { modifierEditId: m.modifier_id, modifierEditCn: m.modifier_cn, modifierEditEn: m.modifier_en, modifierEditAbbr: m.modifier_abbr, modifierEditScope: m.time_scope, modifierEditDesc: m.description, modifierEditExample: m.example_metric };
+      Object.keys(map).forEach(function (k) { var el = document.getElementById(k); if (el) el.value = map[k] || ''; });
+      var t = document.getElementById('modifierEditType'); if (t) t.value = m.modifier_type || 'time';
+      document.getElementById('modifierEditModal').classList.add('show');
+    }).catch(function (e) { alert('加载失败: ' + e.message); });
+  }
+
+  function saveModifierEdit() {
+    var id = document.getElementById('modifierEditId').value.trim();
     var payload = {
-      modifier_cn: (p[0] || '').trim(),
-      modifier_en: (p[1] || '').trim(),
-      modifier_abbr: (p[2] || '').trim(),
-      modifier_type: (p[3] || 'time').trim(),
-      time_scope: (p[4] || '').trim(),
-      description: (p[5] || '').trim()
+      modifier_cn: document.getElementById('modifierEditCn').value.trim(),
+      modifier_en: document.getElementById('modifierEditEn').value.trim(),
+      modifier_abbr: document.getElementById('modifierEditAbbr').value.trim(),
+      modifier_type: document.getElementById('modifierEditType').value,
+      time_scope: document.getElementById('modifierEditScope').value.trim(),
+      description: document.getElementById('modifierEditDesc').value.trim(),
+      example_metric: document.getElementById('modifierEditExample').value.trim()
     };
     if (!payload.modifier_cn || !payload.modifier_en) { alert('中文/英文必填'); return; }
-    api('/api/modifier-rules', { method: 'POST', body: JSON.stringify(payload) })
-      .then(function () { alert('修饰词已新增'); loadSettingsModifiers(); if (DG.refresh) DG.refresh(); })
-      .catch(function (e) { alert('新增失败: ' + e.message); });
+    var path = id ? '/api/modifier-rules/' + encodeURIComponent(id) : '/api/modifier-rules';
+    api(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) })
+      .then(function () {
+        alert(id ? '修饰词已更新' : '修饰词已新增');
+        closeModal('modifierEditModal');
+        loadSettingsModifiers();
+        if (DG.refresh) DG.refresh();
+      })
+      .catch(function (e) { alert('保存失败: ' + e.message); });
   }
 
   /* ==================== 系统设置：评审记录查看（问题 12） ==================== */
@@ -644,9 +701,13 @@
   global.toggleModel = toggleModel;
   global.deleteModel = deleteModel;
   global.openModelModal = openModelModal;
+  global.editModel = editModel;
+  global.saveModelEdit = saveModelEdit;
   global.loadSettingsModifiers = loadSettingsModifiers;
   global.deleteModifier = deleteModifier;
   global.openModifierModal = openModifierModal;
+  global.editModifier = editModifier;
+  global.saveModifierEdit = saveModifierEdit;
   global.loadSettingsReviews = loadSettingsReviews;
   global.loadTableLineage = loadTableLineage;
   global.showTableLineageDetail = showTableLineageDetail;

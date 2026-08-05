@@ -2271,6 +2271,61 @@
   </div>
 </div>
 
+<!-- 模型编辑（问题 13：支持修改全部字段） -->
+<div class="modal-overlay" id="modelEditModal">
+  <div class="modal-dialog" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title">&#9881; 新增/编辑模型</span>
+      <button class="modal-close" onclick="closeModal('modelEditModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-group"><label class="modal-form-label">模型 ID</label><input class="modal-form-input" id="modelEditId" readonly placeholder="新增时自动分配"></div>
+      <div class="modal-form-group"><label class="modal-form-label">模型名 *</label><input class="modal-form-input" id="modelEditName" placeholder="如 deepseek-chat"></div>
+      <div class="modal-form-group"><label class="modal-form-label">厂商 *</label><input class="modal-form-input" id="modelEditProvider" placeholder="如 DeepSeek / OpenAI / Anthropic / Qwen"></div>
+      <div class="modal-form-group"><label class="modal-form-label">场景</label>
+        <select class="modal-form-select" id="modelEditUseCase"><option value="metric_review">metric_review</option><option value="root_generation">root_generation</option></select>
+      </div>
+      <div class="modal-form-group"><label class="modal-form-label">优先级</label><input class="modal-form-input" id="modelEditPriority" placeholder="如 5（越小越优先）"></div>
+      <div class="modal-form-group"><label class="modal-form-label">启用</label>
+        <select class="modal-form-select" id="modelEditEnabled"><option value="true">启用</option><option value="false">停用</option></select>
+      </div>
+      <div class="modal-form-group"><label class="modal-form-label">API 端点</label><input class="modal-form-input" id="modelEditEndpoint" placeholder="如 https://api.deepseek.com（OpenAI 兼容留空则默认）"></div>
+      <div class="modal-form-group"><label class="modal-form-label">Key 环境变量</label><input class="modal-form-input" id="modelEditKeyEnv" placeholder="如 DEEPSEEK_API_KEY（.env 中配置）"></div>
+      <div class="modal-form-group"><label class="modal-form-label">备注</label><input class="modal-form-input" id="modelEditRemark"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modelEditModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveModelEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修饰词编辑（问题 11：支持修改全部字段） -->
+<div class="modal-overlay" id="modifierEditModal">
+  <div class="modal-dialog" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title">&#128220; 新增/编辑修饰词</span>
+      <button class="modal-close" onclick="closeModal('modifierEditModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-group"><label class="modal-form-label">修饰词 ID</label><input class="modal-form-input" id="modifierEditId" readonly placeholder="新增时自动分配"></div>
+      <div class="modal-form-group"><label class="modal-form-label">中文 *</label><input class="modal-form-input" id="modifierEditCn" placeholder="如 上月"></div>
+      <div class="modal-form-group"><label class="modal-form-label">英文 *</label><input class="modal-form-input" id="modifierEditEn" placeholder="如 last_month（用于指标命名前缀）"></div>
+      <div class="modal-form-group"><label class="modal-form-label">缩写</label><input class="modal-form-input" id="modifierEditAbbr" placeholder="如 lm"></div>
+      <div class="modal-form-group"><label class="modal-form-label">类型</label>
+        <select class="modal-form-select" id="modifierEditType"><option value="time">time 时间</option><option value="compare">compare 对比</option><option value="business">business 维度</option></select>
+      </div>
+      <div class="modal-form-group"><label class="modal-form-label">时间范围</label><input class="modal-form-input" id="modifierEditScope" placeholder="如 prior_period / current_month"></div>
+      <div class="modal-form-group"><label class="modal-form-label">说明</label><textarea class="modal-form-textarea" id="modifierEditDesc"></textarea></div>
+      <div class="modal-form-group"><label class="modal-form-label">示例指标</label><input class="modal-form-input" id="modifierEditExample" placeholder="如 上月订单金额"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modifierEditModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveModifierEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script src="js/metric-spec.js"></script>
