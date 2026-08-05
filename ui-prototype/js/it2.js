@@ -1,0 +1,317 @@
+/* ============================================================
+ * IT2 前端：批量生成（接真接口）/ 词根维护 / 口径核查中心
+ * 依赖：governance-api.js 的 DG.fetchJson、app.js 的 switchToPage
+ * 说明：本文件在 app.js 之后加载，同名函数覆盖旧的静态演示实现
+ * ============================================================ */
+(function (global) {
+  'use strict';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function api(path, options) {
+    var base = global.DG_API_BASE || '';
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers['Content-Type'] = 'application/json';
+    return fetch(base + path, options).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) throw new Error((body && body.detail) || r.statusText);
+        return body;
+      });
+    });
+  }
+
+  /* ==================== 批量生成（IT2-1） ==================== */
+
+  function loadBatchGenOptions() {
+    api('/api/metrics').then(function (metrics) {
+      var atomics = (metrics || []).filter(function (m) { return m.metric_type === 'atomic'; });
+      var tbody = document.getElementById('batchAtomicBody');
+      if (!tbody) return;
+      if (!atomics.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">暂无原子指标，请先在「指标管理」创建</td></tr>';
+        return;
+      }
+      tbody.innerHTML = atomics.map(function (m) {
+        return '<tr><td><input type="checkbox" class="batch-atomic-cb" value="' + esc(m.metric_id) + '"></td>' +
+          '<td>' + esc(m.metric_cn) + '</td>' +
+          '<td><span class="badge badge-info">atomic</span></td>' +
+          '<td class="text-mono text-sm">' + esc(m.metric_en) + '</td></tr>';
+      }).join('');
+    }).catch(function (e) {
+      var tbody = document.getElementById('batchAtomicBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">加载失败: ' + esc(e.message) + '</td></tr>';
+    });
+
+    api('/api/modifier-rules').then(function (mods) {
+      var wrap = document.getElementById('batchModifierWrap');
+      if (!wrap) return;
+      if (!mods || !mods.length) { wrap.innerHTML = '<div class="text-sm text-muted">无修饰词配置</div>'; return; }
+      var groups = {};
+      mods.forEach(function (m) { (groups[m.modifier_type] || (groups[m.modifier_type] = [])).push(m); });
+      var cn = { time: '时间修饰词', compare: '对比修饰词', business: '业务维度修饰词' };
+      var html = '';
+      Object.keys(groups).forEach(function (g) {
+        html += '<div class="text-sm text-muted mb-2">' + (cn[g] || g) + '</div>' +
+          '<div class="checkbox-grid mb-3">' +
+          groups[g].map(function (m) {
+            return '<div class="checkbox-item checked" data-mid="' + esc(m.modifier_id) + '" onclick="toggleBatchModifier(this)">' +
+              '<div class="checkbox-box"></div> ' + esc(m.modifier_cn) + ' (' + esc(m.modifier_en) + ')</div>';
+          }).join('') + '</div>';
+      });
+      wrap.innerHTML = html;
+    }).catch(function () { /* 忽略 */ });
+  }
+
+  function toggleBatchModifier(el) { el.classList.toggle('checked'); }
+
+  function batchSelection() {
+    return {
+      atomic_ids: Array.prototype.map.call(document.querySelectorAll('.batch-atomic-cb:checked'), function (cb) { return cb.value; }),
+      modifier_ids: Array.prototype.map.call(document.querySelectorAll('#batchModifierWrap .checkbox-item.checked'), function (el) { return el.getAttribute('data-mid'); })
+    };
+  }
+
+  function renderBatchPreview(list, tag) {
+    var table = document.getElementById('batchPreviewTable');
+    if (!table) return;
+    var tbody = table.querySelector('tbody');
+    if (!list || !list.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-muted" style="padding:12px;">无生成结果</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function (m) {
+      return '<tr><td>' + esc(tag) + '</td>' +
+        '<td class="text-mono text-sm">' + esc(m.metric_en) + '</td>' +
+        '<td class="text-mono text-sm">' + esc(m.metric_en) + '</td>' +
+        '<td class="text-sm">' + esc(m.metric_cn) + '</td>' +
+        '<td class="text-sm text-muted">—</td>' +
+        '<td><span class="badge badge-info">待评审</span></td></tr>';
+    }).join('');
+  }
+
+  function refreshBatchPreview() {
+    var sel = batchSelection();
+    if (!sel.atomic_ids.length || !sel.modifier_ids.length) {
+      var tbody = document.querySelector('#batchPreviewTable tbody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-muted" style="padding:12px;">请先选择原子指标与修饰词</td></tr>';
+      return;
+    }
+    api('/api/metrics/batch-generate', { method: 'POST', body: JSON.stringify({ atomic_ids: sel.atomic_ids, modifier_ids: sel.modifier_ids, dry_run: true }) })
+      .then(function (res) { renderBatchPreview(res.generated, '预览'); })
+      .catch(function (e) { alert('预览失败: ' + e.message); });
+  }
+
+  function batchGenerate(ev) {
+    var btn = ev && ev.currentTarget ? ev.currentTarget : null;
+    var sel = batchSelection();
+    if (!sel.atomic_ids.length || !sel.modifier_ids.length) { alert('请先选择原子指标与修饰词'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 正在生成...'; }
+    api('/api/metrics/batch-generate', { method: 'POST', body: JSON.stringify(sel) })
+      .then(function (res) {
+        renderBatchPreview(res.generated, '✅ 已生成');
+        var msg = '生成 ' + res.generated.length + ' 个派生指标';
+        if (res.existing.length) msg += '，跳过已存在 ' + res.existing.length + ' 个';
+        if (res.invalid_atomics.length || res.invalid_modifiers.length) msg += '，无效 ' + (res.invalid_atomics.length + res.invalid_modifiers.length) + ' 个';
+        alert(msg);
+        if (global.DG && DG.refresh) DG.refresh();
+      })
+      .catch(function (e) { alert('生成失败: ' + e.message); })
+      .finally(function () {
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ 一键生成'; }
+      });
+  }
+
+  /* ==================== 词根维护（IT2-2） ==================== */
+
+  function loadRoots() {
+    api('/api/roots').then(function (rows) {
+      var tbody = document.getElementById('roots-table-body');
+      if (!tbody) return;
+      if (!rows || !rows.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-sm text-muted" style="padding:16px;">暂无词根</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function (r) {
+        return '<tr>' +
+          '<td class="text-mono text-sm">' + esc(r.root_id) + '</td>' +
+          '<td>' + esc(r.root_cn) + '</td>' +
+          '<td class="text-mono">' + esc(r.root_en) + '</td>' +
+          '<td class="text-mono">' + esc(r.root_abbr) + '</td>' +
+          '<td><span class="badge badge-neutral">' + esc(r.root_type) + '</span></td>' +
+          '<td><span class="badge badge-info">' + esc(r.source_model) + '</span></td>' +
+          '<td>—</td>' +
+          '<td><span class="badge ' + (r.review_status === 'approved' ? 'badge-pass' : 'badge-warn') + '">' + esc(r.review_status) + '</span></td>' +
+          '<td><button class="btn btn-sm" onclick="openRootEdit(\'' + esc(r.root_id) + '\')">编辑</button></td>' +
+          '</tr>';
+      }).join('');
+    }).catch(function (e) { /* 静默 */ });
+  }
+
+  function openRootCreateModal() {
+    var m = document.getElementById('rootCreateModal');
+    if (m) m.classList.add('show');
+  }
+
+  function saveRootCreate() {
+    var payload = {
+      root_cn: document.getElementById('rootFormCn').value.trim(),
+      root_en: document.getElementById('rootFormEn').value.trim(),
+      root_abbr: document.getElementById('rootFormAbbr').value.trim(),
+      root_type: document.getElementById('rootFormType').value,
+      domain_code: document.getElementById('rootFormDomain').value.trim(),
+      description: document.getElementById('rootFormDesc').value.trim()
+    };
+    if (!payload.root_cn || !payload.root_en || !payload.domain_code) { alert('中文名 / 英文名 / 主题域 必填'); return; }
+    api('/api/roots', { method: 'POST', body: JSON.stringify(payload) })
+      .then(function () {
+        alert('词根已创建');
+        closeModal('rootCreateModal');
+        ['rootFormCn', 'rootFormEn', 'rootFormAbbr', 'rootFormDomain', 'rootFormDesc'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        loadRoots();
+        if (global.DG && DG.refresh) DG.refresh();
+      })
+      .catch(function (e) { alert('创建失败: ' + e.message); });
+  }
+
+  function openRootEdit(id) {
+    var rows = global.__DG_ROOTS__ || [];
+    var r = null;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].root_id === id) { r = rows[i]; break; } }
+    if (!r) return;
+    document.getElementById('rootEditId').value = r.root_id;
+    document.getElementById('rootEditCn').value = r.root_cn;
+    document.getElementById('rootEditEn').value = r.root_en;
+    document.getElementById('rootEditAbbr').value = r.root_abbr;
+    document.getElementById('rootEditType').value = r.root_type || 'noun';
+    document.getElementById('rootEditDesc').value = r.description || '';
+    closeModal('rootCreateModal');
+    var m = document.getElementById('rootEditModal');
+    if (m) m.classList.add('show');
+  }
+
+  function saveRootEdit() {
+    var id = document.getElementById('rootEditId').value.trim();
+    if (!id) return;
+    var payload = {
+      root_cn: document.getElementById('rootEditCn').value.trim(),
+      root_en: document.getElementById('rootEditEn').value.trim(),
+      root_abbr: document.getElementById('rootEditAbbr').value.trim(),
+      root_type: document.getElementById('rootEditType').value,
+      description: document.getElementById('rootEditDesc').value.trim()
+    };
+    if (!payload.root_cn || !payload.root_en) { alert('中文名 / 英文名 必填'); return; }
+    api('/api/roots/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(payload) })
+      .then(function () {
+        alert('已保存');
+        closeModal('rootEditModal');
+        loadRoots();
+        if (global.DG && DG.refresh) DG.refresh();
+      })
+      .catch(function (e) { alert('保存失败: ' + e.message); });
+  }
+
+  /* ==================== 口径核查中心（IT2-5/IT2-6） ==================== */
+
+  function statusBadge(s) {
+    var map = { pending: 'badge-warn', rejected: 'badge-danger', approved: 'badge-pass', edited: 'badge-info' };
+    return '<span class="badge ' + (map[s] || 'badge-neutral') + '">' + esc(s || '—') + '</span>';
+  }
+
+  function loadCaliberQueue() {
+    var tbody = document.getElementById('caliberQueueBody');
+    var count = document.getElementById('caliberQueueCount');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>';
+    api('/api/caliber/pending').then(function (rows) {
+      rows = rows || [];
+      if (count) count.textContent = '共 ' + rows.length + ' 条';
+      var badge = document.getElementById('nav-badge-caliber-check');
+      if (badge) badge.textContent = rows.length || '—';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">🎉 没有待核查的口径</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function (r) {
+        var c = r.caliber || {};
+        return '<tr>' +
+          '<td class="text-sm"><strong>' + esc(r.metric_cn) + '</strong><br><span class="text-mono" style="font-size:11px;">' + esc(r.metric_id) + '</span></td>' +
+          '<td>' + statusBadge(r.caliber_status) + (r.caliber_reject_reason ? '<div class="text-xs" style="color:var(--danger)">' + esc(r.caliber_reject_reason) + '</div>' : '') + '</td>' +
+          '<td class="text-sm">' + esc(c.caliber_business || '—') + '</td>' +
+          '<td class="text-sm">' + esc(c.caliber_period || '—') + '</td>' +
+          '<td class="text-sm">' + esc(c.caliber_boundary || '—') + '</td>' +
+          '<td class="text-xs text-muted">' + esc(r.caliber_ai_by || '—') + '</td>' +
+          '<td>' +
+          '<button class="btn btn-sm btn-primary" onclick="caliberApprove(\'' + esc(r.metric_id) + '\')">批准</button> ' +
+          '<button class="btn btn-sm" onclick="caliberReject(\'' + esc(r.metric_id) + '\')">打回</button>' +
+          '</td></tr>';
+      }).join('');
+    }).catch(function (e) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">加载失败: ' + esc(e.message) + '</td></tr>';
+    });
+  }
+
+  function caliberApprove(id) {
+    if (!confirm('批准该指标的口径草稿？将触发重新评分。')) return;
+    api('/api/metrics/' + encodeURIComponent(id) + '/caliber/approve', { method: 'POST', body: JSON.stringify({ checked_by: 'console' }) })
+      .then(function () { alert('已批准'); loadCaliberQueue(); if (global.DG && DG.refresh) DG.refresh(); })
+      .catch(function (e) { alert('失败: ' + e.message); });
+  }
+
+  function caliberReject(id) {
+    var reason = prompt('打回原因（必填）：');
+    if (reason === null) return;
+    api('/api/metrics/' + encodeURIComponent(id) + '/caliber/reject', { method: 'POST', body: JSON.stringify({ reason: reason, checked_by: 'console' }) })
+      .then(function () { alert('已打回'); loadCaliberQueue(); })
+      .catch(function (e) { alert('失败: ' + e.message); });
+  }
+
+  function caliberBackfill() {
+    if (!confirm('对未起草口径的存量指标批量起草（mock/live 取决于配置）？')) return;
+    api('/api/caliber/backfill', { method: 'POST', body: JSON.stringify({}) })
+      .then(function (res) { alert('补全完成：起草 ' + res.drafted + ' 个'); loadCaliberQueue(); })
+      .catch(function (e) { alert('补全失败: ' + e.message); });
+  }
+
+  /* ==================== 初始化 & 页面切换联动 ==================== */
+
+  var origSwitch = global.switchToPage;
+  global.switchToPage = function (target) {
+    if (origSwitch) origSwitch(target);
+    if (target === 'batch-gen') loadBatchGenOptions();
+    if (target === 'roots') loadRoots();
+    if (target === 'caliber-check') loadCaliberQueue();
+  };
+
+  function init() {
+    if (document.querySelector('.nav-item[data-page="caliber-check"]')) {
+      loadCaliberQueue(); // nav 徽标常驻
+    }
+  }
+
+  global.loadBatchGenOptions = loadBatchGenOptions;
+  global.toggleBatchModifier = toggleBatchModifier;
+  global.refreshBatchPreview = refreshBatchPreview;
+  global.batchGenerate = batchGenerate;
+  global.loadRoots = loadRoots;
+  global.openRootCreateModal = openRootCreateModal;
+  global.saveRootCreate = saveRootCreate;
+  global.openRootEdit = openRootEdit;
+  global.saveRootEdit = saveRootEdit;
+  global.loadCaliberQueue = loadCaliberQueue;
+  global.caliberApprove = caliberApprove;
+  global.caliberReject = caliberReject;
+  global.caliberBackfill = caliberBackfill;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})(window);

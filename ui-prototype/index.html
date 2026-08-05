@@ -66,6 +66,10 @@
       <div class="nav-item" data-page="scoring">
         <span class="nav-icon">⭐</span> 评分看板
       </div>
+      <div class="nav-item" data-page="caliber-check">
+        <span class="nav-icon">✅</span> 口径核查
+        <span class="nav-badge danger" id="nav-badge-caliber-check">—</span>
+      </div>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -853,7 +857,7 @@
     <input class="input" placeholder="搜索词根..." style="flex:1;min-width:auto;">
     <button class="btn btn-sm">📥 批量导入</button>
     <button class="btn btn-sm">🤖 AI生成</button>
-    <button class="btn btn-sm btn-primary">+ 新增词根</button>
+    <button class="btn btn-sm btn-primary" onclick="openRootCreateModal()">+ 新增词根</button>
   </div>
 
   <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
@@ -1022,32 +1026,9 @@
           <input class="input" placeholder="搜索..." style="flex:1;min-width:auto;">
         </div>
         <table>
-          <thead><tr><th></th><th>指标</th><th>数据类型</th><th>英文名</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><input type="checkbox" checked></td>
-              <td>订单金额</td>
-              <td><span class="badge badge-info">amt</span></td>
-              <td class="text-mono text-sm">order_amount</td>
-            </tr>
-            <tr>
-              <td><input type="checkbox" checked></td>
-              <td>实付订单金额</td>
-              <td><span class="badge badge-info">amt</span></td>
-              <td class="text-mono text-sm">paid_order_amount</td>
-            </tr>
-            <tr>
-              <td><input type="checkbox"></td>
-              <td>订单数</td>
-              <td><span class="badge badge-neutral">cnt</span></td>
-              <td class="text-mono text-sm">order_count</td>
-            </tr>
-            <tr>
-              <td><input type="checkbox"></td>
-              <td>退款金额</td>
-              <td><span class="badge badge-info">amt</span></td>
-              <td class="text-mono text-sm">refund_amount</td>
-            </tr>
+          <thead><tr><th></th><th>指标</th><th>类型</th><th>英文名</th></tr></thead>
+          <tbody id="batchAtomicBody">
+            <tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">加载中…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1057,39 +1038,10 @@
     <div class="card">
       <div class="card-header">
         <div class="card-title">Step 2 · 修饰词选择</div>
-        <span class="text-sm text-muted">数据类型: amt → 自动过滤</span>
+        <span class="text-sm text-muted">点击勾选/取消</span>
       </div>
-      <div class="card-body">
-        <div class="text-sm text-muted mb-2">时间修饰词</div>
-        <div class="checkbox-grid mb-3" id="batchModifierList">
-          <div class="checkbox-item checked"><div class="checkbox-box"></div> 本年 (ytd)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 累计 (cum)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 年累计 (ycum)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 上月 (lm)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 上年同期 (lysp)</div>
-          <div class="checkbox-item disabled"><div class="checkbox-box"></div> 日均 (day_avg)</div>
-        </div>
-
-        <div class="text-sm text-muted mb-2">对比修饰词</div>
-        <div class="checkbox-grid mb-3">
-          <div class="checkbox-item checked"><div class="checkbox-box"></div> 环比 (mom)</div>
-          <div class="checkbox-item checked"><div class="checkbox-box"></div> 同比 (yoy)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 环比差值 (mom_d)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 同比差值 (yoy_d)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 达成率 (ach_rte)</div>
-        </div>
-
-        <div class="text-sm text-muted mb-2">业务维度修饰词</div>
-        <div class="checkbox-grid">
-          <div class="checkbox-item"><div class="checkbox-box"></div> 按商场 (by_mall)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 按商户 (by_ptnr)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 按品类 (by_cat)</div>
-          <div class="checkbox-item"><div class="checkbox-box"></div> 按楼层 (by_flr)</div>
-        </div>
-
-        <div class="callout warning mt-4" style="margin-bottom:0;">
-          ⚠️ <div><strong>日均 (day_avg)</strong> 已被自动禁用 — 金额型指标不适用日均统计</div>
-        </div>
+      <div class="card-body" id="batchModifierWrap">
+        <div class="text-sm text-muted" style="padding:12px;">加载中…</div>
       </div>
     </div>
   </div>
@@ -2099,6 +2051,42 @@
   </div>
 </div>
 
+<!-- 口径核查中心（IT2-5/IT2-6） -->
+<div class="page" id="page-caliber-check">
+  <div class="callout info">
+    💡 <div><strong>口径核查中心：</strong>AI 多模型起草的结构化口径在此待人工核查——批准后自动重新评分，打回需附原因；发布门禁会拦截未核查口径的指标。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">待核查队列</div>
+      <span class="text-sm text-muted" id="caliberQueueCount">—</span>
+      <div class="flex gap-2">
+        <button class="btn btn-sm" onclick="loadCaliberQueue()">&#128260; 刷新</button>
+        <button class="btn btn-sm btn-primary" onclick="caliberBackfill()">&#9889; 存量补全</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>指标</th>
+            <th>状态</th>
+            <th>业务定义（AI 推荐）</th>
+            <th>统计周期</th>
+            <th>边界条件</th>
+            <th>起草模型</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="caliberQueueBody">
+          <tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -2138,6 +2126,30 @@
   </div>
 </div>
 
+<!-- 新增词根（IT2-2） -->
+<div class="modal-overlay" id="rootCreateModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <span class="modal-title">&#10133; 新增词根</span>
+      <button class="modal-close" onclick="closeModal('rootCreateModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-group"><label class="modal-form-label">主题域 *</label><input class="modal-form-input" id="rootFormDomain" placeholder="如 sale"></div>
+      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label><input class="modal-form-input" id="rootFormCn"></div>
+      <div class="modal-form-group"><label class="modal-form-label">英文词根 *</label><input class="modal-form-input" id="rootFormEn" placeholder="如 amount"></div>
+      <div class="modal-form-group"><label class="modal-form-label">缩写</label><input class="modal-form-input" id="rootFormAbbr" placeholder="如 amt（留空默认=英文名）" maxlength="12"></div>
+      <div class="modal-form-group"><label class="modal-form-label">类型</label>
+        <select class="modal-form-select" id="rootFormType"><option value="noun">noun</option><option value="verb">verb</option><option value="adj">adj</option><option value="unit">unit</option><option value="time">time</option></select>
+      </div>
+      <div class="modal-form-group"><label class="modal-form-label">说明</label><textarea class="modal-form-textarea" id="rootFormDesc"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('rootCreateModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveRootCreate()">创建</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script src="js/metric-spec.js"></script>
@@ -2148,6 +2160,7 @@
 <script src="js/metric-library.js"></script>
 <script src="js/metric-score.js"></script>
 <script src="js/app.js"></script>
+<script src="js/it2.js"></script>
 
 </body>
 </html>
