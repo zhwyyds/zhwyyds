@@ -2206,6 +2206,25 @@
       </table>
     </div>
   </div>
+
+  <!-- AI 提示词查看 -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <div class="card-title">AI 提示词查看</div>
+      <div class="flex gap-2">
+        <select class="select" id="promptTypeSelect" style="width:auto;">
+          <option value="metric_review">指标评审</option>
+          <option value="root_generation">词根生成</option>
+          <option value="caliber_draft">口径起草</option>
+        </select>
+        <button class="btn btn-sm" onclick="viewPrompt()">&#128269; 查看</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="text-sm text-muted mb-2" id="promptMeta">选择类型后点击「查看」，展示给 AI 的提示词模板（位置见标注）</div>
+      <pre id="promptPreview" class="text-sm" style="white-space:pre-wrap;max-height:320px;overflow:auto;background:var(--bg);padding:12px;border-radius:8px;">—</pre>
+    </div>
+  </div>
 </div>
 
   </div><!-- /content -->

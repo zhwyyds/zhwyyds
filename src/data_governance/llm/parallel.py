@@ -69,7 +69,7 @@ def run_models_parallel_prompt(
             except Exception as exc:
                 errors.append(f"{client.model_name}: {exc}")
     results.sort(key=lambda x: x[0])
-    if len(results) < 2:
+    if len(results) < 1:
         detail = "; ".join(errors) if errors else "no successful responses"
-        raise RuntimeError(f"M3 needs at least 2 model responses for comparison; got {len(results)}. {detail}")
+        raise RuntimeError(f"M3 needs at least 1 model response; got {len(results)}. {detail}")
     return results

@@ -114,6 +114,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 "Anthropic": bool(provider_api_key("Anthropic")),
                 "Qwen": bool(provider_api_key("Qwen")),
                 "ZhipuAI": bool(provider_api_key("ZhipuAI")),
+                "DeepSeek": bool(provider_api_key("DeepSeek")),
             },
             "dotenv_present": loaded["dotenv"],
             "secrets_file_present": loaded["secrets_json"],
@@ -716,6 +717,43 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             payloads.append({k: v for k, v in row.items() if v is not None})
         created, skipped = batch_create_metrics(base, payloads)
         return {"created": len(created), "skipped": len(skipped), "payload_rows": len(payloads)}
+
+    @app.get("/api/prompts/{prompt_type}")
+    def get_prompt(prompt_type: str) -> dict:
+        """查看 AI 提示词模板（评审/词根/口径），便于审查与调优（用户需求）。"""
+        if prompt_type == "metric_review":
+            from data_governance.prompts.metric_review import METRIC_REVIEW_TEMPLATE
+
+            return {
+                "type": "metric_review",
+                "name": "指标评审提示词",
+                "location": "src/data_governance/prompts/metric_review.py",
+                "template": METRIC_REVIEW_TEMPLATE,
+            }
+        if prompt_type == "root_generation":
+            from data_governance.prompts.root_generation import ROOT_GENERATION_TEMPLATE
+
+            return {
+                "type": "root_generation",
+                "name": "词根生成提示词",
+                "location": "src/data_governance/prompts/root_generation.py",
+                "template": ROOT_GENERATION_TEMPLATE,
+            }
+        if prompt_type == "caliber_draft":
+
+            return {
+                "type": "caliber_draft",
+                "name": "口径起草提示词（动态构建）",
+                "location": "src/data_governance/caliber/draft.py build_prompt()",
+                "template": (
+                    "（口径起草提示词为动态函数，基于单个指标构建。)\n"
+                    "核心要求：输入含糊指标定义，输出结构化 JSON：\n"
+                    "caliber_business / caliber_formula / caliber_period / "
+                    "caliber_granularity / caliber_boundary / caliber_source / suggestions\n"
+                    "详见 build_prompt() 源码或调用口径起草接口查看完整内容。"
+                ),
+            }
+        raise HTTPException(404, f"unknown prompt type: {prompt_type}")
 
     @app.get("/api/metric-tree")
     def get_metric_tree() -> dict:

@@ -109,7 +109,8 @@ def clients_from_fixture(
 
         return MockLLMClient(name, responder=responder)
 
-    for name in model_names:
-        if name in fixture:  # mock 只对 fixture 定义的模型出稿（新增模型仅 live 生效）
-            clients.append(make_responder(name))
+    # mock 只对 fixture 定义的模型出稿；若启用模型与 fixture 无交集，回退用 fixture 全部模型
+    names = [n for n in model_names if n in fixture] or list(fixture.keys())
+    for name in names:
+        clients.append(make_responder(name))
     return clients

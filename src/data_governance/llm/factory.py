@@ -46,7 +46,8 @@ def build_live_client(cfg: ModelConfig) -> PromptLLM | None:
     return None
 
 
-def build_live_clients(configs: list[ModelConfig], *, min_clients: int = 2) -> list[PromptLLM]:
+def build_live_clients(configs: list[ModelConfig], *, min_clients: int = 1) -> list[PromptLLM]:
+    """构建 live 客户端。min_clients=1 支持单模型模式（用户仅有 1 家 Key 时）；≥2 家时并行比对。"""
     clients: list[PromptLLM] = []
     for cfg in configs:
         c = build_live_client(cfg)

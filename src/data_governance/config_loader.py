@@ -65,7 +65,7 @@ def load_models(
     use_case: str | None = None,
     *,
     config_path: Path | None = None,
-    min_enabled: int = 2,
+    min_enabled: int = 1,
 ) -> list[ModelConfig]:
     path = config_path or (repo_root() / "config" / "models.csv")
     if not path.is_file():

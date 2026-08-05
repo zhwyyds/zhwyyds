@@ -654,6 +654,21 @@
     }).catch(function () { /* 忽略 */ });
   }
 
+  /* ==================== AI 提示词查看 ==================== */
+
+  function viewPrompt() {
+    var sel = document.getElementById('promptTypeSelect');
+    var ptype = sel ? sel.value : 'metric_review';
+    var pre = document.getElementById('promptPreview');
+    var meta = document.getElementById('promptMeta');
+    if (!pre) return;
+    pre.textContent = '加载中…';
+    api('/api/prompts/' + encodeURIComponent(ptype)).then(function (r) {
+      if (meta) meta.textContent = r.name + ' ｜ 位置: ' + r.location;
+      pre.textContent = r.template || '（无模板）';
+    }).catch(function (e) { pre.textContent = '加载失败: ' + e.message; });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -711,6 +726,7 @@
   global.loadSettingsReviews = loadSettingsReviews;
   global.loadTableLineage = loadTableLineage;
   global.showTableLineageDetail = showTableLineageDetail;
+  global.viewPrompt = viewPrompt;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

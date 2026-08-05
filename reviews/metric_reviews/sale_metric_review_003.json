@@ -1,0 +1,73 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-05T13:54:28+08:00",
+  "models_used": [
+    "gpt-4o",
+    "claude-3.5-sonnet",
+    "qwen-plus",
+    "deepseek-chat"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_003",
+      "metric_en": "mtd_ord_cnt",
+      "model_reviews": [
+        {
+          "model": "claude-3.5-sonnet",
+          "naming_score": 3,
+          "naming_issues": [
+            "mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审"
+          ],
+          "caliber_score": 3,
+          "caliber_issues": [],
+          "conflict_risks": [],
+          "root_match": false,
+          "suggestions": "配置 LLM Key（config/models.csv + .env）后启用 live 多模型评审"
+        },
+        {
+          "model": "gpt-4o",
+          "naming_score": 3,
+          "naming_issues": [
+            "mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审"
+          ],
+          "caliber_score": 3,
+          "caliber_issues": [],
+          "conflict_risks": [],
+          "root_match": false,
+          "suggestions": "配置 LLM Key（config/models.csv + .env）后启用 live 多模型评审"
+        },
+        {
+          "model": "qwen-plus",
+          "naming_score": 3,
+          "naming_issues": [
+            "mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审"
+          ],
+          "caliber_score": 3,
+          "caliber_issues": [],
+          "conflict_risks": [],
+          "root_match": false,
+          "suggestions": "配置 LLM Key（config/models.csv + .env）后启用 live 多模型评审"
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 3.0,
+        "caliber_score_avg": 3.0,
+        "consistent_issues": [
+          "mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审"
+        ],
+        "conflict_detected": false
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "needs_revision",
+        "action_items": [
+          "mock 模式未覆盖该指标，建议配置 ≥2 个模型 Key 后使用 live 评审",
+          "配置 LLM Key（config/models.csv + .env）后启用 live 多模型评审"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}

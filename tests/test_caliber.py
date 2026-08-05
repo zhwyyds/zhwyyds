@@ -51,7 +51,7 @@ def test_draft_caliber_mock_produces_draft(mini_project: Path):
     assert result.draft.get("caliber_period")
     assert isinstance(result.diff_summary, list)
     assert isinstance(result.high_risk, bool)
-    assert len(result.by_model) >= 2  # 至少两个模型出稿
+    assert len(result.by_model) >= 1  # 单模型模式（仅 DeepSeek 启用时也成立）
     assert "consensus" in result.ai_by or "divergent" in result.ai_by
 
 

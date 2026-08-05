@@ -31,11 +31,13 @@ def provider_api_key(provider: str, *, env_var: str | None = None) -> str | None
             or os.environ.get("DATA_GOV_QWEN_API_KEY")
             or os.environ.get("DATA_GOV_DASHSCOPE_API_KEY")
         )
+    if p in ("deepseek",):
+        return os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("DATA_GOV_DEEPSEEK_API_KEY")
     return os.environ.get(f"DATA_GOV_{p.upper()}_API_KEY") if p else None
 
 
 def any_live_provider_configured() -> bool:
-    return any(provider_api_key(p) for p in ("OpenAI", "Anthropic", "Qwen", "ZhipuAI"))
+    return any(provider_api_key(p) for p in ("OpenAI", "Anthropic", "Qwen", "ZhipuAI", "DeepSeek"))
 
 
 def resolve_use_mock(explicit: bool | None = None) -> bool:

@@ -1,6 +1,25 @@
+import os
 from pathlib import Path
 
 import pytest
+
+_LLM_ENV_KEYS = (
+    "DEEPSEEK_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "DASHSCOPE_API_KEY",
+    "ZHIPUAI_API_KEY",
+    "DATA_GOV_LLM_MODE",
+)
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_llm_env() -> None:
+    """create_app/bootstrap 会把 .env 的真实 key 写入 os.environ，必须每个测试后清理，
+    否则后续测试的 resolve_use_mock 会误判为 live 并真调外部 API。"""
+    yield
+    for key in _LLM_ENV_KEYS:
+        os.environ.pop(key, None)
 
 
 @pytest.fixture
