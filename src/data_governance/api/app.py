@@ -334,23 +334,35 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
             f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
             f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
-            f'"data_sources":"来源表","suggestions":["需人工确认的点"]}}\n中文名：{metric_cn}\n域：{domain}'
+            f'"formula_cn":"公式中文说明","data_sources":"来源表","tech_caliber":"技术口径",'
+            f'"suggestions":["需人工确认的点"]}}\n中文名：{metric_cn}\n域：{domain}'
         )
-        data = parse_response(clients[0].complete(prompt))
-        return {
-            "source": "llm",
-            "metric_cn": metric_cn,
-            "metric_en": data.get("metric_en", ""),
-            "metric_abbr": data.get("metric_abbr", ""),
-            "caliber_desc": data.get("caliber_desc", desc),
-            "unit": data.get("unit", ""),
-            "frequency": data.get("frequency", "月"),
-            "dimensions": data.get("dimensions", ""),
-            "scenario": data.get("scenario", ""),
-            "formula": data.get("formula", ""),
-            "data_sources": data.get("data_sources", ""),
-            "suggestions": data.get("suggestions", []),
-        }
+        from data_governance.llm.parallel import run_models_parallel_prompt
+
+        raws = run_models_parallel_prompt(clients, prompt, cache_base_dir=base)
+        merged: dict = {}
+        for _mname, raw in raws:
+            try:
+                data = parse_response(raw)
+            except Exception:
+                continue
+            if not isinstance(data, dict):
+                continue
+            for key in (
+                "metric_en", "metric_abbr", "caliber_desc", "unit", "frequency",
+                "dimensions", "scenario", "formula", "formula_cn", "data_sources",
+                "tech_caliber", "suggestions",
+            ):
+                v = data.get(key)
+                if v not in (None, "") and key not in merged:
+                    merged[key] = v
+        if not merged.get("metric_en"):
+            raise HTTPException(500, "模型未返回有效的指标定义，请重试或检查 Key 余额")
+        merged.setdefault("metric_cn", metric_cn)
+        merged.setdefault("frequency", "月")
+        merged.setdefault("suggestions", [])
+        merged.setdefault("source", "llm_multi" if len(raws) > 1 else "llm")
+        return merged
 
     @app.get("/api/metrics/stats", response_model=StatsResponse)
     def metrics_statistics() -> StatsResponse:

@@ -297,14 +297,18 @@
         newMetricEn: r.metric_en,
         newMetricDesc: r.caliber_desc,
         newMetricFormulaLogic: r.formula,
+        newMetricFormulaCn: r.formula_cn,
         newMetricUnit: r.unit,
-        newMetricFrequency: r.frequency
+        newMetricFrequency: r.frequency,
+        newMetricSourceTable: r.data_sources,
+        newMetricTechCaliber: r.tech_caliber
       };
       Object.keys(map).forEach(function (id) {
         var el = document.getElementById(id);
         if (el && map[id]) el.value = map[id];
       });
-      alert('🤖 AI 建议已生成（来源: ' + r.source + '）' + ((r.suggestions || []).length ? '\n提示: ' + r.suggestions.join('；') : '') + '\n请核查后保存。');
+      var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || r.source;
+      alert('🤖 AI 建议已生成（来源: ' + src + '）' + ((r.suggestions || []).length ? '\n提示: ' + r.suggestions.join('；') : '') + '\n请核查后保存。');
     }).catch(function (e) { alert('AI 辅助失败: ' + e.message); });
   }
 
