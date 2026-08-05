@@ -14,6 +14,7 @@ from data_governance.pipeline.metric_review import MetricReviewPipeline
 from data_governance.pipeline.root_generation import RootGenerationPipeline
 from data_governance.schemas.metrics import MetricReviewRequest
 from data_governance.schemas.roots import RootGenerationRequest
+from data_governance.validation import validate_project
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,6 +80,9 @@ def main(argv: list[str] | None = None) -> int:
     serve_p.add_argument("--host", default="127.0.0.1")
     serve_p.add_argument("--port", type=int, default=8765)
     serve_p.add_argument("--base-dir", type=Path, default=None)
+
+    val_p = sub.add_parser("validate", help="数据自检：扫描 roots/metrics/lineage 完整性")
+    val_p.add_argument("--base-dir", type=Path, default=None)
 
     args = parser.parse_args(argv)
     if args.command == "version":
@@ -158,6 +162,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Serving {base} at http://{args.host}:{args.port}/ (docs: /docs)")
         uvicorn.run(api, host=args.host, port=args.port, log_level="info")
         return 0
+
+    if args.command == "validate":
+        base = args.base_dir or repo_root()
+        issues = validate_project(base)
+        if not issues:
+            print("validate: OK — 未发现问题")
+            return 0
+        for i in issues:
+            print(f"[{i.severity.upper():7}] {i.file}: {i.message}")
+        errors = sum(1 for i in issues if i.severity == "error")
+        print(f"validate: 共 {len(issues)} 个问题（{errors} error / {len(issues) - errors} warning）")
+        return 1 if errors else 0
 
     parser.print_help()
     return 0
