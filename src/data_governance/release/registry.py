@@ -22,6 +22,10 @@ class ReleaseRecord:
     note: str
     released_by: str
     metric_ids: list[str] = field(default_factory=list)
+    status: str = "active"  # active | revoked
+    revoked_at: str = ""
+    revoked_by: str = ""
+    revoke_note: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)

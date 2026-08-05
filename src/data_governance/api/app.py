@@ -415,6 +415,38 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         """某主题域的发布历史。"""
         return [r.to_dict() for r in ReleaseRegistry(base).list_releases(domain)]
 
+    @app.post("/api/domains/{domain}/revert")
+    def revert_domain_release(domain: str, body: dict | None = None) -> dict:
+        """撤销指定版本发布：指标回退上一版本，registry 标记 revoked（IT3-1）。"""
+        from data_governance.release.service import revert_release
+
+        version = int((body or {}).get("version", 0) or 0) if body else 0
+        if version <= 0:
+            raise HTTPException(400, "version 必填且为正整数")
+        note = ((body or {}).get("note") or "") if body else ""
+        try:
+            return revert_release(base, domain, version, note=note)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.get("/api/domains/{domain}/version-diff")
+    def domain_version_diff(
+        domain: str,
+        from_version: str = Query(default="v1", alias="from"),
+        to_version: str = Query(default="v2", alias="to"),
+    ) -> dict:
+        """对比两个发布版本的指标差异（IT3-1）。"""
+        from data_governance.release.service import version_diff
+
+        return version_diff(base, domain, from_version, to_version)
+
+    @app.get("/api/releases/overview")
+    def releases_overview() -> list[dict]:
+        """跨域发布总览（IT3-1）。"""
+        from data_governance.release.service import release_overview
+
+        return release_overview(base)
+
     # ── 血缘 ────────────────────────────────────────────────────
 
     @app.get("/api/lineage")
