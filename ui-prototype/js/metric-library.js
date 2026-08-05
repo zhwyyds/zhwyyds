@@ -94,6 +94,76 @@
       '</div></div>';
   }
 
+  function buildRevisionBlockHtml(item, doc) {
+    var models = (item && item.model_reviews) || [];
+    var revision = null;
+    for (var i = 0; i < models.length; i++) {
+      var rev = models[i].revision;
+      if (rev && typeof rev === 'object' && Object.keys(rev).length) {
+        revision = rev;
+        break;
+      }
+    }
+    if (!revision) return '';
+    var labels = {
+      metric_cn: '中文名',
+      metric_en: '英文名',
+      caliber_desc: '业务口径',
+      unit: '单位',
+      frequency: '统计频率',
+      root_ids: '关联词根'
+    };
+    var rows = Object.keys(labels)
+      .filter(function (f) { return revision[f] !== undefined && revision[f] !== null && revision[f] !== '' && revision[f].length !== 0; })
+      .map(function (f) {
+        var val = Array.isArray(revision[f]) ? revision[f].join(', ') : revision[f];
+        return (
+          '<label class="revision-item">' +
+          '<input type="checkbox" data-field="' + f + '" checked> ' +
+          '<span class="revision-label">' + labels[f] + '</span>：' +
+          '<code class="revision-value">' + esc(val) + '</code>' +
+          '</label>'
+        );
+      })
+      .join('');
+    if (!rows) return '';
+    return (
+      '<div class="card mb-3" style="border:1px solid var(--primary-light, #c9d8ff);">' +
+      '<div class="card-header"><div class="card-title">🤖 AI 修订建议</div>' +
+      '<span class="text-sm text-muted">勾选后点击「应用修订」写入指标定义</span></div>' +
+      '<div class="card-body">' +
+      (revision.summary ? '<div class="revision-summary text-sm mb-2">' + esc(revision.summary) + '</div>' : '') +
+      '<div class="revision-list mb-2">' + rows + '</div>' +
+      '<div class="flex gap-2">' +
+      '<button class="btn btn-sm btn-primary" onclick="applyMetricRevision(\'' + esc((doc && doc.review_id) || '') + '\')">✓ 应用修订</button>' +
+      '<span class="text-xs text-muted" style="align-self:center;">应用后建议重跑评分</span>' +
+      '</div></div></div>'
+    );
+  }
+
+  function applyMetricRevision(reviewId) {
+    if (!reviewId) { alert('缺少评审批次'); return; }
+    var checked = [];
+    var boxes = document.querySelectorAll('.revision-item input[type="checkbox"]:checked');
+    for (var i = 0; i < boxes.length; i++) checked.push(boxes[i].getAttribute('data-field'));
+    if (!checked.length) { alert('请至少勾选一项修订'); return; }
+    var id = currentMetricId();
+    if (!id) { alert('请先选择指标'); return; }
+    if (!confirm('确认应用 AI 修订建议（' + checked.join(', ') + '）到指标 ' + id + '？')) return;
+    fetchJson('/api/metrics/' + encodeURIComponent(id) + '/review/' + encodeURIComponent(reviewId) + '/apply-revision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: checked, checked_by: 'admin' })
+    })
+      .then(function (res) {
+        alert('已应用修订：' + (res.applied_fields || []).join(', '));
+        if (global.DG && global.DG.loadAll) global.DG.loadAll(false);
+        if (global.MetricLibrary && global.MetricLibrary.loadCurrent) global.MetricLibrary.loadCurrent();
+        return loadReviewForCurrentMetric();
+      })
+      .catch(function (e) { alert('应用失败: ' + e.message); });
+  }
+
   function renderReviewPanelHtml(doc) {
     if (!doc || !doc.item) {
       return '<div class="text-sm text-muted" style="padding:8px 0;">暂无评审记录，点击下方「发起/刷新评审」。</div>';
@@ -154,7 +224,8 @@
       '</span></div></div>' +
       '<div class="ai-review-models">' +
       cards +
-      '</div>'
+      '</div>' +
+      buildRevisionBlockHtml(item, doc)
     );
   }
 
@@ -290,4 +361,5 @@
   global.toggleDisputeForm = toggleDisputeForm;
   global.submitDispute = submitDispute;
   global.clearMetricObjection = clearObjection;
+  global.applyMetricRevision = applyMetricRevision;
 })(window);

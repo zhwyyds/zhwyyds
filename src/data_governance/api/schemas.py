@@ -81,3 +81,13 @@ class StatsResponse(BaseModel):
     pending_review: int
     published: int
     offline: int
+
+
+class RevisionApplyRequest(BaseModel):
+    """POST /api/metrics/{id}/review/{rid}/apply-revision 请求体。
+
+    fields 为空列表表示应用 AI 修订建议的全部字段。
+    """
+
+    fields: list[str] = Field(default_factory=list)
+    checked_by: str = ""

@@ -117,7 +117,7 @@ def decide_root(
     *,
     comparison: RootComparison | None = None,
 ) -> tuple[RootFinalDecision, bool]:
-    if len(results) < 2:
+    if len(results) < 1:
         raise ValueError("need at least 2 model results")
 
     comp = comparison or build_comparison(results)

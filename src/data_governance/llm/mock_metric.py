@@ -38,6 +38,11 @@ def default_monthly_sales_fixture() -> dict[str, dict[str, dict]]:
                 "conflict_risks": [],
                 "root_match": True,
                 "suggestions": "建议口径补充含税说明和统计时区",
+                "revision": {
+                    "metric_en": "monthly_sales_amount",
+                    "caliber_desc": "自然月内已完成订单（已支付且未取消）的销售总金额，不含退款；金额不含增值税。",
+                    "summary": "英文名补全 amount；口径补充已完成订单定义与含税说明",
+                },
             }
         },
     }

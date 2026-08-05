@@ -669,6 +669,95 @@
     }).catch(function (e) { pre.textContent = '加载失败: ' + e.message; });
   }
 
+  /* ==================== 词根 AI 生成（问题 7） ==================== */
+
+  function openRootGenModal() {
+    var m = document.getElementById('rootGenModal');
+    if (m) m.classList.add('show');
+    var wrap = document.getElementById('rootGenResultWrap');
+    if (wrap) wrap.style.display = 'none';
+    var commitBtn = document.getElementById('rootGenCommitBtn');
+    if (commitBtn) commitBtn.style.display = 'none';
+    var runBtn = document.getElementById('rootGenRunBtn');
+    if (runBtn) { runBtn.style.display = ''; runBtn.textContent = '🤖 生成'; runBtn.disabled = false; }
+    var res = document.getElementById('rootGenResult');
+    if (res) res.innerHTML = '';
+  }
+
+  function runRootGen() {
+    var domainEl = document.getElementById('rootGenDomain');
+    var domain = domainEl ? domainEl.value.trim() : 'sale';
+    if (!domain) domain = 'sale';
+    var raw = (document.getElementById('rootGenTerms') || {}).value || '';
+    raw = raw.trim();
+    if (!raw) { alert('请输入中文词根（每行一个）'); return; }
+    var terms = raw.split('\n')
+      .map(function (line) {
+        line = line.trim();
+        if (!line) return null;
+        var p = line.split('|');
+        return { cn_term: p[0].trim(), context: ((p[1] || '').trim()) };
+      })
+      .filter(Boolean);
+    if (!terms.length) { alert('请输入中文词根（每行一个）'); return; }
+    var btn = document.getElementById('rootGenRunBtn');
+    btn.disabled = true;
+    btn.textContent = '生成中…';
+    api('/api/roots/generate', { method: 'POST', body: JSON.stringify({ domain: domain, terms: terms }) })
+      .then(function (doc) {
+        global.__DG_ROOT_GEN_REVIEW__ = doc;
+        var items = doc.items || [];
+        var rows = items.map(function (it) {
+          var fd = it.final_decision || {};
+          var ok = !!it.auto_approved;
+          var en = (fd.root_en || '').trim() || '—';
+          var abbr = (fd.root_abbr || '').trim();
+          var desc = (fd.description || '').trim().slice(0, 60);
+          return (
+            '<label class="revision-item">' +
+            '<input type="checkbox" data-cn="' + esc(it.cn_term) + '"' + (ok ? ' checked' : '') + '> ' +
+            '<span style="min-width:64px;font-weight:600;">' + esc(it.cn_term) + '</span>' +
+            ' → <code class="revision-value">' + esc(en) + (abbr && abbr !== en ? ' (' + esc(abbr) + ')' : '') + '</code> ' +
+            '<span class="badge badge-' + (ok ? 'pass' : 'warn') + '">' + (ok ? '自动通过' : '待确认') + '</span>' +
+            (desc ? '<div class="text-xs text-muted" style="flex-basis:100%;padding-left:24px;">' + esc(desc) + '</div>' : '') +
+            '</label>'
+          );
+        }).join('');
+        document.getElementById('rootGenResult').innerHTML =
+          rows || '<div class="text-sm text-muted">无生成结果</div>';
+        document.getElementById('rootGenResultWrap').style.display = '';
+        document.getElementById('rootGenCommitBtn').style.display = '';
+        btn.disabled = false;
+        btn.textContent = '🤖 重新生成';
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        btn.textContent = '🤖 生成';
+        alert('生成失败: ' + e.message);
+      });
+  }
+
+  function commitRootGen() {
+    var doc = global.__DG_ROOT_GEN_REVIEW__;
+    if (!doc) { alert('请先生成词根'); return; }
+    var boxes = document.querySelectorAll('#rootGenResult .revision-item input[type="checkbox"]:checked');
+    var cn = [];
+    for (var i = 0; i < boxes.length; i++) cn.push(boxes[i].getAttribute('data-cn'));
+    if (!cn.length) { alert('请至少勾选一个词根'); return; }
+    if (!confirm('确认将 ' + cn.length + ' 个词根写入词根库？')) return;
+    api('/api/roots/generate/commit', {
+      method: 'POST',
+      body: JSON.stringify({ review_id: doc.review_id, cn_terms: cn })
+    })
+      .then(function (res) {
+        alert('已入库 ' + res.created.length + ' 个词根' + (res.skipped.length ? '，跳过 ' + res.skipped.length + ' 个' : ''));
+        closeModal('rootGenModal');
+        loadRoots();
+        if (global.DG && global.DG.refresh) global.DG.refresh();
+      })
+      .catch(function (e) { alert('入库失败: ' + e.message); });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -727,6 +816,9 @@
   global.loadTableLineage = loadTableLineage;
   global.showTableLineageDetail = showTableLineageDetail;
   global.viewPrompt = viewPrompt;
+  global.openRootGenModal = openRootGenModal;
+  global.runRootGen = runRootGen;
+  global.commitRootGen = commitRootGen;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

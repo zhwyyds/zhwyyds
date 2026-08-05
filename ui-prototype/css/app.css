@@ -1697,3 +1697,20 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 
 /* End SVG Lineage Graph */
+
+/* ── AI 修订建议（评审面板） ── */
+.revision-list { display: flex; flex-direction: column; gap: 6px; }
+.revision-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; line-height: 1.5; padding: 6px 8px;
+  background: var(--bg-soft, #f5f7fa); border-radius: 6px;
+  cursor: pointer;
+}
+.revision-item input[type="checkbox"] { margin-top: 3px; }
+.revision-label { font-weight: 600; white-space: nowrap; }
+.revision-value {
+  background: #fff; border: 1px solid var(--border-soft, #e5e8ef);
+  border-radius: 4px; padding: 1px 6px; font-size: 12px;
+  word-break: break-all; white-space: normal;
+}
+.revision-summary { color: var(--text-muted, #667085); padding: 2px 0; }

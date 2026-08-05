@@ -889,7 +889,7 @@
     </select>
     <input class="input" placeholder="搜索词根..." style="flex:1;min-width:auto;">
     <button class="btn btn-sm">📥 批量导入</button>
-    <button class="btn btn-sm">🤖 AI生成</button>
+    <button class="btn btn-sm" onclick="openRootGenModal()">🤖 AI生成</button>
     <button class="btn btn-sm" onclick="exportRootsCsv()">📤 导出</button>
     <button class="btn btn-sm" onclick="importRootsFile()">📥 导入</button>
     <button class="btn btn-sm btn-primary" onclick="openRootCreateModal()">+ 新增词根</button>
@@ -2286,6 +2286,33 @@
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('rootCreateModal')">取消</button>
       <button class="btn btn-primary" onclick="saveRootCreate()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 词根 AI 生成（问题 7） -->
+<div class="modal-overlay" id="rootGenModal">
+  <div class="modal-dialog" style="width:640px;">
+    <div class="modal-header">
+      <span class="modal-title">&#129302; 词根 AI 生成</span>
+      <button class="modal-close" onclick="closeModal('rootGenModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-group"><label class="modal-form-label">主题域 *</label><input class="modal-form-input" id="rootGenDomain" placeholder="如 sale" value="sale"></div>
+      <div class="modal-form-group">
+        <label class="modal-form-label">中文词根（每行一个，可带上下文：`词根|业务上下文`）*</label>
+        <textarea class="modal-form-textarea" id="rootGenTerms" rows="5" placeholder="如：&#10;订单金额|销售域核心金额词根&#10;商户|租户维度词根"></textarea>
+      </div>
+      <div class="callout info" id="rootGenResultWrap" style="display:none;">
+        <div style="font-weight:600;margin-bottom:8px;">生成结果（勾选后确认入库）</div>
+        <div id="rootGenResult"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span class="text-xs text-muted" style="margin-right:auto;">生成不写库，勾选确认后才入库</span>
+      <button class="btn" onclick="closeModal('rootGenModal')">取消</button>
+      <button class="btn" id="rootGenRunBtn" onclick="runRootGen()">&#129302; 生成</button>
+      <button class="btn btn-primary" id="rootGenCommitBtn" onclick="commitRootGen()" style="display:none;">✓ 确认入库</button>
     </div>
   </div>
 </div>

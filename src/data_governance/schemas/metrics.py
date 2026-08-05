@@ -28,6 +28,28 @@ class MetricReviewRequest(BaseModel):
     metrics: list[MetricInput] = Field(min_length=1)
 
 
+class MetricRevision(BaseModel):
+    """评审后 AI 产出的结构化修订建议（人工勾选后纳入指标定义）。"""
+
+    metric_cn: str | None = None
+    metric_en: str | None = None
+    caliber_desc: str | None = None
+    unit: str | None = None
+    frequency: str | None = None
+    root_ids: list[str] | None = None
+    summary: str = ""
+
+    def as_dict(self) -> dict:
+        out: dict = {}
+        for f in ("metric_cn", "metric_en", "caliber_desc", "unit", "frequency", "root_ids"):
+            v = getattr(self, f)
+            if v is not None and v != "" and v != []:
+                out[f] = v
+        if self.summary:
+            out["summary"] = self.summary
+        return out
+
+
 class ModelMetricReview(BaseModel):
     model: str
     naming_score: int = Field(ge=1, le=5)
@@ -37,6 +59,7 @@ class ModelMetricReview(BaseModel):
     conflict_risks: list[str] = Field(default_factory=list)
     root_match: bool
     suggestions: str = ""
+    revision: MetricRevision | None = None
 
     @field_validator("naming_issues", "caliber_issues", "conflict_risks", mode="before")
     @classmethod

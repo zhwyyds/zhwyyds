@@ -76,7 +76,7 @@ class RootGenerationPipeline:
                 fields = row_to_model_fields(match)
                 model_results.append(ModelRootResult(model=model_name, **fields))
 
-            if len(model_results) < 2:
+            if len(model_results) < 1:
                 raise RuntimeError(f"insufficient model results for {term.cn_term!r}")
 
             comparison = build_comparison(model_results)

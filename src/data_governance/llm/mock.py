@@ -98,11 +98,16 @@ def clients_from_fixture(
 
         def responder(model: str, terms: list[TermInput]) -> list[dict]:
             del model
+            # term 级兜底：fixture 未覆盖的词根复用第一个 term 的数据（防止 mock 评审/生成 500）
+            template = next(iter(per_term.values()), None)
             out = []
             for t in terms:
                 if t.cn_term not in per_term:
-                    raise KeyError(f"{name}: no data for {t.cn_term!r}")
-                row = dict(per_term[t.cn_term])
+                    if template is None:
+                        raise KeyError(f"{name}: no data for {t.cn_term!r}")
+                    row = dict(template)
+                else:
+                    row = dict(per_term[t.cn_term])
                 row["cn_term"] = t.cn_term
                 out.append(row)
             return out

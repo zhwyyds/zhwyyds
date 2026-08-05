@@ -66,6 +66,46 @@ def _coerce_bool(value: Any) -> bool:
     return text in ("true", "yes", "y", "是", "对", "1", "ok", "通过")
 
 
+def _coerce_revision(value: Any) -> dict | None:
+    """把模型返回的 revision 规整为 dict（容错字符串形式/字段缺省）。"""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or text.lower() == "null":
+            return None
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return None
+        if isinstance(parsed, dict):
+            value = parsed
+        else:
+            return None
+    if not isinstance(value, dict):
+        return None
+    allowed = ("metric_cn", "metric_en", "caliber_desc", "unit", "frequency", "root_ids", "summary")
+    out: dict[str, Any] = {}
+    for key in allowed:
+        if key not in value:
+            continue
+        v = value[key]
+        if v is None:
+            continue
+        if key == "root_ids":
+            if isinstance(v, str):
+                v = [x.strip() for x in v.replace("，", ",").split(",") if x.strip()]
+            if isinstance(v, (list, tuple)):
+                out[key] = [str(x).strip() for x in v if str(x).strip()]
+        elif isinstance(v, str) and v.strip():
+            out[key] = v.strip()
+        elif not isinstance(v, str):
+            out[key] = str(v).strip()
+    if not any(k in out for k in allowed if k != "summary"):
+        return None if not out.get("summary") else out
+    return out
+
+
 def row_to_metric_review_fields(row: dict[str, Any]) -> dict[str, Any]:
     if "metric_id" not in row or not str(row["metric_id"]).strip():
         raise MetricResponseParseError("missing metric_id")
@@ -80,7 +120,7 @@ def row_to_metric_review_fields(row: dict[str, Any]) -> dict[str, Any]:
             raise MetricResponseParseError(f"{score_key} out of range 1-5")
     if "root_match" not in row:
         raise MetricResponseParseError("missing root_match")
-    return {
+    fields: dict[str, Any] = {
         "metric_id": str(row["metric_id"]).strip(),
         "naming_score": int(row["naming_score"]),
         "naming_issues": _coerce_str_list(row.get("naming_issues")),
@@ -90,3 +130,7 @@ def row_to_metric_review_fields(row: dict[str, Any]) -> dict[str, Any]:
         "root_match": _coerce_bool(row["root_match"]),
         "suggestions": str(row.get("suggestions") or "").strip(),
     }
+    revision = _coerce_revision(row.get("revision"))
+    if revision is not None:
+        fields["revision"] = revision
+    return fields

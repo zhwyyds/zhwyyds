@@ -32,6 +32,7 @@ from data_governance.api.schemas import (
     HealthResponse,
     MetricCreateRequest,
     MetricUpdateRequest,
+    RevisionApplyRequest,
     StatsResponse,
 )
 from data_governance.config_loader import load_domains
@@ -188,6 +189,88 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, f"root not found: {root_id}")
         return updated
 
+    @app.post("/api/roots/generate")
+    def roots_generate(body: dict) -> dict:
+        """词根 AI 生成（问题 7）：多模型生成词根定义，返回评审结果（不写库）。"""
+        from data_governance.pipeline.root_generation import RootGenerationPipeline
+        from data_governance.schemas.roots import RootGenerationRequest, TermInput
+
+        domain = str((body or {}).get("domain") or "sale").strip().lower()
+        terms_raw = (body or {}).get("terms") or []
+        if not terms_raw:
+            raise HTTPException(400, "terms 必填（至少一个中文词根）")
+        terms = []
+        for t in terms_raw:
+            cn = str((t or {}).get("cn_term") or "").strip()
+            if not cn:
+                raise HTTPException(400, "cn_term 不能为空")
+            terms.append(
+                TermInput(cn_term=cn, context=str((t or {}).get("context") or "").strip())
+            )
+        req = RootGenerationRequest(domain=domain, terms=terms)
+        doc = RootGenerationPipeline(base_dir=base, use_mock=None).run(req, write_roots=False)
+        return doc.model_dump(mode="json")
+
+    @app.post("/api/roots/generate/commit")
+    def roots_generate_commit(body: dict) -> dict:
+        """把已生成的词根评审结果确认入库（勾选 cn_terms；空=全部 auto_approved）。"""
+        import json as _json
+
+        from data_governance.io.roots_csv import append_root_row, make_root_csv_row
+        from data_governance.schemas.roots import ReviewStatus, SourceModel
+
+        review_id = str((body or {}).get("review_id") or "").strip()
+        if not review_id:
+            raise HTTPException(400, "review_id 必填")
+        cn_terms = [(t or "").strip() for t in (body or {}).get("cn_terms") or []]
+        cn_terms = [t for t in cn_terms if t]
+
+        reviews_dir = base / "reviews" / "root_reviews"
+        doc: dict | None = None
+        for path in sorted(reviews_dir.glob("*_root_review_*.json"), reverse=True):
+            try:
+                candidate = _json.loads(path.read_text(encoding="utf-8"))
+            except (_json.JSONDecodeError, OSError):
+                continue
+            if isinstance(candidate, dict) and candidate.get("review_id") == review_id:
+                doc = candidate
+                break
+        if doc is None:
+            raise HTTPException(404, f"review not found: {review_id}")
+
+        domain = str(doc.get("domain") or "sale").lower()
+        created: list[str] = []
+        skipped: list[str] = []
+        for item in doc.get("items") or []:
+            cn = str(item.get("cn_term") or "").strip()
+            if not item.get("auto_approved"):
+                skipped.append(f"{cn}(未自动通过)")
+                continue
+            if cn_terms and cn not in cn_terms:
+                skipped.append(f"{cn}(未勾选)")
+                continue
+            fd = item.get("final_decision") or {}
+            if not (fd.get("root_en") or "").strip():
+                skipped.append(f"{cn}(无英文名)")
+                continue
+            try:
+                row = make_root_csv_row(
+                    domain=domain,
+                    root_cn=cn,
+                    root_en=str(fd["root_en"]).strip(),
+                    root_abbr=str(fd.get("root_abbr") or "").strip() or str(fd["root_en"]).strip(),
+                    root_type=str(fd.get("root_type") or "noun").strip() or "noun",
+                    description=str(fd.get("description") or "").strip(),
+                    source_model=SourceModel("model_consensus"),
+                    review_status=ReviewStatus.approved,
+                    roots_dir=base / "roots",
+                )
+                append_root_row(base / "roots" / f"{domain}_roots.csv", row)
+                created.append(cn)
+            except ValueError as exc:
+                skipped.append(f"{cn}({exc})")
+        return {"review_id": review_id, "domain": domain, "created": created, "skipped": skipped}
+
     # ── 指标 CRUD ────────────────────────────────────────────────
 
     @app.get("/api/metrics")
@@ -325,6 +408,26 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             return run_metric_review_for_id(base, metric_id)
         except KeyError:
             raise HTTPException(404, f"metric not found: {metric_id}") from None
+        except Exception as exc:
+            raise HTTPException(500, str(exc)) from exc
+
+    @app.post("/api/metrics/{metric_id}/review/{review_id}/apply-revision")
+    def review_apply_revision(metric_id: str, review_id: str, body: RevisionApplyRequest) -> dict:
+        """把评审的 AI 修订建议（勾选字段）应用到指标定义。"""
+        from data_governance.api.metric_services import apply_metric_revision
+
+        try:
+            return apply_metric_revision(
+                base,
+                metric_id,
+                review_id,
+                body.fields,
+                checked_by=body.checked_by or "system",
+            )
+        except KeyError:
+            raise HTTPException(404, f"metric not found: {metric_id}") from None
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
         except Exception as exc:
             raise HTTPException(500, str(exc)) from exc
 

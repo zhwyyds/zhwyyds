@@ -82,3 +82,89 @@ def load_latest_metric_review(base_dir: Path, domain: str) -> dict | None:
 
     data = json.loads(files[0].read_text(encoding="utf-8"))
     return data if isinstance(data, dict) else None
+
+
+REVISION_FIELDS = ("metric_cn", "metric_en", "caliber_desc", "unit", "frequency", "root_ids")
+
+
+def merge_revision_suggestions(model_reviews: list[dict]) -> dict | None:
+    """合并各模型的修订建议：每个字段取第一个非空值（live 单模型即其自身）。"""
+    merged: dict = {}
+    for mr in model_reviews:
+        rev = mr.get("revision") or {}
+        if not isinstance(rev, dict):
+            continue
+        for f in REVISION_FIELDS:
+            v = rev.get(f)
+            if v is not None and v != "" and v != [] and f not in merged:
+                merged[f] = v
+        if rev.get("summary") and "summary" not in merged:
+            merged["summary"] = rev["summary"]
+    return merged or None
+
+
+def apply_metric_revision(
+    base_dir: Path,
+    metric_id: str,
+    review_id: str,
+    fields: list[str],
+    *,
+    checked_by: str = "system",
+) -> dict:
+    """把指定评审的 AI 修订建议（勾选字段）应用到指标定义。
+
+    fields 为空列表表示应用全部建议字段。
+    """
+    import json as _json
+
+    catalog = load_catalog(base_dir)
+    record = next((m for m in catalog.metrics if m.metric_id == metric_id), None)
+    if record is None:
+        raise KeyError(metric_id)
+
+    reviews_dir = base_dir / "reviews" / "metric_reviews"
+    doc: dict | None = None
+    for path in sorted(reviews_dir.glob("*_metric_review_*.json"), reverse=True):
+        try:
+            candidate = _json.loads(path.read_text(encoding="utf-8"))
+        except (_json.JSONDecodeError, OSError):
+            continue
+        if isinstance(candidate, dict) and candidate.get("review_id") == review_id:
+            doc = candidate
+            break
+    if doc is None:
+        raise ValueError(f"review not found: {review_id}")
+
+    item = next((it for it in doc.get("items") or [] if it.get("metric_id") == metric_id), None)
+    if item is None:
+        raise ValueError(f"review {review_id} 无 {metric_id} 的评审条目")
+
+    suggestions = merge_revision_suggestions(item.get("model_reviews") or [])
+    if not suggestions:
+        raise ValueError(f"review {review_id} 无 AI 修订建议")
+
+    apply_keys = list(fields) if fields else [f for f in REVISION_FIELDS if f in suggestions]
+    bad = [f for f in apply_keys if f not in REVISION_FIELDS]
+    if bad:
+        raise ValueError(f"不允许的修订字段: {bad}")
+    if not apply_keys:
+        raise ValueError("无可应用的修订字段")
+
+    payload: dict = {}
+    for f in apply_keys:
+        if f in suggestions:
+            payload[f] = suggestions[f]
+    if not payload:
+        raise ValueError("无可应用的修订字段")
+
+    from data_governance.io.metrics_csv import upsert_metric
+
+    upsert_metric(base_dir, metric_id, payload)
+    return {
+        "metric_id": metric_id,
+        "review_id": review_id,
+        "applied_fields": list(payload.keys()),
+        "applied": {k: v for k, v in payload.items()},
+        "checked_by": checked_by,
+        "note": "建议重跑评分/评审以反映最新定义",
+    }
