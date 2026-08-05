@@ -47,6 +47,19 @@ METRIC_CSV_FIELDS = [
     "offline_note",
     "objection_status",
     "objection_note",
+    # ── 口径助手结构化字段（口径字段标准与迁移方案.md，IT2-4） ──
+    "caliber_business",
+    "caliber_formula",
+    "caliber_period",
+    "caliber_granularity",
+    "caliber_boundary",
+    "caliber_source",
+    "caliber_owner",
+    "caliber_status",
+    "caliber_ai_by",
+    "caliber_checked_by",
+    "caliber_checked_at",
+    "caliber_reject_reason",
 ]
 
 _METRIC_ID = re.compile(r"^M_([A-Z]+)_")

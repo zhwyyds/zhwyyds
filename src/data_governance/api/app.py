@@ -301,6 +301,31 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, f"metric not found: {metric_id}") from None
         return result.to_dict()
 
+    # ── 口径助手：起草 ──────────────────────────────────────────
+
+    @app.post("/api/metrics/{metric_id}/caliber/draft")
+    def caliber_draft_endpoint(metric_id: str) -> dict:
+        """多模型起草口径并落库（status=pending），返回推荐版 + 模型差异（IT2-4）。"""
+        from data_governance.caliber.draft import draft_caliber, persist_draft
+
+        catalog = load_catalog(base)
+        metric = next((m for m in catalog.metrics if m.metric_id == metric_id), None)
+        if metric is None:
+            raise HTTPException(404, f"metric not found: {metric_id}")
+        try:
+            result = draft_caliber(metric, base_dir=base)
+            persist_draft(base, metric_id, result)
+        except Exception as exc:
+            raise HTTPException(500, f"caliber draft failed: {exc}") from exc
+        return {
+            "metric_id": metric_id,
+            "status": "pending",
+            "caliber": result.draft,
+            "diff_summary": result.diff_summary,
+            "high_risk": result.high_risk,
+            "ai_by": result.ai_by,
+        }
+
     @app.post("/api/scores/refresh")
     def scores_refresh() -> dict:
         """全量重评分所有指标。"""
