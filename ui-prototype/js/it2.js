@@ -279,6 +279,35 @@
       .catch(function (e) { alert('补全失败: ' + e.message); });
   }
 
+  /* ==================== 新增指标 AI 辅助（问题 2） ==================== */
+
+  function suggestMetricFields() {
+    var cn = document.getElementById('newMetricCn');
+    if (!cn || !cn.value.trim()) { alert('请先填写中文名称'); return; }
+    var domain = document.getElementById('newMetricDomain');
+    api('/api/metrics/suggest', {
+      method: 'POST',
+      body: JSON.stringify({
+        metric_cn: cn.value.trim(),
+        domain_code: domain ? domain.value : 'sale',
+        caliber_desc: document.getElementById('newMetricDesc') ? document.getElementById('newMetricDesc').value : ''
+      })
+    }).then(function (r) {
+      var map = {
+        newMetricEn: r.metric_en,
+        newMetricDesc: r.caliber_desc,
+        newMetricFormulaLogic: r.formula,
+        newMetricUnit: r.unit,
+        newMetricFrequency: r.frequency
+      };
+      Object.keys(map).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && map[id]) el.value = map[id];
+      });
+      alert('🤖 AI 建议已生成（来源: ' + r.source + '）' + ((r.suggestions || []).length ? '\n提示: ' + r.suggestions.join('；') : '') + '\n请核查后保存。');
+    }).catch(function (e) { alert('AI 辅助失败: ' + e.message); });
+  }
+
   /* ==================== 域级治理看板（IT3-2） ==================== */
 
   function loadDomainDashboard() {
@@ -366,6 +395,7 @@
   global.saveRootCreate = saveRootCreate;
   global.openRootEdit = openRootEdit;
   global.saveRootEdit = saveRootEdit;
+  global.suggestMetricFields = suggestMetricFields;
   global.loadCaliberQueue = loadCaliberQueue;
   global.caliberApprove = caliberApprove;
   global.caliberReject = caliberReject;

@@ -9,6 +9,22 @@ import pytest
 from data_governance.llm.bootstrap import bootstrap_llm_env, load_secrets_json
 from data_governance.llm.env import provider_api_key
 
+_LLM_ENV_KEYS = (
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "DASHSCOPE_API_KEY",
+    "ZHIPUAI_API_KEY",
+    "DEEPSEEK_API_KEY",
+)
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_llm_env() -> None:
+    """bootstrap 会直接写入 os.environ，测试结束后必须清理，避免污染后续测试的 LLM 模式判定。"""
+    yield
+    for key in _LLM_ENV_KEYS:
+        os.environ.pop(key, None)
+
 
 def test_load_secrets_json_does_not_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "from-env")

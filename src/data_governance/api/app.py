@@ -193,6 +193,81 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
     def list_metrics(domain: str | None = Query(default=None)) -> list[dict]:
         return metric_svc.list_metrics(domain)
 
+    @app.post("/api/metrics/suggest")
+    def metric_suggest(body: dict) -> dict:
+        """AI 辅助生成指标定义：mock（相似指标复用+词根提示）/ live（LLM 生成）——问题 2 修复。"""
+        from data_governance.caliber.draft import parse_response
+        from data_governance.config_loader import load_models
+        from data_governance.llm.env import resolve_use_mock
+
+        metric_cn = str((body or {}).get("metric_cn") or "").strip()
+        domain = str((body or {}).get("domain_code") or "").strip().lower()
+        desc = str((body or {}).get("caliber_desc") or "").strip()
+        if not metric_cn:
+            raise HTTPException(400, "metric_cn 必填")
+        catalog = load_catalog(base)
+
+        if resolve_use_mock(None):
+            same = next((m for m in catalog.metrics if m.metric_cn == metric_cn), None)
+            if same is not None:
+                return {
+                    "source": "similar_metric",
+                    "metric_cn": metric_cn,
+                    "metric_en": same.metric_en,
+                    "metric_abbr": same.metric_abbr,
+                    "caliber_desc": same.caliber_desc,
+                    "unit": same.unit,
+                    "frequency": same.frequency,
+                    "dimensions": same.dimensions,
+                    "scenario": same.scenario,
+                    "formula": same.formula,
+                    "data_sources": same.data_sources,
+                    "suggestions": ["已复用同名指标的既有定义，请核查后确认"],
+                }
+            hits = [r.root_en for r in catalog.roots if r.domain_code == domain and r.root_cn and r.root_cn in metric_cn]
+            return {
+                "source": "rule_hint",
+                "metric_cn": metric_cn,
+                "metric_en": "_".join(hits),
+                "metric_abbr": "",
+                "caliber_desc": desc,
+                "unit": "",
+                "frequency": "月",
+                "dimensions": "",
+                "scenario": "",
+                "formula": "",
+                "data_sources": "",
+                "suggestions": ["mock 模式给出词根组合提示；配置 ≥2 个 LLM Key 后可生成完整定义"],
+            }
+
+        # live：单模型生成指标定义
+        models = load_models("metric_review", config_path=base / "config" / "models.csv")
+        from data_governance.llm.factory import build_live_clients
+
+        clients = build_live_clients(models)
+        prompt = (
+            "你是数据治理平台的指标定义专家。根据中文指标名生成指标定义，只输出 JSON：\n"
+            f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
+            f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
+            f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
+            f'"data_sources":"来源表","suggestions":["需人工确认的点"]}}\n中文名：{metric_cn}\n域：{domain}'
+        )
+        data = parse_response(clients[0].complete(prompt))
+        return {
+            "source": "llm",
+            "metric_cn": metric_cn,
+            "metric_en": data.get("metric_en", ""),
+            "metric_abbr": data.get("metric_abbr", ""),
+            "caliber_desc": data.get("caliber_desc", desc),
+            "unit": data.get("unit", ""),
+            "frequency": data.get("frequency", "月"),
+            "dimensions": data.get("dimensions", ""),
+            "scenario": data.get("scenario", ""),
+            "formula": data.get("formula", ""),
+            "data_sources": data.get("data_sources", ""),
+            "suggestions": data.get("suggestions", []),
+        }
+
     @app.get("/api/metrics/stats", response_model=StatsResponse)
     def metrics_statistics() -> StatsResponse:
         stats = metric_svc.get_stats()

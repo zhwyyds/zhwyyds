@@ -490,6 +490,7 @@
 
   global.DG = {
     loadAll: loadAll,
+    refresh: function () { return loadAll(false); },
     runAcceptanceAndReload: runAcceptanceAndReload,
     fetchJson: fetchJson,
     API_BASE: API_BASE

@@ -757,7 +757,12 @@
     <div class="modal-body" style="max-height:70vh;overflow:auto;">
       <div class="modal-form-section modal-form-section--biz">
         <div class="modal-form-section-title">业务属性</div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">中文名称 *</label><input class="modal-form-input" id="newMetricCn" placeholder="指标中文名称"></div>
+        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">中文名称 *</label>
+          <div class="flex gap-2">
+            <input class="modal-form-input" id="newMetricCn" placeholder="指标中文名称" style="flex:1;">
+            <button type="button" class="btn btn-sm btn-primary" onclick="suggestMetricFields()">&#129302; AI 辅助</button>
+          </div>
+        </div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名称</label><input class="modal-form-input" id="newMetricEn" placeholder="可自动生成"></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标描述</label><textarea class="modal-form-textarea" id="newMetricDesc" placeholder="业务定义"></textarea></div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="newMetricFormulaCn" placeholder="全中文公式说明"></textarea></div>
