@@ -447,6 +447,15 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
 
         return release_overview(base)
 
+    # ── 域级治理看板 ────────────────────────────────────────────
+
+    @app.get("/api/dashboard/domains")
+    def domains_dashboard() -> list[dict]:
+        """每域治理红绿灯：词根/指标/评分/血缘/口径/发布（IT3-2）。"""
+        from data_governance.dashboard import domain_dashboard
+
+        return domain_dashboard(base)
+
     # ── 血缘 ────────────────────────────────────────────────────
 
     @app.get("/api/lineage")
