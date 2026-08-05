@@ -190,6 +190,86 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, f"root not found: {root_id}")
         return updated
 
+    @app.post("/api/roots/suggest")
+    def roots_suggest(body: dict) -> dict:
+        """词根 AI 字段建议（H1）：输入中文词根 → 生成 root_en/abbr/type/description，直接填充表单。
+
+        命中已有词根（含同义词）→ 返回 reuse 提示；live 模式 LLM 生成，mock 模式规则提示。
+        """
+        from data_governance.config_loader import load_models
+        from data_governance.llm.env import resolve_use_mock
+        from data_governance.llm.factory import build_live_clients
+        from data_governance.roots.dictionary import (
+            build_root_dictionary,
+            dictionary_to_prompt_text,
+            find_root_for_term,
+        )
+
+        root_cn = str((body or {}).get("root_cn") or "").strip()
+        if not root_cn:
+            raise HTTPException(400, "root_cn 必填")
+        domain = str((body or {}).get("domain") or (body or {}).get("domain_code") or "sale").strip().lower()
+        context = str((body or {}).get("context") or "").strip()
+        catalog = load_catalog(base)
+
+        # 1. 确定性：命中已有词根（含同义词）→ 直接复用，不调 LLM
+        hit = find_root_for_term(catalog.roots, root_cn, domain=domain) or find_root_for_term(
+            catalog.roots, root_cn
+        )
+        if hit is not None:
+            return {
+                "root_cn": root_cn,
+                "root_en": hit.root_en,
+                "root_abbr": hit.root_abbr,
+                "root_type": hit.root_type,
+                "description": f"已复用已有词根 {hit.root_id}（{hit.root_cn}），语义一致",
+                "reused_root_id": hit.root_id,
+            }
+
+        root_text = dictionary_to_prompt_text(build_root_dictionary(catalog.roots, domain=domain))
+        if resolve_use_mock(None):
+            return {
+                "root_cn": root_cn,
+                "root_en": "",
+                "root_abbr": "",
+                "root_type": "noun",
+                "description": "",
+                "warning": "mock 模式无法生成英文词根，请配置 LLM Key 或手动填写",
+            }
+
+        models = load_models("root_generation", config_path=base / "config" / "models.csv")
+        clients = build_live_clients(models)
+        prompt = (
+            "你是数据治理平台的词根专家。根据中文词根生成标准英文词根，只输出 JSON：\n"
+            '{"root_en":"标准英文单词（不用拼音）","root_abbr":"缩写不超过6字符",'
+            '"root_type":"noun/verb/adj/unit/time","description":"一句话说明"}\n'
+            "规则：\n"
+            "- root_en 使用标准英文单词，不用拼音\n"
+            "- root_abbr 不超过 6 字符（单词取前3-4字母，短词用全称）\n"
+            "- 语义若与参考词根库中已有词根相同（含同义词），必须复用其 root_en，不得自创\n"
+            f"参考词根库：\n{root_text}\n"
+            f"中文词根：{root_cn}\n上下文：{context or '（无）'}"
+        )
+        from data_governance.caliber.draft import parse_response
+
+        data = parse_response(clients[0].complete(prompt))
+        if not data.get("root_en"):
+            return {
+                "root_cn": root_cn,
+                "root_en": "",
+                "root_abbr": "",
+                "root_type": "noun",
+                "description": "",
+                "warning": "AI 未能生成英文词根，请重试或手动填写",
+            }
+        return {
+            "root_cn": root_cn,
+            "root_en": str(data.get("root_en") or "").strip(),
+            "root_abbr": str(data.get("root_abbr") or "").strip() or str(data.get("root_en") or "").strip(),
+            "root_type": str(data.get("root_type") or "noun").strip(),
+            "description": str(data.get("description") or "").strip(),
+        }
+
     @app.post("/api/roots/generate")
     def roots_generate(body: dict) -> dict:
         """词根 AI 生成（问题 7）：多模型生成词根定义，返回评审结果（不写库）。"""

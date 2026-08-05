@@ -282,6 +282,75 @@
       .catch(function (e) { alert('补全失败: ' + e.message); });
   }
 
+  /* ==================== AI 填充 + 差异提示（H2 通用机制） ==================== */
+
+  var AI_FILL_MAP = {
+    newMetricEn: 'metric_en',
+    newMetricDesc: 'caliber_desc',
+    newMetricFormulaLogic: 'formula',
+    newMetricFormulaCn: 'formula_cn',
+    newMetricUnit: 'unit',
+    newMetricFrequency: 'frequency',
+    newMetricSourceTable: 'data_sources',
+    newMetricTechCaliber: 'tech_caliber'
+  };
+
+  function flashField(el) {
+    el.classList.add('ai-flash');
+    setTimeout(function () { el.classList.remove('ai-flash'); }, 1400);
+  }
+
+  function removeDiffTip(fieldId) {
+    var tip = document.getElementById('ai-diff-' + fieldId);
+    if (tip) tip.remove();
+  }
+
+  function applyAiFill(fieldId, aiVal, label) {
+    var el = document.getElementById(fieldId);
+    if (!el || aiVal === null || aiVal === undefined || String(aiVal).trim() === '') return;
+    var cur = (el.value || '').trim();
+    var ai = String(aiVal).trim();
+    if (!cur || cur === ai) {
+      el.value = ai;
+      flashField(el);
+      removeDiffTip(fieldId);
+      return;
+    }
+    // 已有值且不同 → 差异提示条（不覆盖，让用户决定）
+    showDiffTip(fieldId, ai, label);
+  }
+
+  function showDiffTip(fieldId, aiVal, label) {
+    removeDiffTip(fieldId);
+    var el = document.getElementById(fieldId);
+    if (!el) return;
+    var group = el.closest('.modal-form-group');
+    if (!group) return;
+    var tip = document.createElement('div');
+    tip.id = 'ai-diff-' + fieldId;
+    tip.className = 'ai-diff-tip';
+    tip.innerHTML =
+      '🔄 <b>' + esc(label) + '</b> 差异：当前「<span class="ai-diff-old">' + esc(el.value) + '</span>」' +
+      ' → AI 建议「<b class="ai-diff-new">' + esc(aiVal) + '</b>」 ' +
+      '<button type="button" class="btn btn-xs btn-primary" onclick="adoptAiValue(\'' + fieldId + '\')">采用 AI 值</button> ' +
+      '<button type="button" class="btn btn-xs" onclick="dismissAiDiff(\'' + fieldId + '\')">忽略</button>';
+    group.appendChild(tip);
+  }
+
+  function adoptAiValue(fieldId) {
+    var r = global.__DG_AI_SUGGEST__;
+    var key = AI_FILL_MAP[fieldId];
+    if (r && key && r[key] !== null && r[key] !== undefined && String(r[key]).trim() !== '') {
+      var el = document.getElementById(fieldId);
+      if (el) { el.value = r[key]; flashField(el); }
+    }
+    removeDiffTip(fieldId);
+  }
+
+  function dismissAiDiff(fieldId) {
+    removeDiffTip(fieldId);
+  }
+
   /* ==================== 新增指标 AI 辅助（问题 2 / 内联面板） ==================== */
 
   function showAiPanel() {
@@ -318,6 +387,18 @@
       global.__DG_AI_SUGGEST__ = r;
       var src = { similar_metric: '· 复用同名指标', rule_hint: '· 词根组合提示(mock)', llm: '· AI 生成', llm_multi: '· AI 多模型生成' }[r.source] || '';
       if (status) status.textContent = src;
+      // H2：AI 直接填充表单字段（空字段填值+高亮；非空字段行内差异提示）
+      var fills = [
+        ['newMetricEn', r.metric_en, '英文名称'],
+        ['newMetricDesc', r.caliber_desc, '指标描述'],
+        ['newMetricFormulaLogic', r.formula, '计算公式'],
+        ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
+        ['newMetricUnit', r.unit, '单位'],
+        ['newMetricFrequency', r.frequency, '统计频率'],
+        ['newMetricSourceTable', r.data_sources, '来源表'],
+        ['newMetricTechCaliber', r.tech_caliber, '技术口径']
+      ];
+      fills.forEach(function (f) { applyAiFill(f[0], f[1], f[2]); });
       renderAiFields(r);
       renderAiRoots(r.suggested_roots || []);
     }).catch(function (e) {
@@ -402,6 +483,45 @@
         enEl.placeholder = 'AI 未生成，请手动填写 snake_case 英文名';
       }
     }
+  }
+
+  /* ==================== 词根 AI 字段填充（H1/H2） ==================== */
+
+  function suggestRootFields() {
+    var editMode = !!(document.getElementById('rootEditModal') && document.getElementById('rootEditModal').classList.contains('show'));
+    var cnEl = document.getElementById(editMode ? 'rootEditCn' : 'rootFormCn');
+    if (!cnEl || !cnEl.value.trim()) { alert('请先填写中文词根'); return; }
+    var domainEl = document.getElementById(editMode ? 'rootEditDomain' : 'rootFormDomain');
+    var descEl = document.getElementById(editMode ? 'rootEditDesc' : 'rootFormDesc');
+    api('/api/roots/suggest', {
+      method: 'POST',
+      body: JSON.stringify({
+        root_cn: cnEl.value.trim(),
+        domain: domainEl ? (domainEl.value || 'sale') : 'sale',
+        context: descEl ? descEl.value : ''
+      })
+    }).then(function (r) {
+      global.__DG_ROOT_SUGGEST__ = r;
+      if (r.reused_root_id) {
+        applyAiFill(editMode ? 'rootEditEn' : 'rootFormEn', r.root_en, '英文词根');
+        applyAiFill(editMode ? 'rootEditAbbr' : 'rootFormAbbr', r.root_abbr, '缩写');
+        alert('该词根与已有词根 ' + r.reused_root_id + '（' + r.root_cn + ' → ' + r.root_en + '）语义一致，已自动复用。建议直接使用已有词根，无需新建。');
+        return;
+      }
+      applyAiFill(editMode ? 'rootEditEn' : 'rootFormEn', r.root_en, '英文词根');
+      applyAiFill(editMode ? 'rootEditAbbr' : 'rootFormAbbr', r.root_abbr, '缩写');
+      if (editMode) {
+        var typeSel = document.getElementById('rootEditType');
+        var descIn = document.getElementById('rootEditDesc');
+        if (typeSel && r.root_type) { typeSel.value = r.root_type; flashField(typeSel); }
+        if (descIn && r.description) { applyAiFill('rootEditDesc', r.description, '说明'); }
+      } else {
+        var typeSel2 = document.getElementById('rootFormType');
+        if (typeSel2 && r.root_type) { typeSel2.value = r.root_type; flashField(typeSel2); }
+        applyAiFill('rootFormDesc', r.description, '说明');
+      }
+      if (r.warning) alert(r.warning);
+    }).catch(function (e) { alert('AI 辅助失败: ' + e.message); });
   }
 
   /* ==================== 域级治理看板（IT3-2） ==================== */
@@ -899,6 +1019,10 @@
   global.saveRootEdit = saveRootEdit;
   global.suggestMetricFields = suggestMetricFields;
   global.fillAiSuggestion = fillAiSuggestion;
+  global.applyAiFill = applyAiFill;
+  global.adoptAiValue = adoptAiValue;
+  global.dismissAiDiff = dismissAiDiff;
+  global.suggestRootFields = suggestRootFields;
   global.loadCaliberQueue = loadCaliberQueue;
   global.caliberApprove = caliberApprove;
   global.caliberReject = caliberReject;

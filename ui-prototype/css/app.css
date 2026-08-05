@@ -1714,3 +1714,23 @@ tr.row-selected td { background: var(--primary-light) !important; }
   word-break: break-all; white-space: normal;
 }
 .revision-summary { color: var(--text-muted, #667085); padding: 2px 0; }
+
+/* ── AI 填充 + 差异提示（H2） ── */
+.ai-flash {
+  animation: ai-flash-anim 1.4s ease-out;
+  border-color: var(--primary, #4a7dff) !important;
+  box-shadow: 0 0 0 3px rgba(74, 125, 255, 0.18);
+}
+@keyframes ai-flash-anim {
+  0% { background: rgba(74, 125, 255, 0.25); }
+  100% { background: transparent; }
+}
+.ai-diff-tip {
+  margin-top: 6px; padding: 6px 10px; border-radius: 6px;
+  font-size: 12px; line-height: 1.6;
+  background: #fff8e6; border: 1px solid #f0d9a8; color: #6b5314;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.ai-diff-old { text-decoration: line-through; opacity: 0.7; }
+.ai-diff-new { color: var(--primary, #4a7dff); }
+.btn-xs { padding: 1px 8px; font-size: 12px; border-radius: 4px; }

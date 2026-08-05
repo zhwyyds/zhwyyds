@@ -2267,7 +2267,12 @@
     </div>
     <div class="modal-body">
       <div class="modal-form-group"><label class="modal-form-label">词根 ID</label><input class="modal-form-input" id="rootEditId" readonly></div>
-      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label><input class="modal-form-input" id="rootEditCn"></div>
+      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label>
+        <div class="flex gap-2">
+          <input class="modal-form-input" id="rootEditCn" style="flex:1;">
+          <button type="button" class="btn btn-sm btn-primary" onclick="suggestRootFields()">&#129302; AI 辅助</button>
+        </div>
+      </div>
       <div class="modal-form-group"><label class="modal-form-label">英文词根 *</label><input class="modal-form-input" id="rootEditEn"></div>
       <div class="modal-form-group"><label class="modal-form-label">缩写 *</label><input class="modal-form-input" id="rootEditAbbr" maxlength="6"></div>
       <div class="modal-form-group"><label class="modal-form-label">类型</label>
@@ -2293,7 +2298,12 @@
     </div>
     <div class="modal-body">
       <div class="modal-form-group"><label class="modal-form-label">主题域 *</label><input class="modal-form-input" id="rootFormDomain" placeholder="如 sale"></div>
-      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label><input class="modal-form-input" id="rootFormCn"></div>
+      <div class="modal-form-group"><label class="modal-form-label">中文词根 *</label>
+        <div class="flex gap-2">
+          <input class="modal-form-input" id="rootFormCn" style="flex:1;">
+          <button type="button" class="btn btn-sm btn-primary" onclick="suggestRootFields()">&#129302; AI 辅助</button>
+        </div>
+      </div>
       <div class="modal-form-group"><label class="modal-form-label">英文词根 *</label><input class="modal-form-input" id="rootFormEn" placeholder="如 amount"></div>
       <div class="modal-form-group"><label class="modal-form-label">缩写</label><input class="modal-form-input" id="rootFormAbbr" placeholder="如 amt（留空默认=英文名）" maxlength="12"></div>
       <div class="modal-form-group"><label class="modal-form-label">类型</label>

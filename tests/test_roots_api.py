@@ -98,3 +98,27 @@ def test_create_root_with_synonyms(mini_project: Path, api_client: TestClient):
     catalog = load_catalog(mini_project)
     hit = next(x for x in catalog.roots if x.root_id == body["root_id"])
     assert hit.synonyms == "商家|租户"
+
+
+def test_roots_suggest_reuses_existing(mini_project: Path, api_client: TestClient):
+    """POST /api/roots/suggest：命中已有词根（含同义词）→ 返回 reuse，不调 LLM。"""
+    r = api_client.post(
+        "/api/roots/suggest",
+        json={"root_cn": "订单", "domain": "sale"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["root_en"] == "order"
+    assert body["reused_root_id"] == "R_SALE_001"
+
+
+def test_roots_suggest_unknown_mock_warning(mini_project: Path, api_client: TestClient):
+    """mock 模式未知词根 → 200 + warning，不 500。"""
+    r = api_client.post(
+        "/api/roots/suggest",
+        json={"root_cn": "机器人", "domain": "sale"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["root_en"] == ""
+    assert "mock" in body.get("warning", "")
