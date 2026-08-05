@@ -38,10 +38,12 @@ class RootGenerationPipeline:
         base_dir: Path | None = None,
         use_mock: bool | None = None,
         fixture: dict | None = None,
+        root_dictionary_text: str = "",
     ) -> None:
         self.base_dir = base_dir or repo_root()
         self._use_mock = use_mock
         self.fixture = fixture or default_customer_fixture()
+        self.root_dictionary_text = root_dictionary_text
 
     def run(
         self,
@@ -52,7 +54,7 @@ class RootGenerationPipeline:
         models = load_models("root_generation", config_path=self.base_dir / "config" / "models.csv")
         model_names = [m.model_name for m in models]
         terms = request.terms
-        prompt = build_root_generation_prompt(terms)
+        prompt = build_root_generation_prompt(terms, root_dictionary_text=self.root_dictionary_text)
         use_mock = resolve_use_mock(self._use_mock)
 
         if use_mock:

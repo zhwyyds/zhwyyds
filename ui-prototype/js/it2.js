@@ -164,14 +164,15 @@
       root_abbr: document.getElementById('rootFormAbbr').value.trim(),
       root_type: document.getElementById('rootFormType').value,
       domain_code: document.getElementById('rootFormDomain').value.trim(),
-      description: document.getElementById('rootFormDesc').value.trim()
+      description: document.getElementById('rootFormDesc').value.trim(),
+      synonyms: document.getElementById('rootFormSyn').value.trim()
     };
     if (!payload.root_cn || !payload.root_en || !payload.domain_code) { alert('中文名 / 英文名 / 主题域 必填'); return; }
     api('/api/roots', { method: 'POST', body: JSON.stringify(payload) })
       .then(function () {
         alert('词根已创建');
         closeModal('rootCreateModal');
-        ['rootFormCn', 'rootFormEn', 'rootFormAbbr', 'rootFormDomain', 'rootFormDesc'].forEach(function (id) {
+        ['rootFormCn', 'rootFormEn', 'rootFormAbbr', 'rootFormDomain', 'rootFormDesc', 'rootFormSyn'].forEach(function (id) {
           var el = document.getElementById(id); if (el) el.value = '';
         });
         loadRoots();
@@ -191,6 +192,7 @@
     document.getElementById('rootEditAbbr').value = r.root_abbr;
     document.getElementById('rootEditType').value = r.root_type || 'noun';
     document.getElementById('rootEditDesc').value = r.description || '';
+    document.getElementById('rootEditSyn').value = r.synonyms || '';
     closeModal('rootCreateModal');
     var m = document.getElementById('rootEditModal');
     if (m) m.classList.add('show');
@@ -204,7 +206,8 @@
       root_en: document.getElementById('rootEditEn').value.trim(),
       root_abbr: document.getElementById('rootEditAbbr').value.trim(),
       root_type: document.getElementById('rootEditType').value,
-      description: document.getElementById('rootEditDesc').value.trim()
+      description: document.getElementById('rootEditDesc').value.trim(),
+      synonyms: document.getElementById('rootEditSyn').value.trim()
     };
     if (!payload.root_cn || !payload.root_en) { alert('中文名 / 英文名 必填'); return; }
     api('/api/roots/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(payload) })
@@ -717,12 +720,16 @@
           var en = (fd.root_en || '').trim() || '—';
           var abbr = (fd.root_abbr || '').trim();
           var desc = (fd.description || '').trim().slice(0, 60);
+          var reused = it.reused_root_id;
+          var badge = reused
+            ? '<span class="badge badge-info">已复用 ' + esc(reused) + '</span>'
+            : '<span class="badge badge-' + (ok ? 'pass' : 'warn') + '">' + (ok ? '自动通过' : '待确认') + '</span>';
           return (
             '<label class="revision-item">' +
-            '<input type="checkbox" data-cn="' + esc(it.cn_term) + '"' + (ok ? ' checked' : '') + '> ' +
+            '<input type="checkbox" data-cn="' + esc(it.cn_term) + '"' + (reused ? '' : (ok ? ' checked' : '')) + (reused ? ' disabled' : '') + '> ' +
             '<span style="min-width:64px;font-weight:600;">' + esc(it.cn_term) + '</span>' +
             ' → <code class="revision-value">' + esc(en) + (abbr && abbr !== en ? ' (' + esc(abbr) + ')' : '') + '</code> ' +
-            '<span class="badge badge-' + (ok ? 'pass' : 'warn') + '">' + (ok ? '自动通过' : '待确认') + '</span>' +
+            badge +
             (desc ? '<div class="text-xs text-muted" style="flex-basis:100%;padding-left:24px;">' + esc(desc) + '</div>' : '') +
             '</label>'
           );

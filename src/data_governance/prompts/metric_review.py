@@ -11,7 +11,11 @@ METRIC_REVIEW_TEMPLATE = """你是一位数据治理评审专家。请对以下�
 3. 同名同义风险：该指标名称是否可能与其他指标产生同名异义或同义异名
 4. 词根关联性：root_ids 关联的词根是否能正确还原为 metric_en
 5. 单位与频率：unit 和 frequency 是否合理
+6. 词根归并（G4）：metric_en 中的词根若与词根库已有词根同义（如 lease 与 rent），必须指出，
+   并在 revision 中给出统一为词根库标准词根的修正值
 
+参考词根库（含同义词，用于归并检查）：
+{root_dictionary_section}
 指标列表：
 {metrics_json}
 
@@ -34,7 +38,18 @@ revision
 """
 
 
-def build_metric_review_prompt(metrics: list[MetricInput]) -> str:
+def build_metric_review_prompt(
+    metrics: list[MetricInput],
+    *,
+    root_dictionary_text: str = "",
+) -> str:
+    if root_dictionary_text and root_dictionary_text.strip() != "（当前词根库为空）":
+        section = root_dictionary_text.strip()
+    else:
+        section = "（无）"
     payload = [m.model_dump() for m in metrics]
     metrics_json = json.dumps(payload, ensure_ascii=False, indent=2)
-    return METRIC_REVIEW_TEMPLATE.format(metrics_json=metrics_json)
+    return METRIC_REVIEW_TEMPLATE.format(
+        root_dictionary_section=section,
+        metrics_json=metrics_json,
+    )

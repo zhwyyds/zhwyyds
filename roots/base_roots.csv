@@ -1,2 +1,2 @@
-root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,source_model,review_status,created_at,updated_at
-R_TIME_001,月度,monthly,mon,base,time,自然月,model_consensus,approved,2026-08-03,2026-08-03
+root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,synonyms,source_model,review_status,created_at,updated_at
+R_TIME_001,月度,monthly,mon,base,time,自然月,,model_consensus,approved,2026-08-03,2026-08-03

@@ -41,6 +41,7 @@ class RootCreateRequest(BaseModel):
     root_type: RootType = RootType.noun
     domain_code: str = Field(min_length=1)
     description: str = ""
+    synonyms: str = ""
     source_model: SourceModel = SourceModel.manual
     review_status: ReviewStatus = ReviewStatus.pending
 
@@ -107,6 +108,7 @@ class RootCsvRow(BaseModel):
     domain_code: str
     root_type: RootType
     description: str
+    synonyms: str = ""
     source_model: SourceModel
     review_status: ReviewStatus
     created_at: str

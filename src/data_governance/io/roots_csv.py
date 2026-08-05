@@ -17,6 +17,7 @@ ROOT_CSV_HEADER = [
     "domain_code",
     "root_type",
     "description",
+    "synonyms",
     "source_model",
     "review_status",
     "created_at",
@@ -74,7 +75,13 @@ def update_root_row(path: Path, root_id: str, payload: dict) -> dict | None:
     with _file_lock(path), path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = [dict(r) for r in reader]
-        fieldnames = reader.fieldnames or ROOT_CSV_HEADER
+        fieldnames = list(reader.fieldnames or ROOT_CSV_HEADER)
+        # 兼容旧文件缺列：payload 中的新列（如 synonyms）自动追加表头并为已有行补空值
+        for k in payload:
+            if k not in fieldnames and k in ROOT_CSV_HEADER:
+                fieldnames.append(k)
+                for row in rows:
+                    row.setdefault(k, "")
 
     target: dict | None = None
     for row in rows:
@@ -110,6 +117,7 @@ def append_root_row(path: Path, row: RootCsvRow) -> None:
                 "domain_code": row.domain_code,
                 "root_type": row.root_type.value,
                 "description": row.description,
+                "synonyms": row.synonyms,
                 "source_model": row.source_model.value,
                 "review_status": row.review_status.value,
                 "created_at": row.created_at,
@@ -130,6 +138,7 @@ def make_root_csv_row(
     review_status,
     roots_dir: Path,
     on_date: date | None = None,
+    synonyms: str = "",
 ) -> RootCsvRow:
     d = (on_date or date.today()).isoformat()
     csv_path = roots_csv_path(roots_dir, domain)
@@ -142,6 +151,7 @@ def make_root_csv_row(
         domain_code=domain,
         root_type=root_type,
         description=description,
+        synonyms=synonyms,
         source_model=source_model,
         review_status=review_status,
         created_at=d,

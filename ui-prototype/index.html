@@ -2257,6 +2257,7 @@
         <select class="modal-form-select" id="rootEditType"><option>noun</option><option>verb</option><option>adj</option><option>unit</option><option>time</option></select>
       </div>
       <div class="modal-form-group"><label class="modal-form-label">说明</label><textarea class="modal-form-textarea" id="rootEditDesc"></textarea></div>
+      <div class="modal-form-group"><label class="modal-form-label">同义词（|分隔，如：租赁|出租）</label><input class="modal-form-input" id="rootEditSyn" placeholder="语义相同/相近的词根写法，AI 生成时据此强制复用"></div>
       <div class="modal-warning info">保存后写入词根 CSV；若影响已发布指标命名，建议重新跑指标评审。</div>
     </div>
     <div class="modal-footer">
@@ -2282,6 +2283,7 @@
         <select class="modal-form-select" id="rootFormType"><option value="noun">noun</option><option value="verb">verb</option><option value="adj">adj</option><option value="unit">unit</option><option value="time">time</option></select>
       </div>
       <div class="modal-form-group"><label class="modal-form-label">说明</label><textarea class="modal-form-textarea" id="rootFormDesc"></textarea></div>
+      <div class="modal-form-group"><label class="modal-form-label">同义词（|分隔，如：租赁|出租）</label><input class="modal-form-input" id="rootFormSyn" placeholder="语义相同/相近的词根写法，AI 生成时据此强制复用"></div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('rootCreateModal')">取消</button>

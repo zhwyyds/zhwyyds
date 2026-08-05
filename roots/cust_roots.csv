@@ -1,3 +1,3 @@
-root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,source_model,review_status,created_at,updated_at
-R_CUST_001,客户,customer,cust,cust,noun,客户的统称,model_consensus,approved,2026-08-03,2026-08-03
-R_CUST_002,会员,member,mb,cust,noun,已注册的消费者,model_majority,approved,2026-08-03,2026-08-03
+root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,synonyms,source_model,review_status,created_at,updated_at
+R_CUST_001,客户,customer,cust,cust,noun,客户的统称,,model_consensus,approved,2026-08-03,2026-08-03
+R_CUST_002,会员,member,mb,cust,noun,已注册的消费者,,model_majority,approved,2026-08-03,2026-08-03

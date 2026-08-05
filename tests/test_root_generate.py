@@ -85,3 +85,22 @@ def test_root_pipeline_single_model_threshold(mini_project: Path):
     )
     doc = RootGenerationPipeline(base_dir=mini_project, use_mock=True).run(req)
     assert len(doc.items) == 1
+
+
+def test_root_generate_reuses_existing_root(mini_project: Path, api_client: TestClient):
+    """语义归并：输入词根命中已有词根 → 返回 reuse 标记（前端置为不可勾选，不提交）。"""
+    r = api_client.post(
+        "/api/roots/generate",
+        json={"domain": "sale", "terms": [{"cn_term": "订单"}]},
+    )
+    assert r.status_code == 200, r.text
+    item = r.json()["items"][0]
+    assert item["reused_root_id"] == "R_SALE_001"
+    assert item["final_decision"]["root_en"] == "order"
+
+    # reuse 条目不落盘 review，前端也不会提交（disabled）；直接 commit 空勾选 → 404 合理
+    r2 = api_client.post(
+        "/api/roots/generate/commit",
+        json={"review_id": r.json()["review_id"], "cn_terms": []},
+    )
+    assert r2.status_code == 404

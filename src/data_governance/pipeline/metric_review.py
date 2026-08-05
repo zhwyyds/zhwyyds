@@ -44,7 +44,21 @@ class MetricReviewPipeline:
         models = load_models("metric_review", config_path=self.base_dir / "config" / "models.csv")
         model_names = [m.model_name for m in models]
         metrics = request.metrics
-        prompt = build_metric_review_prompt(metrics)
+        from data_governance.io.catalog import load_catalog
+        from data_governance.roots.dictionary import (
+            build_root_dictionary,
+            dictionary_to_prompt_text,
+        )
+
+        root_text = ""
+        try:
+            catalog = load_catalog(self.base_dir)
+            root_text = dictionary_to_prompt_text(
+                build_root_dictionary(catalog.roots, domain=request.domain)
+            )
+        except (FileNotFoundError, OSError, ValueError):
+            root_text = ""  # 轻量项目无 catalog 时跳过词根字典注入
+        prompt = build_metric_review_prompt(metrics, root_dictionary_text=root_text)
         use_mock = resolve_use_mock(self._use_mock)
 
         if use_mock:

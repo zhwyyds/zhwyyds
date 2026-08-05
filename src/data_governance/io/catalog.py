@@ -16,6 +16,7 @@ class RootRecord:
     root_abbr: str
     root_type: str
     description: str = ""
+    synonyms: str = ""
     source_model: str = ""
     review_status: str = ""
     created_at: str = ""

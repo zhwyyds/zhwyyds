@@ -76,3 +76,25 @@ def test_update_root(api_client: TestClient):
 def test_update_root_not_found(api_client: TestClient):
     r = api_client.put("/api/roots/R_NO_SUCH", json={"description": "x"})
     assert r.status_code == 404
+
+
+def test_create_root_with_synonyms(mini_project: Path, api_client: TestClient):
+    """POST /api/roots 支持 synonyms 字段写入（G1 回归保护）。"""
+    r = api_client.post(
+        "/api/roots",
+        json={
+            "root_cn": "商户",
+            "root_en": "merchant",
+            "root_abbr": "mcht",
+            "root_type": "noun",
+            "domain_code": "sale",
+            "description": "商户词根",
+            "synonyms": "商家|租户",
+        },
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["synonyms"] == "商家|租户"
+    catalog = load_catalog(mini_project)
+    hit = next(x for x in catalog.roots if x.root_id == body["root_id"])
+    assert hit.synonyms == "商家|租户"

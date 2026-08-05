@@ -167,6 +167,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             root_abbr=body.root_abbr or body.root_en,
             root_type=body.root_type,
             description=body.description,
+            synonyms=body.synonyms,
             source_model=body.source_model,
             review_status=body.review_status,
             roots_dir=base / "roots",
@@ -207,9 +208,67 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             terms.append(
                 TermInput(cn_term=cn, context=str((t or {}).get("context") or "").strip())
             )
-        req = RootGenerationRequest(domain=domain, terms=terms)
-        doc = RootGenerationPipeline(base_dir=base, use_mock=None).run(req, write_roots=False)
-        return doc.model_dump(mode="json")
+
+        # 词根语义归并（G3）：术语命中已有词根（含同义词）→ 直接复用，跳过 LLM，禁止自创
+        from data_governance.io.catalog import load_catalog
+        from data_governance.roots.dictionary import (
+            build_root_dictionary,
+            dictionary_to_prompt_text,
+            find_root_for_term,
+        )
+
+        catalog = load_catalog(base)
+        reuse_items: list[dict] = []
+        pending_terms: list[TermInput] = []
+        for t in terms:
+            hit = find_root_for_term(catalog.roots, t.cn_term, domain=domain)
+            if hit is not None:
+                reuse_items.append(
+                    {
+                        "cn_term": t.cn_term,
+                        "context": t.context,
+                        "model_results": [],
+                        "comparison": {
+                            "root_en_consistent": True,
+                            "root_abbr_consistent": True,
+                            "root_type_consistent": True,
+                            "conflict_fields": [],
+                        },
+                        "final_decision": {
+                            "root_en": hit.root_en,
+                            "root_abbr": hit.root_abbr,
+                            "root_type": hit.root_type,
+                            "description": f"已复用已有词根 {hit.root_id}（{hit.root_cn}），未新建",
+                            "decision_reason": f"语义命中已有词根 {hit.root_id}（含同义词），强制复用",
+                            "decision_type": "model_consensus",
+                            "review_status": "approved",
+                        },
+                        "auto_approved": True,
+                        "reused_root_id": hit.root_id,
+                    }
+                )
+            else:
+                pending_terms.append(t)
+
+        root_text = dictionary_to_prompt_text(build_root_dictionary(catalog.roots, domain=domain))
+        if pending_terms:
+            req = RootGenerationRequest(domain=domain, terms=pending_terms)
+            doc = RootGenerationPipeline(
+                base_dir=base, use_mock=None, root_dictionary_text=root_text
+            ).run(req, write_roots=False)
+            payload = doc.model_dump(mode="json")
+            payload["items"] = payload["items"] + reuse_items
+            return payload
+        if reuse_items:
+            return {
+                "review_id": f"RR_{domain.upper()}_001",
+                "domain": domain,
+                "review_type": "root_generation",
+                "created_at": __import__("data_governance.io.reviews", fromlist=["now_iso_cn"]).now_iso_cn(),
+                "models_used": [],
+                "items": reuse_items,
+            }
+        return {"review_id": f"RR_{domain.upper()}_001", "domain": domain, "items": []}
 
     @app.post("/api/roots/generate/commit")
     def roots_generate_commit(body: dict) -> dict:
@@ -243,6 +302,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         skipped: list[str] = []
         for item in doc.get("items") or []:
             cn = str(item.get("cn_term") or "").strip()
+            if item.get("reused_root_id"):
+                skipped.append(f"{cn}(已复用 {item['reused_root_id']}，无需入库)")
+                continue
             if not item.get("auto_approved"):
                 skipped.append(f"{cn}(未自动通过)")
                 continue
@@ -329,13 +391,24 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         from data_governance.llm.factory import build_live_clients
 
         clients = build_live_clients(models)
+        from data_governance.roots.dictionary import build_root_dictionary, dictionary_to_prompt_text
+
+        entries = build_root_dictionary(catalog.roots, domain=domain)
+        root_text = dictionary_to_prompt_text(entries)
         prompt = (
             "你是数据治理平台的指标定义专家。根据中文指标名生成指标定义，只输出 JSON：\n"
             f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
             f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
             f'"dimensions":"常用维度","scenario":"适用场景","formula":"计算公式",'
             f'"formula_cn":"公式中文说明","data_sources":"来源表","tech_caliber":"技术口径",'
-            f'"suggestions":["需人工确认的点"]}}\n中文名：{metric_cn}\n域：{domain}'
+            f'"suggestions":["需人工确认的点"]}}\n\n'
+            f"参考词根库（该域的既有标准词根，含同义词）：\n{root_text}\n\n"
+            "词根强制复用规则（必须遵守）：\n"
+            "1. metric_en 必须由词根库中的词根组合而成（使用 root_en 原词）\n"
+            "2. 术语语义若已被词根库覆盖（包括其同义词），必须复用对应词根，禁止自创新词根\n"
+            "3. 例如词根库已有 rent（同义词：租金/租赁/出租），则「租赁收入」必须用 rent，不能写 lease\n"
+            "4. 仅当词根库确无对应语义时，才可在 suggestions 中说明缺失的词根\n"
+            f"\n中文名：{metric_cn}\n域：{domain}"
         )
         from data_governance.llm.parallel import run_models_parallel_prompt
 

@@ -54,14 +54,14 @@ def mini_project(tmp_path: Path, project_root: Path) -> Path:
 
     root_header = (
         "root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,"
-        "source_model,review_status,created_at,updated_at"
+        "synonyms,source_model,review_status,created_at,updated_at"
     )
     _write_csv(
         base / "roots" / "sale_roots.csv",
         root_header,
         [
-            "R_SALE_001,订单,order,ord,sale,noun,订单,model_consensus,approved,2026-08-03,2026-08-03",
-            "R_TIME_001,月度,monthly,mon,base,time,月,model_consensus,approved,2026-08-03,2026-08-03",
+            "R_SALE_001,订单,order,ord,sale,noun,订单,,model_consensus,approved,2026-08-03,2026-08-03",
+            "R_TIME_001,月度,monthly,mon,base,time,月,,model_consensus,approved,2026-08-03,2026-08-03",
         ],
     )
 
