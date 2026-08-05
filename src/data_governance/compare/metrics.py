@@ -44,8 +44,8 @@ def _collect_action_items(reviews: list[ModelMetricReview], comparison: MetricCo
 
 
 def decide_metric(reviews: list[ModelMetricReview]) -> MetricFinalDecision:
-    if len(reviews) < 2:
-        raise ValueError("need at least 2 model reviews")
+    if len(reviews) < 1:
+        raise ValueError("need at least 1 model review")
 
     comparison = build_metric_comparison(reviews)
 

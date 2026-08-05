@@ -1,8 +1,12 @@
 import json
 from pathlib import Path
 
+from data_governance.parsing.metric_review import (
+    parse_metric_review_response,
+    row_to_metric_review_fields,
+)
 from data_governance.pipeline.metric_review import MetricReviewPipeline
-from data_governance.schemas.metrics import MetricInput, MetricReviewRequest
+from data_governance.schemas.metrics import MetricInput, MetricReviewRequest, ModelMetricReview
 
 
 def test_metric_review_pipeline(project_root: Path, tmp_path: Path):
@@ -36,3 +40,66 @@ def test_metric_review_pipeline(project_root: Path, tmp_path: Path):
     assert len(reviews) == 1
     saved = json.loads(reviews[0].read_text(encoding="utf-8"))
     assert saved["items"][0]["comparison"]["naming_score_avg"] == 4.67
+
+
+def test_parse_dirty_live_response_coerced():
+    """DeepSeek live 返回脏格式（issues 为字符串、root_match 为中文）应规整为合法结构（回归保护）。"""
+    raw = json.dumps(
+        [
+            {
+                "metric_id": "M_SALE_001",
+                "naming_score": 4,
+                "naming_issues": "metric_en 使用了 mont 而非 month，不符合标准词根组合",
+                "caliber_score": 3,
+                "caliber_issues": "口径未明确是否含税；未明确统计时区",
+                "conflict_risks": ["与 M_SALE_002 可能同义"],
+                "root_match": "是",
+                "suggestions": "建议补充含税说明",
+            }
+        ],
+        ensure_ascii=False,
+    )
+    rows = parse_metric_review_response(raw)
+    fields = row_to_metric_review_fields(rows[0])
+    review = ModelMetricReview.model_validate({"model": "deepseek-v4-flash", **fields})
+
+    assert review.naming_issues == ["metric_en 使用了 mont 而非 month，不符合标准词根组合"]
+    assert review.caliber_issues == ["口径未明确是否含税", "未明确统计时区"]
+    assert review.conflict_risks == ["与 M_SALE_002 可能同义"]
+    assert review.root_match is True
+    assert review.naming_score == 4
+
+
+def test_parse_str_list_literal_coerced():
+    """模型返回字符串形式的 JSON 数组（'["a","b"]'）也应正确解析。"""
+    fields = row_to_metric_review_fields(
+        {
+            "metric_id": "M_SALE_002",
+            "naming_score": 5,
+            "caliber_score": 5,
+            "naming_issues": '["a", "b"]',
+            "caliber_issues": "[]",
+            "conflict_risks": [],
+            "root_match": "true",
+            "suggestions": "",
+        }
+    )
+    assert fields["naming_issues"] == ["a", "b"]
+    assert fields["caliber_issues"] == []
+    assert fields["root_match"] is True
+
+
+def test_parse_missing_optional_fields_ok():
+    """缺省 issues 字段时使用空数组，不报错。"""
+    fields = row_to_metric_review_fields(
+        {
+            "metric_id": "M_SALE_003",
+            "naming_score": 4,
+            "caliber_score": 4,
+            "root_match": False,
+        }
+    )
+    assert fields["naming_issues"] == []
+    assert fields["caliber_issues"] == []
+    assert fields["conflict_risks"] == []
+    assert fields["root_match"] is False

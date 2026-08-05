@@ -68,7 +68,7 @@ class MetricReviewPipeline:
                 fields = row_to_metric_review_fields(match)
                 model_reviews.append(ModelMetricReview(model=model_name, **fields))
 
-            if len(model_reviews) < 2:
+            if len(model_reviews) < 1:
                 raise RuntimeError(f"insufficient model reviews for {metric.metric_id!r}")
 
             comparison = build_metric_comparison(model_reviews)
