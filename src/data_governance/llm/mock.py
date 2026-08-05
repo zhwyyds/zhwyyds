@@ -92,7 +92,9 @@ def clients_from_fixture(
     clients: list[MockLLMClient] = []
 
     def make_responder(name: str) -> MockLLMClient:
-        per_term = fixture.get(name, {})
+        # 未配置 fixture 的模型（如后加的 DeepSeek）复用第一个模型的响应
+        fallback = next(iter(fixture.values()), {})
+        per_term = fixture.get(name) or fallback
 
         def responder(model: str, terms: list[TermInput]) -> list[dict]:
             del model
@@ -108,5 +110,6 @@ def clients_from_fixture(
         return MockLLMClient(name, responder=responder)
 
     for name in model_names:
-        clients.append(make_responder(name))
+        if name in fixture:  # mock 只对 fixture 定义的模型出稿（新增模型仅 live 生效）
+            clients.append(make_responder(name))
     return clients
