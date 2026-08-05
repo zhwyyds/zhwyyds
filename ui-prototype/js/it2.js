@@ -368,6 +368,173 @@
     });
   }
 
+  /* ==================== 导入导出（问题 3/6） ==================== */
+
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('文件读取失败')); };
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  function pickFile(accept, onText) {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.style.display = 'none';
+    input.onchange = function () {
+      var f = input.files && input.files[0];
+      if (f) readFileAsText(f).then(onText).catch(function (e) { alert(e.message); });
+    };
+    document.body.appendChild(input);
+    input.click();
+  }
+
+  function importMetricsFile() {
+    pickFile('.csv', function (csv) {
+      api('/api/metrics/import', { method: 'POST', body: JSON.stringify({ csv: csv }) })
+        .then(function (r) { alert('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个'); if (DG.refresh) DG.refresh(); })
+        .catch(function (e) { alert('导入失败: ' + e.message); });
+    });
+  }
+
+  function exportRootsCsv() {
+    var base = global.DG_API_BASE || '';
+    window.open(base + '/api/roots/export', '_blank');
+  }
+
+  function importRootsFile() {
+    pickFile('.csv', function (csv) {
+      api('/api/roots/import', { method: 'POST', body: JSON.stringify({ csv: csv }) })
+        .then(function (r) { alert('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个' + (r.errors.length ? '，错误 ' + r.errors.length + ' 条' : '')); loadRoots(); if (DG.refresh) DG.refresh(); })
+        .catch(function (e) { alert('导入失败: ' + e.message); });
+    });
+  }
+
+  /* ==================== 系统设置：模型管理（问题 13） ==================== */
+
+  function loadSettingsModels() {
+    var tbody = document.getElementById('settingsModelBody');
+    if (!tbody) return;
+    api('/api/models').then(function (rows) {
+      var count = document.getElementById('settingsModelCount');
+      if (count) count.textContent = '共 ' + rows.length + ' 个';
+      tbody.innerHTML = rows.map(function (m) {
+        return '<tr>' +
+          '<td class="text-sm"><strong>' + esc(m.model_name) + '</strong><br><span class="text-mono" style="font-size:11px;">' + esc(m.provider) + (m.api_endpoint ? ' · ' + esc(m.api_endpoint) : '') + '</span></td>' +
+          '<td class="text-sm">' + esc(m.use_case) + '</td>' +
+          '<td>' + esc(m.priority) + '</td>' +
+          '<td><span class="badge ' + (m.enabled === 'true' ? 'badge-pass' : 'badge-neutral') + '">' + (m.enabled === 'true' ? '启用' : '停用') + '</span></td>' +
+          '<td><button class="btn btn-sm" onclick="toggleModel(\'' + esc(m.model_id) + '\',\'' + (m.enabled === 'true' ? 'false' : 'true') + '\')">' + (m.enabled === 'true' ? '停用' : '启用') + '</button> ' +
+          '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteModel(\'' + esc(m.model_id) + '\')">删除</button></td></tr>';
+      }).join('');
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
+  }
+
+  function toggleModel(id, enabled) {
+    api('/api/models/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ enabled: enabled }) })
+      .then(loadSettingsModels).catch(function (e) { alert('操作失败: ' + e.message); });
+  }
+
+  function deleteModel(id) {
+    if (!confirm('删除模型 ' + id + '？')) return;
+    api('/api/models/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(loadSettingsModels).catch(function (e) { alert('删除失败: ' + e.message); });
+  }
+
+  function openModelModal() {
+    var cn = prompt('新增模型，格式：模型名,厂商,场景(root_generation|metric_review),优先级,启用(true|false),endpoint,key环境变量\n例：deepseek-chat,DeepSeek,metric_review,5,true,https://api.deepseek.com,DEEPSEEK_API_KEY');
+    if (!cn) return;
+    var p = cn.split(',');
+    var payload = {
+      model_name: (p[0] || '').trim(),
+      provider: (p[1] || '').trim(),
+      use_case: (p[2] || 'metric_review').trim(),
+      priority: (p[3] || '9').trim(),
+      enabled: (p[4] || 'true').trim(),
+      api_endpoint: (p[5] || '').trim(),
+      api_key_env: (p[6] || '').trim()
+    };
+    if (!payload.model_name || !payload.provider) { alert('模型名/厂商必填'); return; }
+    api('/api/models', { method: 'POST', body: JSON.stringify(payload) })
+      .then(function () { alert('模型已新增'); loadSettingsModels(); })
+      .catch(function (e) { alert('新增失败: ' + e.message); });
+  }
+
+  /* ==================== 系统设置：修饰词管理（问题 11） ==================== */
+
+  function loadSettingsModifiers() {
+    var tbody = document.getElementById('settingsModifierBody');
+    if (!tbody) return;
+    api('/api/modifier-rules').then(function (rows) {
+      var count = document.getElementById('settingsModifierCount');
+      if (count) count.textContent = '共 ' + rows.length + ' 个';
+      tbody.innerHTML = rows.map(function (m) {
+        return '<tr>' +
+          '<td class="text-sm"><strong>' + esc(m.modifier_cn) + '</strong><br><span class="text-mono" style="font-size:11px;">' + esc(m.modifier_id) + '</span></td>' +
+          '<td class="text-mono text-sm">' + esc(m.modifier_en) + '</td>' +
+          '<td><span class="badge badge-info">' + esc(m.modifier_type) + '</span></td>' +
+          '<td><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteModifier(\'' + esc(m.modifier_id) + '\')">删除</button></td></tr>';
+      }).join('');
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
+  }
+
+  function deleteModifier(id) {
+    if (!confirm('删除修饰词 ' + id + '？')) return;
+    api('/api/modifier-rules/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(loadSettingsModifiers).catch(function (e) { alert('删除失败: ' + e.message); });
+  }
+
+  function openModifierModal() {
+    var cn = prompt('新增修饰词，格式：中文,英文,缩写,类型(time|compare|business),时间范围,说明\n例：上月,last_month,lm,time,prior_period,上一自然月');
+    if (!cn) return;
+    var p = cn.split(',');
+    var payload = {
+      modifier_cn: (p[0] || '').trim(),
+      modifier_en: (p[1] || '').trim(),
+      modifier_abbr: (p[2] || '').trim(),
+      modifier_type: (p[3] || 'time').trim(),
+      time_scope: (p[4] || '').trim(),
+      description: (p[5] || '').trim()
+    };
+    if (!payload.modifier_cn || !payload.modifier_en) { alert('中文/英文必填'); return; }
+    api('/api/modifier-rules', { method: 'POST', body: JSON.stringify(payload) })
+      .then(function () { alert('修饰词已新增'); loadSettingsModifiers(); if (DG.refresh) DG.refresh(); })
+      .catch(function (e) { alert('新增失败: ' + e.message); });
+  }
+
+  /* ==================== 系统设置：评审记录查看（问题 12） ==================== */
+
+  function loadSettingsReviews() {
+    var tbody = document.getElementById('settingsReviewBody');
+    if (!tbody) return;
+    api('/api/metric-reviews/latest').then(function (doc) {
+      var count = document.getElementById('settingsReviewCount');
+      var items = (doc && doc.items) || [];
+      if (count) count.textContent = '最近评审 ' + items.length + ' 个指标';
+      if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">暂无评审记录</td></tr>';
+        return;
+      }
+      var html = '';
+      items.forEach(function (item, idx) {
+        (item.model_reviews || []).forEach(function (mr) {
+          html += '<tr>' +
+            '<td class="text-mono text-sm">' + esc(doc.review_id || ('review-' + idx)) + '</td>' +
+            '<td class="text-sm">' + esc(item.metric_id || '') + '</td>' +
+            '<td class="text-sm">' + esc(mr.model) + '</td>' +
+            '<td>' + (mr.naming_score || '—') + '</td>' +
+            '<td>' + (mr.caliber_score || '—') + '</td>' +
+            '<td>' + ((item.final_decision && item.final_decision.decision_type) || '—') + '</td>' +
+            '<td class="text-sm text-muted">—</td></tr>';
+        });
+      });
+      tbody.innerHTML = html || '<tr><td colspan="7" class="text-sm text-muted">无模型明细</td></tr>';
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -377,6 +544,11 @@
     if (target === 'roots') loadRoots();
     if (target === 'caliber-check') loadCaliberQueue();
     if (target === 'dashboard') loadDomainDashboard();
+    if (target === 'settings') {
+      loadSettingsModels();
+      loadSettingsModifiers();
+      loadSettingsReviews();
+    }
   };
 
   function init() {
@@ -402,6 +574,17 @@
   global.caliberBackfill = caliberBackfill;
   global.loadDomainDashboard = loadDomainDashboard;
   global.drillDomain = drillDomain;
+  global.importMetricsFile = importMetricsFile;
+  global.exportRootsCsv = exportRootsCsv;
+  global.importRootsFile = importRootsFile;
+  global.loadSettingsModels = loadSettingsModels;
+  global.toggleModel = toggleModel;
+  global.deleteModel = deleteModel;
+  global.openModelModal = openModelModal;
+  global.loadSettingsModifiers = loadSettingsModifiers;
+  global.deleteModifier = deleteModifier;
+  global.openModifierModal = openModifierModal;
+  global.loadSettingsReviews = loadSettingsReviews;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

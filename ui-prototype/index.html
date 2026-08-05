@@ -70,6 +70,9 @@
         <span class="nav-icon">✅</span> 口径核查
         <span class="nav-badge danger" id="nav-badge-caliber-check">—</span>
       </div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span> 系统设置
+      </div>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -473,6 +476,8 @@
     </select>
     <input class="input" id="mgmtSearchInput" placeholder="搜索指标ID/名称/英文名..." style="flex:1;min-width:auto;">
     <button type="button" class="btn btn-sm" onclick="exportMetricsCsv()">&#128194; 导出清单</button>
+    <button type="button" class="btn btn-sm" onclick="importMetricsFile()">&#128229; 导入</button>
+    <button type="button" class="btn btn-sm" onclick="switchToPage('settings')">&#9881; 设置</button>
     <button type="button" class="new-metric-btn" onclick="showNewMetricModal()">+ 新增指标</button>
   </div>
 
@@ -885,6 +890,8 @@
     <input class="input" placeholder="搜索词根..." style="flex:1;min-width:auto;">
     <button class="btn btn-sm">📥 批量导入</button>
     <button class="btn btn-sm">🤖 AI生成</button>
+    <button class="btn btn-sm" onclick="exportRootsCsv()">📤 导出</button>
+    <button class="btn btn-sm" onclick="importRootsFile()">📥 导入</button>
     <button class="btn btn-sm btn-primary" onclick="openRootCreateModal()">+ 新增词根</button>
   </div>
 
@@ -2110,6 +2117,70 @@
         <tbody id="caliberQueueBody">
           <tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
         </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 系统设置（问题 11/12/13） -->
+<div class="page" id="page-settings">
+  <div class="callout info">
+    💡 <div><strong>系统设置：</strong>模型配置（后续更换模型在此维护）、修饰词库、评审记录查看。模型/修饰词变更即时生效。</div>
+  </div>
+
+  <div class="grid-2 mb-4">
+    <!-- 模型管理 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">模型管理</div>
+        <span class="text-sm text-muted" id="settingsModelCount">—</span>
+      </div>
+      <div class="card-body" style="max-height:360px;overflow:auto;">
+        <table>
+          <thead><tr><th>模型</th><th>场景</th><th>优先级</th><th>启用</th><th>操作</th></tr></thead>
+          <tbody id="settingsModelBody"><tr><td colspan="5" class="text-sm text-muted">加载中…</td></tr></tbody>
+        </table>
+        <div class="flex gap-2 mt-3">
+          <button class="btn btn-sm btn-primary" onclick="openModelModal()">+ 新增模型</button>
+          <button class="btn btn-sm" onclick="loadSettingsModels()">🔄 刷新</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修饰词管理 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">修饰词管理</div>
+        <span class="text-sm text-muted" id="settingsModifierCount">—</span>
+      </div>
+      <div class="card-body" style="max-height:360px;overflow:auto;">
+        <table>
+          <thead><tr><th>修饰词</th><th>英文</th><th>类型</th><th>操作</th></tr></thead>
+          <tbody id="settingsModifierBody"><tr><td colspan="4" class="text-sm text-muted">加载中…</td></tr></tbody>
+        </table>
+        <div class="flex gap-2 mt-3">
+          <button class="btn btn-sm btn-primary" onclick="openModifierModal()">+ 新增修饰词</button>
+          <button class="btn btn-sm" onclick="loadSettingsModifiers()">🔄 刷新</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 评审记录 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">模型评审记录</div>
+      <span class="text-sm text-muted" id="settingsReviewCount">—</span>
+      <div class="flex gap-2">
+        <button class="btn btn-sm" onclick="loadSettingsReviews()">🔄 刷新</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>评审ID</th><th>域</th><th>模型</th><th>命名分</th><th>口径分</th><th>结论</th><th>时间</th></tr>
+        </thead>
+        <tbody id="settingsReviewBody"><tr><td colspan="7" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr></tbody>
       </table>
     </div>
   </div>

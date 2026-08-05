@@ -562,15 +562,160 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         path = save_lineage(base, domain, body)
         return {"domain": domain, "lineages": len(lineages), "written_to": path.name}
 
-    # ── 修饰规则 & 指标树 ────────────────────────────────────────
+    # ── 修饰规则 & 指标树 & 配置管理 ────────────────────────────
 
     @app.get("/api/modifier-rules")
     def modifier_rules() -> list[dict]:
-        path = base / "config" / "modifier_rules.csv"
-        if not path.is_file():
-            return []
-        with path.open(newline="", encoding="utf-8") as f:
-            return list(csv.DictReader(f))
+        from data_governance.io.modifier_rules import load_modifiers_file
+
+        return load_modifiers_file(base / "config" / "modifier_rules.csv")
+
+    @app.post("/api/modifier-rules")
+    def create_modifier(body: dict) -> dict:
+        """新增修饰词（问题 11）。"""
+        from data_governance.io.modifier_rules import append_modifier
+
+        try:
+            return append_modifier(base / "config" / "modifier_rules.csv", body or {})
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.put("/api/modifier-rules/{modifier_id}")
+    def update_modifier_endpoint(modifier_id: str, body: dict) -> dict:
+        from data_governance.io.modifier_rules import update_modifier
+
+        updated = update_modifier(base / "config" / "modifier_rules.csv", modifier_id, body or {})
+        if updated is None:
+            raise HTTPException(404, f"modifier not found: {modifier_id}")
+        return updated
+
+    @app.delete("/api/modifier-rules/{modifier_id}")
+    def delete_modifier_endpoint(modifier_id: str) -> dict:
+        from data_governance.io.modifier_rules import delete_modifier
+
+        if not delete_modifier(base / "config" / "modifier_rules.csv", modifier_id):
+            raise HTTPException(404, f"modifier not found: {modifier_id}")
+        return {"deleted": modifier_id}
+
+    # ── 模型配置管理（问题 13） ─────────────────────────────────
+
+    @app.get("/api/models")
+    def list_models() -> list[dict]:
+        from data_governance.io.models_store import load_models_file
+
+        return load_models_file(base / "config" / "models.csv")
+
+    @app.post("/api/models")
+    def create_model(body: dict) -> dict:
+        from data_governance.io.models_store import append_model
+
+        try:
+            return append_model(base / "config" / "models.csv", body or {})
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.put("/api/models/{model_id}")
+    def update_model_endpoint(model_id: str, body: dict) -> dict:
+        from data_governance.io.models_store import update_model
+
+        updated = update_model(base / "config" / "models.csv", model_id, body or {})
+        if updated is None:
+            raise HTTPException(404, f"model not found: {model_id}")
+        return updated
+
+    @app.delete("/api/models/{model_id}")
+    def delete_model_endpoint(model_id: str) -> dict:
+        from data_governance.io.models_store import delete_model
+
+        if not delete_model(base / "config" / "models.csv", model_id):
+            raise HTTPException(404, f"model not found: {model_id}")
+        return {"deleted": model_id}
+
+    # ── 导入导出（问题 3/6） ────────────────────────────────────
+
+    @app.get("/api/roots/export")
+    def export_roots(domain: str | None = Query(default=None)) -> PlainTextResponse:
+        """词根导出 CSV（问题 6）。"""
+        from data_governance.io.roots_csv import ROOT_CSV_HEADER
+
+        catalog = load_catalog(base)
+        rows = [r for r in catalog.roots if not domain or r.domain_code == domain]
+        import io as _io
+
+        buf = _io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=ROOT_CSV_HEADER)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({k: getattr(r, k, "") for k in ROOT_CSV_HEADER})
+        return PlainTextResponse(
+            content=buf.getvalue(),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="roots_export.csv"'},
+        )
+
+    @app.post("/api/roots/import")
+    def import_roots(body: dict) -> dict:
+        """词根导入：CSV 文本 → 校验 → 批量入库（问题 6）。"""
+        import io as _io
+
+        from data_governance.io.roots_csv import append_root_row, make_root_csv_row
+
+        csv_text = str((body or {}).get("csv") or "")
+        if not csv_text.strip():
+            raise HTTPException(400, "csv 内容为空")
+        rows = list(csv.DictReader(_io.StringIO(csv_text)))
+        created, skipped = 0, 0
+        errors: list[str] = []
+        for row in rows:
+            domain = str(row.get("domain_code") or "").strip().lower()
+            root_cn = str(row.get("root_cn") or "").strip()
+            root_en = str(row.get("root_en") or "").strip()
+            if not domain or not root_cn or not root_en:
+                skipped += 1
+                continue
+            if any(r.domain_code == domain and r.root_en == root_en for r in load_catalog(base).roots):
+                skipped += 1
+                continue
+            try:
+                from data_governance.schemas.roots import ReviewStatus, RootType, SourceModel
+
+                record = make_root_csv_row(
+                    domain=domain,
+                    root_cn=root_cn,
+                    root_en=root_en,
+                    root_abbr=str(row.get("root_abbr") or "").strip() or root_en,
+                    root_type=RootType(str(row.get("root_type") or "noun").strip() or "noun"),
+                    description=str(row.get("description") or "").strip(),
+                    source_model=SourceModel.manual,
+                    review_status=ReviewStatus.pending,
+                    roots_dir=base / "roots",
+                )
+                append_root_row(base / "roots" / f"{domain}_roots.csv", record)
+                created += 1
+            except Exception as exc:
+                errors.append(f"{root_cn}: {exc}")
+        return {"created": created, "skipped": skipped, "errors": errors}
+
+    @app.post("/api/metrics/import")
+    def import_metrics(body: dict) -> dict:
+        """指标导入：CSV 文本 → 校验 → 批量入库（问题 3）。"""
+        import io as _io
+
+        from data_governance.io.metrics_csv import batch_create_metrics
+
+        csv_text = str((body or {}).get("csv") or "")
+        if not csv_text.strip():
+            raise HTTPException(400, "csv 内容为空")
+        rows = list(csv.DictReader(_io.StringIO(csv_text)))
+        payloads = []
+        for row in rows:
+            mid = str(row.get("metric_id") or "").strip()
+            cn = str(row.get("metric_cn") or "").strip()
+            if not mid or not cn:
+                continue
+            payloads.append({k: v for k, v in row.items() if v is not None})
+        created, skipped = batch_create_metrics(base, payloads)
+        return {"created": len(created), "skipped": len(skipped), "payload_rows": len(payloads)}
 
     @app.get("/api/metric-tree")
     def get_metric_tree() -> dict:
