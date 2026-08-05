@@ -1475,6 +1475,28 @@
     🗂️ <div>表级血缘由外部项目解析后上传 JSON 文件。当前展示 <strong>sale 交易</strong> 主题域的表间依赖关系，共 12 张表、23 条血缘关系。</div>
   </div>
 
+  <!-- 血缘明细表（问题 10：真实数据 + 点击查看） -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">血缘明细（真实数据）</div>
+      <span class="text-sm text-muted" id="tableLineageCount">—</span>
+      <div class="flex gap-2">
+        <button class="btn btn-sm" onclick="loadTableLineage()">&#128260; 刷新</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>目标表</th><th>层级</th><th>来源表</th><th>字段映射</th><th>关联指标</th><th>操作</th></tr>
+        </thead>
+        <tbody id="tableLineageBody">
+          <tr><td colspan="6" class="text-sm text-muted" style="padding:16px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tableLineageDetail" style="display:none;padding:12px;border-top:1px solid var(--border);"></div>
+  </div>
+
   <!-- Table Lineage DAG -->
   <div class="card mb-4">
     <div class="card-header">

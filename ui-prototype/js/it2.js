@@ -535,6 +535,68 @@
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="7" class="text-sm text-muted">加载失败: ' + esc(e.message) + '</td></tr>'; });
   }
 
+  /* ==================== 表血缘明细（问题 10） ==================== */
+
+  function loadTableLineage() {
+    var tbody = document.getElementById('tableLineageBody');
+    if (!tbody) return;
+    api('/api/lineage?domain=sale').then(function (payload) {
+      var rows = (payload && payload.lineages) || [];
+      var count = document.getElementById('tableLineageCount');
+      if (count) count.textContent = '共 ' + rows.length + ' 条血缘';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-muted" style="padding:16px;">该域暂无血缘数据（可 POST /api/lineage/upload 上传）</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function (r) {
+        var sources = (r.source_tables || []).map(function (s) { return s.table_name; }).join(', ') || '—';
+        var cm = (r.column_mappings || []).length;
+        var mids = (r.metric_ids || []).join(', ') || '—';
+        return '<tr style="cursor:pointer;" onclick="showTableLineageDetail(\'' + esc(r.lineage_id) + '\', this)">' +
+          '<td class="text-mono text-sm"><strong>' + esc(r.target_table) + '</strong></td>' +
+          '<td><span class="badge badge-info">' + esc(r.target_layer || '—') + '</span></td>' +
+          '<td class="text-sm">' + esc(sources) + '</td>' +
+          '<td>' + cm + '</td>' +
+          '<td class="text-sm">' + esc(mids) + '</td>' +
+          '<td><button class="btn btn-sm" onclick="event.stopPropagation();showTableLineageDetail(\'' + esc(r.lineage_id) + '\', this)">查看映射</button></td></tr>';
+      }).join('');
+    }).catch(function (e) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-muted" style="padding:16px;">加载失败: ' + esc(e.message) + '</td></tr>';
+    });
+  }
+
+  function showTableLineageDetail(lineageId, rowEl) {
+    api('/api/lineage?domain=sale').then(function (payload) {
+      var item = null;
+      ((payload && payload.lineages) || []).forEach(function (r) { if (r.lineage_id === lineageId) item = r; });
+      var detail = document.getElementById('tableLineageDetail');
+      if (!item || !detail) return;
+      var maps = item.column_mappings || [];
+      var html = '<div class="text-sm text-bold mb-2">' + esc(item.target_table) + ' 字段映射（' + maps.length + ' 条）</div>';
+      if (!maps.length) {
+        html += '<div class="text-sm text-muted">无字段映射</div>';
+      } else {
+        html += '<table><thead><tr><th>目标字段</th><th>来源表</th><th>来源字段</th><th>转换</th><th>关联指标</th></tr></thead><tbody>';
+        maps.forEach(function (m) {
+          html += '<tr><td class="text-mono text-sm">' + esc(m.target_column) + '</td>' +
+            '<td class="text-mono text-sm">' + esc(m.source_table || '—') + '</td>' +
+            '<td class="text-mono text-sm">' + esc(m.source_column || '—') + '</td>' +
+            '<td class="text-sm">' + esc(m.transform || '—') + '</td>' +
+            '<td class="text-mono text-sm">' + esc(m.metric_id || '—') + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      detail.innerHTML = html;
+      detail.style.display = 'block';
+      if (rowEl) {
+        var tbody = document.getElementById('tableLineageBody');
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (tr) { tr.style.background = ''; });
+        if (rowEl.tagName === 'TR') rowEl.style.background = 'var(--primary-light)';
+        else rowEl.closest('tr').style.background = 'var(--primary-light)';
+      }
+    }).catch(function () { /* 忽略 */ });
+  }
+
   /* ==================== 初始化 & 页面切换联动 ==================== */
 
   var origSwitch = global.switchToPage;
@@ -544,6 +606,7 @@
     if (target === 'roots') loadRoots();
     if (target === 'caliber-check') loadCaliberQueue();
     if (target === 'dashboard') loadDomainDashboard();
+    if (target === 'table-lineage') loadTableLineage();
     if (target === 'settings') {
       loadSettingsModels();
       loadSettingsModifiers();
@@ -585,6 +648,8 @@
   global.deleteModifier = deleteModifier;
   global.openModifierModal = openModifierModal;
   global.loadSettingsReviews = loadSettingsReviews;
+  global.loadTableLineage = loadTableLineage;
+  global.showTableLineageDetail = showTableLineageDetail;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
