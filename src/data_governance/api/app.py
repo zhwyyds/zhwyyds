@@ -435,7 +435,10 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 if v not in (None, "") and key not in merged:
                     merged[key] = v
         if not merged.get("metric_en"):
-            raise HTTPException(500, "模型未返回有效的指标定义，请重试或检查 Key 余额")
+            raise HTTPException(
+                500,
+                "模型未返回有效的指标定义（响应解析失败或缺少 metric_en 字段），请重试或检查 Key 余额/网络",
+            )
         merged.setdefault("metric_cn", metric_cn)
         merged.setdefault("frequency", "月")
         merged.setdefault("suggestions", [])

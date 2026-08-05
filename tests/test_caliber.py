@@ -98,3 +98,31 @@ def test_api_caliber_draft(api_client: TestClient, mini_project: Path):
 def test_api_caliber_draft_not_found(api_client: TestClient):
     r = api_client.post("/api/metrics/M_NO_SUCH/caliber/draft")
     assert r.status_code == 404
+
+
+def test_parse_response_handles_nested_suggested_roots():
+    """嵌套 JSON（suggested_roots 数组含对象）应正确解析（G5 回归保护）。"""
+    text = (
+        '{"metric_en":"monthly_rent_amount","metric_abbr":"mra",'
+        '"suggested_roots":[{"root_cn":"客流","root_en":"visitor","root_abbr":"vis","root_type":"noun"}]}'
+    )
+    data = parse_response(text)
+    assert data["metric_en"] == "monthly_rent_amount"
+    assert data["suggested_roots"][0]["root_en"] == "visitor"
+
+
+def test_parse_response_strips_markdown_code_block():
+    text = '```json\n{"metric_en":"foo","metric_cn":"测试"}\n```'
+    assert parse_response(text)["metric_en"] == "foo"
+
+
+def test_parse_response_handles_list_wrapped():
+    """模型返回 [{...}] 应取第一个 dict。"""
+    assert parse_response('[{"metric_en":"a"}]')["metric_en"] == "a"
+
+
+def test_parse_response_nested_in_markdown():
+    text = '```json\n{"metric_en":"x","suggested_roots":[{"root_en":"y"}]}\n```'
+    data = parse_response(text)
+    assert data["metric_en"] == "x"
+    assert data["suggested_roots"][0]["root_en"] == "y"

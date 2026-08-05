@@ -63,24 +63,67 @@ def build_prompt(metric: MetricRecord) -> str:
 """
 
 
+def _find_balanced(text: str, opener: str) -> str | None:
+    """在 text 中找到第一个 balanced {…} 或 […]（支持嵌套与字符串内括号）。"""
+    idx = text.find(opener)
+    if idx < 0:
+        return None
+    closer = "}" if opener == "{" else "]"
+    depth = 1
+    in_str = False
+    esc = False
+    for j in range(idx + 1, len(text)):
+        ch = text[j]
+        if esc:
+            esc = False
+            continue
+        if ch == "\\" and in_str:
+            esc = True
+            continue
+        if ch == '"' and not esc:
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth == 0:
+                return text[idx : j + 1]
+    return None
+
+
 def parse_response(text: str) -> dict:
-    """从容错文本中提取口径 JSON。"""
+    """容错解析 LLM 返回的 JSON 字典：支持 markdown 包裹 / 嵌套 / list-wrapped。
+
+    返回 dict；解析失败返回空字典（调用方按需处理）。
+    """
     text = (text or "").strip()
-    # 先尝试整段 JSON
-    try:
-        data = json.loads(text)
-        if isinstance(data, dict):
-            return data
-    except json.JSONDecodeError:
-        pass
-    # 提取第一个 JSON 块
-    for block in _JSON_BLOCK_RE.findall(text):
+    if not text:
+        return {}
+    # 1. 剥 markdown ```json\n{…}\n``` 包裹
+    md = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+    if md:
+        text = md.group(1).strip()
+    # 2. 找第一个 balanced {...} 或 [...]（支持任意嵌套）
+    candidates = []
+    for opener in ("{", "["):
+        sub = _find_balanced(text, opener)
+        if sub:
+            candidates.append(sub)
+    if not candidates:
+        candidates.append(text)
+    # 3. 按顺序尝试解析，dict 优先；list-wrap 取首个 dict
+    for sub in candidates:
         try:
-            data = json.loads(block)
-            if isinstance(data, dict):
-                return data
+            obj = json.loads(sub)
         except json.JSONDecodeError:
             continue
+        if isinstance(obj, dict):
+            return obj
+        if isinstance(obj, list) and obj and isinstance(obj[0], dict):
+            return obj[0]
     return {}
 
 
