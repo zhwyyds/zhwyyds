@@ -152,10 +152,15 @@ def draft_caliber(
     use_mock = resolve_use_mock(use_mock)
 
     if use_mock:
-        clients = [
-            MockLLMClient(name, responder=lambda mname, _batch, _n=name: [_mock_draft(metric, mname)])
-            for name in model_names
-        ]
+        from data_governance.llm.mock import MockLLMClient
+
+        def _make_responder() -> Any:
+            def responder(mname: str, _batch: list[Any]) -> list[dict]:
+                return [_mock_draft(metric, mname)]
+
+            return responder
+
+        clients = [MockLLMClient(name, responder=_make_responder()) for name in model_names]
         raw = run_models_parallel_mock(clients, [metric])
     else:
         live_clients = build_live_clients(models)

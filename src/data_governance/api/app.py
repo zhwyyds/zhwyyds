@@ -335,6 +335,15 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
 
         return pending_queue(base, domain)
 
+    @app.post("/api/caliber/backfill")
+    def caliber_backfill(body: dict | None = None) -> dict:
+        """存量一键补全：对未起草口径的指标批量起草（IT2-6）。"""
+        from data_governance.caliber.review import backfill_calibers
+
+        domain = ((body or {}).get("domain") or "") if body else ""
+        dry_run = bool((body or {}).get("dry_run", False)) if body else False
+        return backfill_calibers(base, domain or None, dry_run=dry_run)
+
     @app.post("/api/metrics/{metric_id}/caliber/approve")
     def caliber_approve(metric_id: str, body: dict | None = None) -> dict:
         """批准口径草稿，触发重新评分（IT2-5）。"""

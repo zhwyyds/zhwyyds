@@ -36,6 +36,13 @@ def publish_domain(
     if not approved:
         raise ValueError(f"domain {domain!r} has no approved metrics to publish")
 
+    # 发布门禁：口径草稿未核查（pending/rejected）禁止发布；"" 表示未进入口径流程（兼容存量）
+    blocked = [m.metric_id for m in approved if m.caliber_status in ("pending", "rejected")]
+    if blocked:
+        raise ValueError(
+            f"以下指标口径未核查，禁止发布: {', '.join(blocked)}（请先批准/修改口径）"
+        )
+
     registry = ReleaseRegistry(base_dir)
     version = registry.next_version(domain)
     label = format_version(version)

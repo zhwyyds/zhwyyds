@@ -213,15 +213,22 @@ def _score_root_link(metric: MetricRecord, root_by_id: dict[str, RootRecord]) ->
 
 
 def _score_caliber(metric: MetricRecord) -> tuple[list[ScoreItem], bool]:
-    caliber = metric.caliber_desc.strip()
-    formula = (metric.formula or "").strip() or (metric.tech_caliber or "").strip()
+    # 结构化口径字段优先（口径助手产出），回退到 caliber_desc（存量文本口径）
+    business = (metric.caliber_business or "").strip()
+    formula = (
+        (metric.caliber_formula or "").strip()
+        or (metric.formula or "").strip()
+        or (metric.tech_caliber or "").strip()
+    )
+    period = (metric.caliber_period or "").strip()
+    caliber = business or metric.caliber_desc.strip()
     freq = metric.frequency.strip()
     items: list[ScoreItem] = []
     veto = False
 
     if not caliber:
         veto = True
-        items.append(ScoreItem("口径非空", 0, 5, "fail", "caliber_desc 为空"))
+        items.append(ScoreItem("口径非空", 0, 5, "fail", "caliber_business/caliber_desc 均为空"))
     else:
         items.append(ScoreItem("口径非空", 5, 5, "pass", "口径已填写"))
 
@@ -238,7 +245,7 @@ def _score_caliber(metric: MetricRecord) -> tuple[list[ScoreItem], bool]:
     else:
         items.append(ScoreItem("计算公式", 0, 7, "fail", "缺少计算公式"))
 
-    if _caliber_period_present(caliber, freq):
+    if period or _caliber_period_present(caliber, freq):
         items.append(ScoreItem("统计周期", 5, 5, "pass", "口径或频率明确统计周期"))
     else:
         items.append(ScoreItem("统计周期", 0, 5, "fail", "未明确统计周期"))

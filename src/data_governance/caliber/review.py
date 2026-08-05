@@ -81,6 +81,29 @@ def reject_caliber(base_dir: Path, metric_id: str, reason: str, *, checked_by: s
     return {"metric_id": metric_id, "status": "rejected", "reason": reason}
 
 
+def backfill_calibers(base_dir: Path, domain: str | None = None, *, dry_run: bool = False) -> dict:
+    """存量一键补全：对 caliber_status 为空（未起草）的指标批量起草口径。"""
+    from data_governance.caliber.draft import draft_caliber, persist_draft
+
+    catalog = load_catalog(base_dir)
+    targets = [
+        m
+        for m in catalog.metrics
+        if m.caliber_status == "" and (not domain or m.domain_code == domain)
+    ]
+    drafted = 0
+    failed: list[dict] = []
+    for m in targets:
+        try:
+            result = draft_caliber(m, base_dir=base_dir)
+            if not dry_run:
+                persist_draft(base_dir, m.metric_id, result)
+            drafted += 1
+        except Exception as exc:
+            failed.append({"metric_id": m.metric_id, "error": str(exc)})
+    return {"drafted": drafted, "dry_run": dry_run, "failed": failed}
+
+
 def update_caliber(base_dir: Path, metric_id: str, fields: dict, *, checked_by: str = "system") -> dict:
     """人工修改口径：仅允许 CALIBER_FIELDS 字段，改后 status=edited（视为 approved）并重评分。"""
     catalog = load_catalog(base_dir)
