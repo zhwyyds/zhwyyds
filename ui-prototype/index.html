@@ -40,6 +40,9 @@
       <div class="nav-item" data-page="batch-gen">
         <span class="nav-icon">⚡</span> 批量生成
       </div>
+      <div class="nav-item" data-page="batch-import">
+        <span class="nav-icon">📥</span> 批量导入
+      </div>
       <div class="nav-item" data-page="review">
         <span class="nav-icon">🤖</span> 模型评审
         <span class="nav-badge warning" id="nav-badge-review">—</span>
@@ -1174,6 +1177,58 @@
       <span><span style="color:var(--success)">✅</span> 允许（默认推荐）</span>
       <span><span style="color:var(--warning)">○</span> 允许（需手动勾选）</span>
       <span><span style="color:var(--danger)">✕</span> 禁止（硬规则）</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: Batch Import ==================== -->
+<div class="page" id="page-batch-import">
+  <div class="callout info">
+    💡 <div><strong>批量导入说明：</strong>上传 CSV（列：metric_cn 中文名, caliber_desc 定义）→ 每 50 条生成一个待办任务 → 去重比对指标库 → AI 生成指标卡片 → 逐卡人工评审（通过进草稿，打回可修正重提）。</div>
+  </div>
+
+  <!-- 上传区 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">上传 CSV</div>
+      <span class="text-sm text-muted">每 50 条为一组生成待办任务</span>
+    </div>
+    <div class="card-body">
+      <div class="flex gap-2" style="align-items:center;gap:12px;">
+        <input type="file" id="importTaskFile" accept=".csv" class="input" style="flex:1;min-width:auto;">
+        <button class="btn btn-primary" onclick="uploadImportTaskFile()">上传并切分</button>
+        <button class="btn" onclick="loadImportTasks()">刷新任务列表</button>
+      </div>
+      <div class="text-sm text-muted mt-2">CSV 格式：第一行表头 <code>metric_cn,caliber_desc</code>（可含 unit/frequency/domain_code），每行一条指标。</div>
+    </div>
+  </div>
+
+  <!-- 任务列表 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-title">待办任务</div>
+      <span class="text-sm text-muted" id="importTaskCount">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>任务ID</th><th>组序号</th><th>条数</th><th>状态</th><th>去重</th><th>评审进度</th><th>操作</th></tr></thead>
+        <tbody id="importTaskBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 任务详情（指标卡片堆叠） -->
+  <div class="card" id="importTaskDetailCard" style="display:none;">
+    <div class="card-header">
+      <div class="card-title" id="importTaskDetailTitle">任务详情</div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm" onclick="processImportTask()">去重 + AI 生成</button>
+        <button class="btn btn-sm" onclick="closeImportTaskDetail()">收起</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="text-sm text-muted mb-2" id="importTaskDetailMeta"></div>
+      <div id="importTaskCards"></div>
     </div>
   </div>
 </div>
@@ -2469,6 +2524,7 @@
 <script src="js/metric-library.js"></script>
 <script src="js/metric-score.js"></script>
 <script src="js/app.js"></script>
+<script src="js/batch-import.js"></script>
 <script src="js/it2.js"></script>
 
 </body>

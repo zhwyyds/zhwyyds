@@ -68,11 +68,13 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
     ai_svc = AiService(base)
 
     # 按域拆分路由（R3）
+    from data_governance.api.routes_import_tasks import register as register_import_tasks
     from data_governance.api.routes_metrics import register as register_metrics
     from data_governance.api.routes_roots import register as register_roots
 
     register_roots(app, base, ai_svc)
     register_metrics(app, base, metric_svc, ai_svc)
+    register_import_tasks(app, base, metric_svc, ai_svc)
 
     # ── 基础端点 ──────────────────────────────────────────────────
 

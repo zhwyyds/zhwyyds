@@ -991,6 +991,7 @@
   global.switchToPage = function (target) {
     if (origSwitch) origSwitch(target);
     if (target === 'batch-gen') loadBatchGenOptions();
+    if (target === 'batch-import') loadImportTasks();
     if (target === 'roots') loadRoots();
     if (target === 'caliber-check') loadCaliberQueue();
     if (target === 'dashboard') loadDomainDashboard();

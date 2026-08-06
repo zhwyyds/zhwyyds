@@ -1,0 +1,64 @@
+{
+  "task_id": "T20260806174948_001",
+  "batch_id": "20260806174948",
+  "group_no": 1,
+  "total_rows": 12,
+  "status": "pending",
+  "dedup_result": {},
+  "generated": [
+    {
+      "metric_cn": "批量测试指标0",
+      "caliber_desc": "批量测试定义0"
+    },
+    {
+      "metric_cn": "批量测试指标1",
+      "caliber_desc": "批量测试定义1"
+    },
+    {
+      "metric_cn": "批量测试指标2",
+      "caliber_desc": "批量测试定义2"
+    },
+    {
+      "metric_cn": "批量测试指标3",
+      "caliber_desc": "批量测试定义3"
+    },
+    {
+      "metric_cn": "批量测试指标4",
+      "caliber_desc": "批量测试定义4"
+    },
+    {
+      "metric_cn": "批量测试指标5",
+      "caliber_desc": "批量测试定义5"
+    },
+    {
+      "metric_cn": "批量测试指标6",
+      "caliber_desc": "批量测试定义6"
+    },
+    {
+      "metric_cn": "批量测试指标7",
+      "caliber_desc": "批量测试定义7"
+    },
+    {
+      "metric_cn": "批量测试指标8",
+      "caliber_desc": "批量测试定义8"
+    },
+    {
+      "metric_cn": "批量测试指标9",
+      "caliber_desc": "批量测试定义9"
+    },
+    {
+      "metric_cn": "批量测试指标10",
+      "caliber_desc": "批量测试定义10"
+    },
+    {
+      "metric_cn": "批量测试指标11",
+      "caliber_desc": "批量测试定义11"
+    }
+  ],
+  "review_progress": {
+    "reviewed": 0,
+    "approved": 0,
+    "rejected": 0
+  },
+  "created_at": "2026-08-06 17:49:48"
+}

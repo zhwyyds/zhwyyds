@@ -80,7 +80,7 @@ class MetricFinalDecision(BaseModel):
     approved: bool
     decision_type: MetricDecisionType
     action_items: list[str] = Field(default_factory=list)
-    review_status: Literal["pending", "approved"]
+    review_status: Literal["pending", "approved", "draft"]
 
 
 class MetricReviewItem(BaseModel):

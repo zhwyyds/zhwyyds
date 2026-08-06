@@ -8,7 +8,7 @@ const pageTitles = {
   'metrics': '指标库',
   'metric-mgmt': '指标管理',
   'roots': '词根库',
-  'batch-gen': '批量生成',
+  'batch-gen': '批量生成', 'batch-import': '批量导入',
   'review': '模型评审',
   'lineage': '字段血缘',
   'table-lineage': '表血缘',
@@ -407,7 +407,7 @@ function switchToPage(target) {
   var targetPage = document.getElementById('page-' + target);
   if (targetPage) targetPage.classList.add('active');
   var pageTitle = document.getElementById('pageTitle');
-  var titles = { 'dashboard': '治理总览', 'metrics': '指标库', 'metric-mgmt': '指标管理', 'roots': '词根库', 'batch-gen': '批量生成', 'review': '模型评审', 'lineage': '字段血缘', 'table-lineage': '表血缘', 'naming': '命名规范', 'caliber': '口径治理', 'scoring': '评分看板', 'caliber-check': '口径核查', 'settings': '系统设置' };
+  var titles = { 'dashboard': '治理总览', 'metrics': '指标库', 'metric-mgmt': '指标管理', 'roots': '词根库', 'batch-gen': '批量生成', 'batch-import': '批量导入', 'review': '模型评审', 'lineage': '字段血缘', 'table-lineage': '表血缘', 'naming': '命名规范', 'caliber': '口径治理', 'scoring': '评分看板', 'caliber-check': '口径核查', 'settings': '系统设置' };
   pageTitle.innerHTML = titles[target] + ' <span class="crumb">› 数据治理平台</span>';
   window.scrollTo(0, 0);
 }
