@@ -175,12 +175,13 @@
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
 
-    // 默认选中第一张待评审/待打回卡；已选中则保持
+    // 默认选中第一张未完成态卡（pending/rejected/未处理都算）
+    // 完成态（draft/skip/error）跳过；undefined 也视为未处理可选中
     if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
       SELECTED_INDEX = -1;
       for (var k = 0; k < n; k++) {
         var st = rows[k]._status;
-        if (st === 'pending' || st === 'rejected') { SELECTED_INDEX = k; break; }
+        if (st !== 'draft' && st !== 'skip' && st !== 'error') { SELECTED_INDEX = k; break; }
       }
     }
 
@@ -239,6 +240,9 @@
     rows.forEach(function (r) { cnt[r._status] = (cnt[r._status] || 0) + 1; });
     var hint =
       '<div class="import-fan-hint">' +
+        (task.status === 'pending' && (cnt.pending + cnt.rejected) === n
+          ? '⚠️ 任务未处理 · 点击右上「<b>去重 + AI 生成</b>」开始 → '
+          : '') +
         '共 ' + n + ' 张 · ' +
         '<span class="dot" style="background:#f0a020;"></span>待评审 ' + (cnt.pending || 0) +
         '<span class="dot" style="background:#2e8b57;"></span>已通过 ' + (cnt.draft || 0) +
