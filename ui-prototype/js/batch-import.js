@@ -266,6 +266,7 @@
       '<div class="draw-actions" id="mc8draw-actions">' +
         '<button class="act-btn reject" id="mc8btn-reject" type="button">✕ 打回</button>' +
         '<button class="act-btn ghost2" id="mc8btn-save" type="button">💾 保存</button>' +
+        '<button class="act-btn ghost2" id="mc8btn-edit" type="button">✏️ 编辑</button>' +
         '<button class="act-btn ghost2" id="mc8btn-back" type="button">📥 收回卡包</button>' +
         '<button class="act-btn approve" id="mc8btn-approve" type="button">✓ 进入草稿</button>' +
         '<span class="draw-state" id="mc8draw-state"></span>' +
@@ -474,10 +475,6 @@
     el.classList.add('active-lock');
     // 强制 z-index 提升（覆盖 buildFrame 设置的 inline z-index）
     el.style.zIndex = '999';
-    // 抽出 = 编辑表单：把卡面替换为真实 input/textarea/select（保证可见）
-    var row = CURRENT_TASK.generated[idx];
-    var cardEl = el.querySelector('.card');
-    if (row && cardEl) cardEl.innerHTML = editCardHtml(mapRow(row, idx), idx, frames.length);
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
     var actions = document.getElementById('mc8draw-actions');
@@ -526,6 +523,8 @@
       btnApprove.onclick = function () { reviewImportRow(activeIdx, 'approve', collectEdits()); };
       var btnSave = document.getElementById('mc8btn-save');
       if (btnSave) btnSave.onclick = function () { saveEdits(); };
+      var btnEdit = document.getElementById('mc8btn-edit');
+      if (btnEdit) btnEdit.onclick = function () { toggleEditMode(); };
     }
   }
   /* ============ 视图模式（参考 ch9） ============ */
@@ -575,12 +574,14 @@
       });
       f.addEventListener('click', function (e) {
         // 排除编辑元素：点击 input/textarea/select/button 不触发抽卡/收回
-        if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON')) return;
+        if (e && e.target && e.target.closest && e.target.closest('.edit-form, input, textarea, select, button, label, .ef-row, .ef-grid2')) return;
         if (gridMode) {
           setGrid(false);
           requestAnimationFrame(function () { draw(f); });
           return;
         }
+        // 兜底：active-lock 状态下点任何位置都不响应（closest 未拦住时也安全）
+        if (f.classList.contains('active-lock')) return;
         if (activeIdx === +f.dataset.idx) { putBack(); return; }
         draw(f);
       });
@@ -653,6 +654,43 @@
     var row = CURRENT_TASK.generated[activeIdx];
     Object.keys(edits).forEach(function (k) { row[k] = edits[k]; });
     if (window.toast) toast('✓ 已保存（待通过入草稿生效）', 'success');
+    exitEditMode();  // 保存后退出编辑模式，展示更新后的只读卡面
+  }
+
+  /* 进入编辑模式：卡面替换为编辑表单 */
+  function enterEditMode() {
+    if (!CURRENT_TASK || activeIdx < 0) return;
+    var el = frames[activeIdx];
+    if (!el) return;
+    var cardEl = el.querySelector('.card');
+    if (!cardEl) return;
+    var row = CURRENT_TASK.generated[activeIdx];
+    cardEl.innerHTML = editCardHtml(mapRow(row, activeIdx), activeIdx, frames.length);
+    var btn = document.getElementById('mc8btn-edit');
+    if (btn) btn.textContent = '🔙 退出编辑';
+  }
+  /* 退出编辑模式：恢复只读卡面 */
+  function exitEditMode() {
+    if (!CURRENT_TASK || activeIdx < 0) return;
+    var el = frames[activeIdx];
+    if (!el) return;
+    var cardEl = el.querySelector('.card');
+    if (!cardEl) return;
+    var row = CURRENT_TASK.generated[activeIdx];
+    cardEl.innerHTML = cardHtml(mapRow(row, activeIdx), activeIdx, frames.length);
+    var btn = document.getElementById('mc8btn-edit');
+    if (btn) btn.textContent = '✏️ 编辑';
+  }
+  function toggleEditMode() {
+    if (!CURRENT_TASK || activeIdx < 0) return;
+    var el = frames[activeIdx];
+    if (!el) return;
+    var cardEl = el.querySelector('.card');
+    if (!cardEl) return;
+    // 判断当前是否编辑模式：卡面内是否有 [data-field]
+    var isEditing = !!cardEl.querySelector('[data-field]');
+    if (isEditing) exitEditMode();
+    else enterEditMode();
   }
 
   /* ---------- 逐卡评审 ---------- */
@@ -701,4 +739,5 @@
     activeIdx = -1;
   };
   global.toggleBoardMode = toggleBoardMode;
+  global.toggleEditMode = toggleEditMode;
 })(window);
