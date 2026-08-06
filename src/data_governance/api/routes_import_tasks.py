@@ -6,6 +6,7 @@
 - POST /api/import-tasks/{id}/process   去重 + AI 生成（处理任务）
 - POST /api/import-tasks/{id}/review   逐卡人工评审（通过→draft / 打回）
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -42,19 +43,27 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
     def import_tasks_list() -> dict:
         return {"tasks": list_import_tasks(base)}
 
-    @app.get("/api/import-tasks/{task_id}")
-    def import_task_detail(task_id: str) -> dict:
+    def _safe_task(task_id: str) -> dict:
+        """校验 task_id 安全并返回任务（非法/不存在 → 404）。"""
+        from data_governance.io.task_store import task_path
+
+        try:
+            task_path(base, task_id)
+        except ValueError:
+            raise HTTPException(400, f"非法 task_id: {task_id!r}") from None
         task = get_import_task(base, task_id)
         if task is None:
             raise HTTPException(404, f"task not found: {task_id}")
         return task
 
+    @app.get("/api/import-tasks/{task_id}")
+    def import_task_detail(task_id: str) -> dict:
+        return _safe_task(task_id)
+
     @app.post("/api/import-tasks/{task_id}/process")
     def import_task_process(task_id: str, body: dict | None = None) -> dict:
         """处理任务：去重比对 → 未通过项标记，新条目 AI 生成（存入 generated）。"""
-        task = get_import_task(base, task_id)
-        if task is None:
-            raise HTTPException(404, f"task not found: {task_id}")
+        task = _safe_task(task_id)
         rows = task.get("generated") or []
         if not rows:
             raise HTTPException(400, "任务无数据行")
@@ -80,7 +89,15 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
                     }
                 )
                 merged = {**row}
-                for k in ("metric_en", "domain_code", "unit", "frequency", "caliber_desc", "category_l1", "category_l2"):
+                for k in (
+                    "metric_en",
+                    "domain_code",
+                    "unit",
+                    "frequency",
+                    "caliber_desc",
+                    "category_l1",
+                    "category_l2",
+                ):
                     v = sug.get(k)
                     if v:
                         merged[k] = v
@@ -90,7 +107,7 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
             except Exception as exc:
                 generated.append({**row, "_dedup": "new", "_status": "error", "_error": str(exc)[:200]})
 
-        task = update_import_task(
+        updated = update_import_task(
             base,
             task_id,
             status="reviewing",
@@ -103,7 +120,8 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
             generated=generated,
             review_progress={"reviewed": 0, "approved": 0, "rejected": 0, "total": len(generated)},
         )
-        return task or {}
+        assert updated is not None
+        return updated
 
     @app.post("/api/import-tasks/{task_id}/review")
     def import_task_review(task_id: str, body: dict | None = None) -> dict:
@@ -111,9 +129,7 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
 
         body: {row_index, action: "approve"|"reject", edits?: {...}}
         """
-        task = get_import_task(base, task_id)
-        if task is None:
-            raise HTTPException(404, f"task not found: {task_id}")
+        task = _safe_task(task_id)
         body = body or {}
         row_index = int(body.get("row_index", -1))
         action = str(body.get("action") or "")
@@ -172,11 +188,12 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
         else:
             status = task.get("status", "reviewing")
 
-        task = update_import_task(
+        updated = update_import_task(
             base,
             task_id,
             status=status,
             generated=rows,
             review_progress=prog,
         )
-        return task or {}
+        assert updated is not None
+        return updated

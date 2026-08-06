@@ -6,6 +6,7 @@
 
 状态机：pending → processing（去重+AI生成）→ reviewing（人工评审）→ done
 """
+
 from __future__ import annotations
 
 import csv
@@ -63,6 +64,10 @@ def tasks_dir(base_dir: Path) -> Path:
 
 
 def task_path(base_dir: Path, task_id: str) -> Path:
+    """任务文件路径。task_id 仅允许安全字符（T + 字母数字），防路径遍历。"""
+    safe = re.sub(r"[^A-Za-z0-9_]", "", task_id)
+    if not safe or safe != task_id:
+        raise ValueError(f"非法 task_id: {task_id!r}")
     return tasks_dir(base_dir) / f"{task_id}.json"
 
 

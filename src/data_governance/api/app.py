@@ -92,7 +92,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             try:
                 r = subprocess.run(
                     ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                    capture_output=True, text=True, timeout=3,
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
                 )
                 return r.stdout.strip() if r.returncode == 0 else "unknown"
             except Exception:

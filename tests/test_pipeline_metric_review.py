@@ -14,8 +14,13 @@ def test_metric_review_pipeline(project_root: Path, tmp_path: Path):
     base.mkdir()
     (base / "config").mkdir()
     (base / "reviews" / "metric_reviews").mkdir(parents=True)
+    # 自包含固定模型配置：仅启用 mock fixture 覆盖的 3 路模型（gpt-4o/claude-3.5-sonnet/qwen-plus），
+    # 避免断言 4.67 依赖运行时 config/models.csv（任何 enabled 开关变化都会改变平均分）。
     (base / "config" / "models.csv").write_text(
-        (project_root / "config" / "models.csv").read_text(encoding="utf-8"),
+        "model_id,model_name,provider,use_case,priority,enabled,api_endpoint,api_key_env,remark\n"
+        "1,gpt-4o,OpenAI,metric_review,1,true,,OPENAI_API_KEY,\n"
+        "2,claude-3.5-sonnet,Anthropic,metric_review,2,true,,ANTHROPIC_API_KEY,\n"
+        "3,qwen-plus,Qwen,metric_review,3,true,,DASHSCOPE_API_KEY,\n",
         encoding="utf-8",
     )
 

@@ -1,4 +1,5 @@
 """批量导入任务 API 集成测试（H31 P1）。"""
+
 import io
 
 import pytest
@@ -92,7 +93,9 @@ def test_review_reject_marks_rejected(client):
     task = client.get(f"/api/import-tasks/{tid}").json()
     idx = next(i for i, r in enumerate(task["generated"]) if r["_status"] == "pending")
 
-    resp = client.post(f"/api/import-tasks/{tid}/review", json={"row_index": idx, "action": "reject", "reason": "定义不清"})
+    resp = client.post(
+        f"/api/import-tasks/{tid}/review", json={"row_index": idx, "action": "reject", "reason": "定义不清"}
+    )
     assert resp.status_code == 200
     task = resp.json()
     assert task["generated"][idx]["_status"] == "rejected"
@@ -100,3 +103,22 @@ def test_review_reject_marks_rejected(client):
     # 打回不入库
     metrics = client.get("/api/metrics").json()
     assert not any(m["metric_cn"] == "另一个新指标" for m in metrics)
+
+
+def test_path_traversal_rejected(client):
+    """恶意 task_id（路径遍历）应返回 400 而非逃逸。"""
+    resp = client.get("/api/import-tasks/..%2F..%2Fetc%2Fpasswd")
+    assert resp.status_code in (400, 404)
+    # 也测 process/review
+    resp2 = client.post("/api/import-tasks/..%2F..%2Fetc%2Fpasswd/process", json={})
+    assert resp2.status_code in (400, 404)
+
+
+def test_task_path_rejects_unsafe(monkeypatch, mini_project):
+    """task_path 对含路径分隔符的 task_id 抛 ValueError。"""
+    import pytest
+
+    from data_governance.io.task_store import task_path
+
+    with pytest.raises(ValueError):
+        task_path(mini_project, "../../etc/passwd")
