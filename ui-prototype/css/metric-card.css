@@ -496,17 +496,17 @@
     background-size: 12px 12px;
   
 }
-/* 悬停：查阅——卡片脱离卡堆、保持原尺寸，不霸占空间让其他卡也能被 hover */
+/* 悬停：查阅——卡片在原位轻微抬起 + 高亮（不脱离卡包，点击才取出） */
 #importTaskCards .frame.hovered {
 
     z-index: 200;
-    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 240px)) rotate(0deg) scale(1.05);
-    filter: none;
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 16px)) rotate(var(--fan-deg, 0deg)) scale(1.02);
+    filter: brightness(1.15) saturate(1.1);
     box-shadow:
       0 0 0 1.5px var(--frame-outer),
       0 0 0 5px var(--frame-2),
       0 0 0 7.5px var(--frame-1),
-      0 30px 60px oklch(0% 0 0 / 0.55),
+      0 20px 44px oklch(0% 0 0 / 0.5),
       0 0 28px color-mix(in oklch, var(--frame-1) 60%, transparent);
   
 }
@@ -1137,7 +1137,7 @@
 #importTaskCards .pack.board-mode .frame.hovered {
 
     z-index: 200;
-    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 160px)) rotate(0deg) scale(1.06);
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 14px)) rotate(var(--fan-deg, 0deg)) scale(1.02);
   
 }
 /* 白板模式下抽出：恢复完整卡片 */
