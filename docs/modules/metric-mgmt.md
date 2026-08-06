@@ -21,8 +21,20 @@
 | P1-6 | draft 状态接入 + 全量验收 | ✅ 完成 |
 
 - API：`/api/import-tasks/*`（upload/list/detail/process/review）
-- 状态机新增 draft；测试 12 个（task_store 6 + import_tasks_api 6）
+- 状态机新增 draft；测试 14 个（task_store 6 + import_tasks_api 8）
 - 真实环境验收：上传→切分→去重→AI生成→评审通过→draft 入库全链路 ✅
+
+### 质量审查修复（2026-08-06）
+
+| # | 问题 | 级别 | 修复 |
+|---|---|---|---|
+| 1 | `task_path` 直接拼接 task_id → `../../etc/passwd.json` 路径遍历 | Critical | 安全字符白名单（`[A-Za-z0-9_]`）+ 路由 `_safe_task()` 兜底（非法→400，不存在→404）+ 2 个安全测试 |
+| 2 | 前端 fetch 相对路径打到 8080 静态服务器 | High | `api()` 先探测 API base |
+| 3 | `esc is not defined`（评审弹窗） | Medium | batch-import.js 增加本地 esc() |
+| 4 | `tasks_dir` 不自动建目录 | Medium | mkdir parents |
+| 5 | mypy：`task = update_import_task()` 变量覆盖导致类型推断错误 | Medium | 独立 `updated` 变量隔离 |
+| 6 | ruff：未使用 `force` 变量 | Low | 删除 |
+| 7 | `test_metric_review_pipeline` 断言依赖运行时 models.csv | Low | 测试自包含固定 models.csv（3 路 fixture 模型），解耦运行时配置 |
 
 ## 实现说明
 
@@ -39,8 +51,8 @@
 
 | 项 | 命令 | 结果 |
 |---|---|---|
-| pytest | `pytest -q` | ✅ 172 passed |
-| ruff | `ruff check src` | ✅ All checks passed |
+| pytest | `pytest -q` | ✅ 186 passed |
+| ruff | `ruff check src tests` | ✅ All checks passed |
 | mypy | `mypy src` | ✅ 0 error |
 | JS 语法 | `node --check *.js` | ✅ 全部通过 |
 
@@ -60,4 +72,5 @@
 
 | 日期 | 版本 | 说明 |
 |---|---|---|
+| 2026-08-06 | H31 收尾 | 质量审查修复 7 项（含路径遍历 Critical），回归 186 全绿 |
 | 2026-08-06 | 补档 | 历史功能模块文档补建（H25 规范落地） |
