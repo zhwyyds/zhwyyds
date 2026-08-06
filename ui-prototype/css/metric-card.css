@@ -508,209 +508,116 @@
 }
 
 /* ================================================================
-   卡包桌 v10：筛选器 + 卡包 + 抽出完整展示（参考卡包状态机）
+   v11：卡包 = 正常大小卡堆叠（不缩小），抽出 = 完整大卡轻微放大
+   删除所有数量/统计/上下张导航；筛选通过抽出卡顶部主题域色点（鼠标点选）
    ================================================================ */
-/* 筛选器（分段控件） */
-.mc-filter {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  margin-bottom: 18px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-}
-.mc-filter-title {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: #111827;
-}
-.mc-filter-count {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  background: #f3f4f6;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-variant-numeric: tabular-nums;
-}
-.mc-filter-tabs {
-  display: flex;
-  gap: 3px;
-  background: #f3f4f6;
-  padding: 3px;
-  border-radius: 9px;
-}
-.mc-filter-tabs button {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 13px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  font-variant-numeric: tabular-nums;
-}
-.mc-filter-tabs button:hover { color: #111827; }
-.mc-filter-tabs button.active {
-  background: #ffffff;
-  color: #111827;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
-}
-.mc-filter-domain {
-  font-size: 12px;
-  padding: 5px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #374151;
-  cursor: pointer;
-}
-.mc-filter-reset {
-  font-size: 11px;
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.mc-filter-reset:hover { color: #111827; }
-
-/* 卡包舞台 */
 .mc-pack-zone {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 460px;
+  min-height: 620px;
 }
-/* 卡包本体：层叠卡 + 正面 */
+/* 卡包容器（容纳一张完整卡 + 底下层叠卡露出边缘） */
 .mc-pack {
   position: relative;
-  width: 230px;
-  height: 330px;
+  width: 380px;
+  height: 600px;
   cursor: pointer;
-  transition: transform 0.3s var(--ease);
 }
-.mc-pack:hover { transform: translateY(-6px); }
-.mc-pack .deck-card {
+.mc-pack > .deck-bg {
   position: absolute;
-  width: 212px;
-  height: 300px;
+  width: 360px;
+  height: 560px;
   border-radius: 12px;
   background: linear-gradient(160deg, #2d2a45, #1d1b30);
   border: 1px solid #4a4468;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
   transition: transform 0.5s var(--ease);
 }
-.mc-pack .d1 { left: 4px;  transform: rotate(-4.5deg) translateY(5px); }
-.mc-pack .d2 { left: 9px;  transform: rotate(2.5deg) translateY(3px); }
-.mc-pack .d3 { left: 6px;  transform: rotate(-1deg) translateY(8px); }
-.mc-pack.pop .d1 { transform: rotate(-8deg) translateY(16px) translateX(-10px); }
-.mc-pack.pop .d2 { transform: rotate(4.5deg) translateY(20px) translateX(8px); }
-.mc-pack.pop .d3 { transform: rotate(-2deg) translateY(12px) translateX(10px); }
-/* 卡包正面（主题色烫印 + 数量） */
-.mc-pack-front {
+.mc-pack > .d2 { left: 6px;  top: 6px;  transform: rotate(3deg) translateY(4px); }
+.mc-pack > .d3 { left: 14px; top: 12px; transform: rotate(-2deg) translateY(10px); }
+.mc-pack.pop > .d2 { transform: rotate(7deg) translateY(18px) translateX(8px); }
+.mc-pack.pop > .d3 { transform: rotate(-4deg) translateY(14px) translateX(12px); }
+/* 顶层卡（卡包里看到的那张，正常大小） */
+.mc-pack-top {
   position: absolute;
   inset: 0;
   z-index: 2;
-  border-radius: 12px;
-  background:
-    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--accent, #6b7280) 28%, transparent), transparent 60%),
-    linear-gradient(160deg, #2d2a45, #1d1b30);
-  border: 1px solid color-mix(in srgb, var(--accent, #6b7280) 55%, transparent);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 36px rgba(0, 0, 0, 0.4);
 }
-.mc-pack-front::before {
-  content: "";
-  position: absolute;
-  top: 14px; left: 14px; right: 14px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent, #6b7280), transparent);
-  opacity: 0.7;
-}
-.mc-pack-count {
-  font-size: 46px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent, #6b7280);
-  text-shadow: 0 0 22px color-mix(in srgb, var(--accent, #6b7280) 55%, transparent);
-  line-height: 1;
-}
-.mc-pack-label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.34em;
-  text-indent: 0.34em;
-  color: #e5e7eb;
-  margin-top: 10px;
-}
-.mc-pack-sub {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-top: 3px;
-  font-variant-numeric: tabular-nums;
-}
-.mc-pack-hint {
-  position: absolute;
-  bottom: -26px;
-  left: 0; right: 0;
-  text-align: center;
-  font-size: 12px;
-  color: #9ca3af;
-}
-/* 抽出完整卡区 */
+/* 抽出完整大卡区（popout 轻微放大 1.05） */
 .mc-draw {
   position: absolute;
   left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%);
+  top: 46%;
+  transform: translate(-50%, -50%) scale(1.05);
   z-index: 300;
   display: none;
 }
 .mc-draw.open { display: block; animation: mc-popout 0.7s var(--ease); }
-/* 抽出的完整卡（380×660） */
-.mc-draw .mc-frame { width: 404px; }
-.mc-draw .mc-card { width: 380px; height: 636px; }
-.mc-draw-close {
+@keyframes mc-popout {
+  0%   { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+  55%  { transform: translate(-50%, -50%) scale(1.1); filter: brightness(1.12); }
+  100% { transform: translate(-50%, -50%) scale(1.05); filter: none; }
+}
+/* 抽出卡主题域切换器（顶部色点 + 关闭按钮） */
+.mc-draw-controls {
   position: absolute;
-  top: -12px; right: -12px;
-  z-index: 310;
-  width: 32px; height: 32px;
+  top: -52px;
+  left: 0; right: 0;
+  z-index: 320;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.mc-draw-dots {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.mc-draw-dots .dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s;
+  font-size: 0;
+}
+.mc-draw-dots .dot:hover { transform: scale(1.18); }
+.mc-draw-dots .dot.active {
+  border-color: #111827;
+  transform: scale(1.18);
+}
+.mc-draw-dots .dot.trade     { background: oklch(80% 0.12 82); }
+.mc-draw-dots .dot.lease     { background: oklch(80% 0.11 155); }
+.mc-draw-dots .dot.finance   { background: oklch(75% 0.1 265); }
+.mc-draw-dots .dot.ops       { background: oklch(78% 0.09 215); }
+.mc-draw-dots .dot.marketing { background: oklch(78% 0.12 350); }
+.mc-draw-dots .dot.service   { background: oklch(76% 0.1 300); }
+.mc-draw-close {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   background: #1f2937;
-  color: #fff;
-  font-size: 15px;
+  color: #ffffff;
+  font-size: 16px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s, background 0.2s;
 }
 .mc-draw-close:hover { background: #dc2626; transform: rotate(90deg); }
-/* 抽出后切换提示 */
-.mc-draw-nav {
-  position: absolute;
-  bottom: -34px;
-  left: 0; right: 0;
-  text-align: center;
-  font-size: 12px;
-  color: #9ca3af;
-  z-index: 310;
-}
-.mc-draw-nav b { color: #4b5563; }
-/* 空包状态 */
+.mc-draw .mc-frame { width: 404px; }
+.mc-draw .mc-card { width: 380px; height: 636px; }
+
+/* 空包状态（筛选无结果） */
 .mc-pack-empty {
   font-size: 13px;
   color: #9ca3af;
