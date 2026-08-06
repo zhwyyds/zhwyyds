@@ -146,6 +146,16 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
    - 语义化：v0.2.0 新功能 / v0.2.1 修复
 4. **数据纪律**：测试数据（`_N` 编号指标、mock 评审、临时文件）不得混入正式数据文件；发布前按 §5 验收清单确认数据干净
 
+### 4.10 模块化开发与文档存档规范
+**任何功能开发必须按模块进行，且每模块一份开发文档（任务清单 + 测试结果），存档于 `docs/modules/`。**
+
+1. **按模块开发**：模块划分见 `docs/modules/模块开发规范.md`（当前 13 个模块，按前端页面划分）
+2. **开发前建任务清单**：复制 `docs/modules/_template.md` → 新建 `docs/modules/<module>.md` → 填「任务清单」（每项含验收标准，状态 ☐→🚧→✅）
+3. **开发后填测试结果**：pytest / ruff / mypy / JS 语法 + 真实环境 Playwright 验收（pageerror/console/4xx = 0）+ 结论
+4. **索引维护**：`docs/modules/README.md` 登记每模块最新状态（✅/🚧/⚠️/📝）
+5. **留痕原则**：模块文档就是开发证据——"每个功能当时怎么规划、怎么验证的"都可追溯；变更记录追加在模块文件底部
+6. **与分支流程联动**：模块开发在 dev 分支 + `feature/<module>` 子分支 → 测试结果全绿 → PR 合入 main
+
 ---
 
 ## §5 验收清单（每次开发完成对照）
@@ -169,6 +179,7 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 □ 双主干模型：开发在 dev，验证通过才 PR 进 main
 □ main 保护生效（PR + CI 门禁）
 □ 发版打 tag（语义化版本）
+□ 模块开发文档已建/更新（docs/modules/<module>.md：任务清单 ✅ + 测试结果 ✅）
 ```
 
 ---
