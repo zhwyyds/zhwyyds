@@ -5,6 +5,35 @@
 (function (global) {
   var CURRENT_TASK = null;
 
+  // 主题域 → 炉石卡插画配色 + emoji 图标（H32 魔兽卡风格）
+  var DOMAIN_THEMES = {
+    sale: { icon: '💰', c1: '#8b6914', c2: '#3a2a08' },
+    cust: { icon: '👥', c1: '#1e4a8a', c2: '#0a1f3a' },
+    prod: { icon: '📦', c1: '#8a4513', c2: '#3a1f08' },
+    mall: { icon: '🏛️', c1: '#5a3a8a', c2: '#2a1a4a' },
+    mkt: { icon: '📢', c1: '#8a3a6a', c2: '#3a1a2a' },
+    cont: { icon: '📜', c1: '#5a5a3a', c2: '#2a2a1a' },
+    fin: { icon: '💎', c1: '#2a8a5a', c2: '#0a3a2a' },
+    _default: { icon: '📊', c1: '#4a4a4a', c2: '#1a1a1a' }
+  };
+
+  function themeFor(domain) {
+    return DOMAIN_THEMES[(domain || '').toLowerCase()] || DOMAIN_THEMES._default;
+  }
+
+  function cardCost(row) {
+    // 从 metric_id 末段取数字（如 M_SALE_001 → 1）；失败回退 5
+    var parts = String(row.metric_id || '').split('_');
+    var tail = parts[parts.length - 1] || '5';
+    var n = parseInt(tail, 10);
+    if (!isFinite(n) || n <= 0) n = (row.metric_cn || '').length % 9 + 1;
+    return String(Math.max(1, Math.min(9, n)));
+  }
+
+  function cardStat(row) {
+    return String(((row.metric_cn || '').length % 7) + 1);
+  }
+
   // 复用全局 API 探测：DG_API_BASE 未设置时先探测（与 governance-api 同逻辑）
   function resolveApiBase() {
     var cached = global.DG_API_BASE;
@@ -136,7 +165,6 @@
       return;
     }
     host.classList.add('import-cards-stack');
-    host.setAttribute('style', 'perspective:1800px;perspective-origin:50% 0%;padding:24px 16px 80px;');
     host.innerHTML = rows.map(function (row, i) {
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
@@ -144,30 +172,34 @@
       var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
       var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
 
-      // 透视层叠偏移（inline 强制生效；激进参数让重叠明显可见）
-      var layerOffset = i * 40;           // 每张卡向上偏移 40px（够明显）
-      var layerScale = Math.max(0.82, 1 - i * 0.06); // 缩小更明显
-      var layerOpacity = Math.max(0.7, 1 - i * 0.12); // 透明度递减
-      var layerMarginTop = (i === 0) ? 0 : -150;       // 后面卡往上叠 150px 真正重叠
+      // 横向层叠 z-index：第一张最上，向后递减
+      var z = 100 - i;
 
       return (
-        '<div class="import-card-wrap" ' +
-          'style="--i:' + i + ';margin-top:' + layerMarginTop + 'px;' +
-          'transform:translateY(-' + layerOffset + 'px) scale(' + layerScale.toFixed(3) + ');' +
-          'opacity:' + layerOpacity.toFixed(2) + ';z-index:' + (100 - i) + ';" ' +
-          'data-index="' + i + '">' +
-          // 顶部状态条
-          '<div class="import-card-status">' +
-            '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
-            '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
-            (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
-            '<span class="text-sm text-muted" style="margin-left:auto;">卡片 ' + (i + 1) + ' / ' + rows.length + '</span>' +
-          '</div>' +
-          // 指标卡片（复用指标库的 indicator-spec-card 完整渲染：全部字段值）
-          '<div class="metric-spec-surface">' +
-            buildImportSpecHtml(row) +
-            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 16px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
-            // 评审按钮
+        '<div class="import-card-wrap" style="z-index:' + z + ';">' +
+          // 卡包容器（H32 魔兽卡包）
+          '<div class="warcraft-card" ' +
+            'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
+            '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
+            // 顶部状态条（卡牌上方：去重 / 状态 / 打回原因 / 序号）
+            '<div class="import-card-status">' +
+              '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
+              '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
+              (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
+              '<span class="text-sm text-muted" style="margin-left:auto;">卡片 ' + (i + 1) + ' / ' + rows.length + '</span>' +
+            '</div>' +
+            // 左上角黄色水晶数字（成本）
+            '<div class="warcraft-cost">' + cardCost(row) + '</div>' +
+            // 顶部插画区（按主题域配色 + emoji）
+            '<div class="warcraft-art"><span class="warcraft-art-icon">' + themeFor(row.domain_code).icon + '</span></div>' +
+            // 卡名条（米色椭圆渐变，紧贴插画下方）
+            '<div class="warcraft-name">' + esc(row.metric_cn || '—') + '</div>' +
+            // 内容区（米色背景，复用指标库完整字段渲染）
+            '<div class="warcraft-body">' + buildImportSpecHtml(row) + '</div>' +
+            // 右下角蓝色水晶数字（耐久）
+            '<div class="warcraft-stat">' + cardStat(row) + '</div>' +
+            // 错误提示 + 评审按钮
+            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 12px;background:#fef2f2;border-radius:0 0 12px 12px;">' + esc(row._error) + '</div>' : '') +
             ((st === 'pending' || st === 'rejected') ?
               '<div class="import-card-actions">' +
                 '<button class="btn" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
