@@ -317,7 +317,7 @@
     els.style.setProperty('--stack-x', stackX + 'px');
     els.style.setProperty('--stack-y', stackY + 'px');
     els.style.setProperty('--fan-deg', fanDeg + 'deg');
-    els.style.zIndex = i + 1;
+    els.style.zIndex = n - i;  // 右侧(i=0)在上：stackX 大(z-index 高)，永远不被左侧卡盖住
 
     els.innerHTML = cardHtml(m, i, n);
     pack.appendChild(els);
