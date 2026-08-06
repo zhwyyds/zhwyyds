@@ -61,14 +61,13 @@ def score_metric(
     """对单个指标评分，返回完整 ScoreResult。"""
     rules = rules or load_scoring_rules()
     root_en_set = {r.root_en for r in catalog.roots if r.root_en.strip()}
-    root_abbr_set = {r.root_abbr for r in catalog.roots if r.root_abbr.strip()}
     root_by_id = {r.root_id: r for r in catalog.roots}
 
     dimensions: list[ScoreDimension] = []
     special_hits: list[str] = []
 
     # ── 维度一：命名规范 ──
-    naming_items, naming_veto = _score_naming(metric, root_en_set, root_abbr_set)
+    naming_items, naming_veto = _score_naming(metric, root_en_set)
     if naming_veto:
         special_hits.append("拼音残留")
     dimensions.append(_dim_from_items(rules, "naming", naming_items))
@@ -131,10 +130,9 @@ def score_metric(
 
 
 def _score_naming(
-    metric: MetricRecord, root_en_set: set[str], root_abbr_set: set[str]
+    metric: MetricRecord, root_en_set: set[str]
 ) -> tuple[list[ScoreItem], bool]:
     en = metric.metric_en.strip()
-    abbr = metric.metric_abbr.strip()
     items: list[ScoreItem] = []
     veto = False
 
@@ -146,23 +144,9 @@ def _score_naming(
     else:
         items.append(ScoreItem("英文名标准化", 0, 8, "fail", f"{en} 不符合英文 snake_case 多段格式"))
 
-    # 缩写可拆解
-    if not abbr:
-        items.append(ScoreItem("缩写可拆解", 0, 6, "fail", "metric_abbr 为空"))
-    else:
-        tokens = [t for t in abbr.split("_") if t]
-        matched = sum(1 for t in tokens if t in root_abbr_set)
-        ratio = matched / len(tokens) if tokens else 0.0
-        if ratio == 1.0:
-            items.append(ScoreItem("缩写可拆解", 6, 6, "pass", f"{abbr} 全部匹配 root_abbr"))
-        elif ratio >= 0.5:
-            items.append(ScoreItem("缩写可拆解", 3, 6, "warn", f"部分可拆解 {matched}/{len(tokens)}"))
-        else:
-            items.append(ScoreItem("缩写可拆解", 0, 6, "fail", f"无法拆解 {matched}/{len(tokens)} 匹配"))
-
     # 无拼音残留
     pinyin_tokens: list[str] = []
-    for t in (en.split("_") if en else []) + (abbr.split("_") if abbr else []):
+    for t in (en.split("_") if en else []):
         if t and looks_like_pinyin(t, root_en_set):
             pinyin_tokens.append(t)
     if pinyin_tokens:
@@ -436,7 +420,6 @@ def _build_issues(dimensions: list[ScoreDimension], rules: ScoringRuleSet) -> li
 def _suggest_for(item: str, dim_code: str) -> str:
     mapping = {
         "英文名标准化": "按 root_en 组合重写 metric_en（snake_case 多段）",
-        "缩写可拆解": "metric_abbr 改为已注册 root_abbr 的组合",
         "无拼音残留": "将拼音命名替换为英文词根组合",
         "命名格式一致": "统一为小写下划线命名",
         "词根非空": "补充关联词根 root_ids",

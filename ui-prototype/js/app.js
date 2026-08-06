@@ -187,7 +187,6 @@ function refreshMetricLibraryFromApi(metrics, domains) {
       id: r.metric_id,
       name: r.metric_cn,
       en: r.metric_en,
-      abbr: r.metric_abbr,
       desc: r.caliber_desc,
       formula: r.formula || '',
       unit: r.unit,
@@ -234,8 +233,7 @@ function updateMetricDetailHeader(m) {
   if (idEl) idEl.textContent = m.id || '—';
   if (nameEl) nameEl.textContent = m.name || '—';
   if (enEl) {
-    enEl.innerHTML =
-      escTag(m.en) + '<span class="abbr">&middot; ' + escTag(m.abbr || '—') + '</span>';
+    enEl.innerHTML = escTag(m.en);
   }
   var grade = (m.grade || 'A').toLowerCase();
   var gradeEl = document.getElementById('libMetricGrade');

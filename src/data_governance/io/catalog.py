@@ -34,7 +34,6 @@ class MetricRecord:
     metric_id: str
     metric_cn: str
     metric_en: str
-    metric_abbr: str
     root_ids: str
     metric_type: str = ""
     caliber_desc: str = ""

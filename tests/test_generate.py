@@ -29,8 +29,8 @@ def test_generate_derived_dry_run(mini_project: Path, project_root: Path):
     assert result.dry_run is True
     assert len(result.generated) == 2
     ens = {m.metric_en for m in result.generated}
-    assert "mtd_mon_sal_amt" in ens
-    assert "ytd_mon_sal_amt" in ens
+    assert "mtd_monthly_sales_amt" in ens
+    assert "ytd_monthly_sales_amt" in ens
     # dry-run 不落盘
     assert len(load_catalog(base).metrics) == 1
 

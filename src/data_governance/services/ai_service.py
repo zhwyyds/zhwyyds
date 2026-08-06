@@ -41,7 +41,7 @@ from data_governance.schemas.roots import (
 
 # metric_en 收集的字段清单（与 suggest prompt 输出对齐）
 _METRIC_FIELDS = (
-    "metric_en", "metric_abbr", "caliber_desc", "unit", "frequency",
+    "metric_en", "caliber_desc", "unit", "frequency",
     "value_type", "dimensions", "scenario", "formula", "formula_cn",
     "reports", "analysis_methods", "alert_rules", "precision",
     "owner", "category_l1", "category_l2",
@@ -185,7 +185,6 @@ class AiService:
                 "source": "similar_metric",
                 "metric_cn": metric_cn,
                 "metric_en": same.metric_en,
-                "metric_abbr": same.metric_abbr,
                 "caliber_desc": same.caliber_desc,
                 "unit": same.unit,
                 "frequency": same.frequency,
@@ -201,7 +200,6 @@ class AiService:
             "source": "rule_hint",
             "metric_cn": metric_cn,
             "metric_en": "_".join(hits),
-            "metric_abbr": "",
             "caliber_desc": desc,
             "unit": "",
             "frequency": "月",
@@ -454,7 +452,7 @@ def _build_metric_prompt(metric_cn: str, domain: str, root_text: str, context_bl
     """构造指标定义生成 prompt：词根字典注入 + 强制复用规则。"""
     return (
         "你是数据治理平台的指标定义专家。根据指标名称【并结合业务定义/计算公式】生成标准化的指标定义，只输出 JSON：\n"
-        f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名","metric_abbr":"缩写",'
+        f'{{"metric_cn":"{metric_cn}","metric_en":"snake_case 英文名",'
         f'"caliber_desc":"业务定义(含统计周期与边界)","unit":"单位","frequency":"月/日/周",'
         f'"value_type":"值类型(如 金额/数量/比率/百分数)","dimensions":"常用维度(逗号分隔)",'
         f'"scenario":"适用场景","formula":"计算公式","formula_cn":"公式中文说明",'

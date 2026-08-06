@@ -103,7 +103,7 @@ def test_api_caliber_draft_not_found(api_client: TestClient):
 def test_parse_response_handles_nested_suggested_roots():
     """嵌套 JSON（suggested_roots 数组含对象）应正确解析（G5 回归保护）。"""
     text = (
-        '{"metric_en":"monthly_rent_amount","metric_abbr":"mra",'
+        '{"metric_en":"monthly_rent_amount",'
         '"suggested_roots":[{"root_cn":"客流","root_en":"visitor","root_abbr":"vis","root_type":"noun"}]}'
     )
     data = parse_response(text)

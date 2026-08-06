@@ -54,8 +54,7 @@ def load_modifiers(base_dir: Path) -> list[ModifierRecord]:
 
 def _derive_payload(atomic: MetricRecord, mod: ModifierRecord, metric_id: str) -> dict:
     """单个原子 × 修饰词的派生指标 payload。"""
-    abbr = atomic.metric_abbr or atomic.metric_en
-    en = f"{mod.modifier_en}_{abbr}"
+    en = f"{mod.modifier_en}_{atomic.metric_en}"
     inherit = {
         # 派生指标继承原子的业务属性（修饰词不改变这些维度）
         "category_l1": atomic.category_l1,
@@ -75,7 +74,6 @@ def _derive_payload(atomic: MetricRecord, mod: ModifierRecord, metric_id: str) -
         "metric_id": metric_id,
         "metric_cn": f"{mod.modifier_cn}{atomic.metric_cn}",
         "metric_en": en,
-        "metric_abbr": en,
         "domain_code": atomic.domain_code,
         "root_ids": atomic.root_ids,
         "metric_type": "derived",
@@ -120,8 +118,7 @@ def generate_derived_metrics(
                 if mid not in result.invalid_modifiers:
                     result.invalid_modifiers.append(mid)
                 continue
-            abbr = atomic.metric_abbr or atomic.metric_en
-            en = f"{mod.modifier_en}_{abbr}"
+            en = f"{mod.modifier_en}_{atomic.metric_en}"
             if en in seen_en:
                 result.existing.append(en)
                 continue

@@ -164,7 +164,6 @@
     '<button type="button" class="btn btn-xs btn-primary" onclick="inlineSuggestMetric()" title="AI 生成">&#129302;</button>' +
     '</div></td>' +
     '<td style="min-width:150px;"><input class="input" id="inlineNewEn" placeholder="monthly_rent_revenue" style="width:100%;"></td>' +
-    '<td style="min-width:80px;"><input class="input" id="inlineNewAbbr" placeholder="mrr" style="width:100%;"></td>' +
     '<td style="min-width:90px;"><select class="select" id="inlineNewDomain" style="width:100%;"><option value="sale">sale</option><option value="mall">mall</option><option value="cust">cust</option></select></td>' +
     '<td style="min-width:80px;"><select class="select" id="inlineNewType" style="width:100%;"><option value="atomic">atomic</option><option value="derived">derived</option></select></td>' +
     '<td class="text-sm text-muted">草稿</td>' +
@@ -205,8 +204,6 @@
           esc(m.metric_cn) +
           '</td><td class="text-mono text-sm">' +
           esc(m.metric_en) +
-          '</td><td class="text-mono text-sm">' +
-          esc(m.metric_abbr || '—') +
           '</td><td><span class="badge badge-neutral">' +
           esc(m.domain_code) +
           '</span></td><td>' +
@@ -279,7 +276,6 @@
     setFormValue('metricEditId', m.metric_id);
     setFormValue('metricEditCn', m.metric_cn);
     setFormValue('metricEditEn', m.metric_en);
-    setFormValue('metricEditAbbr', m.metric_abbr);
     setFormValue('metricEditCatL1', m.category_l1);
     setFormValue('metricEditCatL2', m.category_l2);
     setFormValue('metricEditValueType', m.value_type);
@@ -310,7 +306,6 @@
       metric_id: getFormValue('metricEditId'),
       metric_cn: getFormValue('metricEditCn'),
       metric_en: getFormValue('metricEditEn'),
-      metric_abbr: getFormValue('metricEditAbbr'),
       domain_code: getFormValue('metricEditDomain'),
       metric_type: getFormValue('metricEditType'),
       category_l1: getFormValue('metricEditCatL1'),
@@ -402,7 +397,6 @@
       metric_id: newId,
       metric_cn: cn,
       metric_en: getFormValue('newMetricEn') || 'pending_naming',
-      metric_abbr: getFormValue('newMetricAbbr'),
       domain_code: dom,
       metric_type: getFormValue('newMetricType') || 'atomic',
       caliber_desc: getFormValue('newMetricDesc'),
@@ -615,7 +609,6 @@
       metric_id: newId,
       metric_cn: it.metric_cn,
       metric_en: it.metric_en || 'pending_naming',
-      metric_abbr: it.metric_abbr || '',
       domain_code: dom,
       metric_type: 'atomic',
       caliber_desc: it.caliber_desc || '',
@@ -647,7 +640,7 @@
   function showNewMetricInline() {
     var row = document.getElementById('newMetricInlineRow');
     if (!row) return;
-    ['inlineNewCn', 'inlineNewEn', 'inlineNewAbbr'].forEach(function (id) {
+    ['inlineNewCn', 'inlineNewEn'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -682,8 +675,6 @@
         global.__DG_INLINE_SUGGEST__ = r;
         var enEl = document.getElementById('inlineNewEn');
         if (enEl && r.metric_en) enEl.value = r.metric_en;
-        var abEl = document.getElementById('inlineNewAbbr');
-        if (abEl && r.metric_abbr) abEl.value = r.metric_abbr;
         // 不再弹窗，结果已自动填充到字段（内联）
       })
       .catch(function (e) { toast('AI 生成失败: ' + e.message); });
@@ -700,7 +691,6 @@
       metric_id: 'M_' + domUp + '_N' + String(Math.floor(Math.random() * 900 + 100)),
       metric_cn: cn.value.trim(),
       metric_en: val('inlineNewEn') || it.metric_en || 'pending_naming',
-      metric_abbr: val('inlineNewAbbr') || it.metric_abbr || '',
       domain_code: dom,
       metric_type: val('inlineNewType') || 'atomic',
       caliber_desc: it.caliber_desc || '',
@@ -911,7 +901,7 @@
     global.__DG_AI_SUGGEST__ = r;
     var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || '';
     var fills = [
-      ['newMetricEn', r.metric_en, '英文名'], ['newMetricAbbr', r.metric_abbr, '缩写'],
+      ['newMetricEn', r.metric_en, '英文名'],
       ['newMetricDesc', r.caliber_desc, '指标描述'], ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
       ['newMetricFormulaLogic', r.formula, '计算公式'], ['newMetricUnit', r.unit, '计量单位'],
       ['newMetricFrequency', r.frequency, '时间周期'], ['newMetricValueType', r.value_type, '值类型'],
@@ -951,7 +941,6 @@
       metric_id: 'M_' + domUp + '_N' + String(Math.floor(Math.random() * 900 + 100)),
       metric_cn: cn.value.trim(),
       metric_en: get('newMetricEn') || it.metric_en || 'pending_naming',
-      metric_abbr: get('newMetricAbbr') || it.metric_abbr || '',
       domain_code: dom,
       metric_type: get('newMetricType') || 'atomic',
       caliber_desc: get('newMetricDesc'),

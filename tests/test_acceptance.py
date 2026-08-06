@@ -22,13 +22,13 @@ def test_homonym_veto(tmp_path: Path, project_root: Path):
         encoding="utf-8",
     )
     metric_header = (
-        "metric_id,metric_cn,metric_en,metric_abbr,domain_code,root_ids,metric_type,"
+        "metric_id,metric_cn,metric_en,domain_code,root_ids,metric_type,"
         "caliber_desc,unit,frequency,owner,source_model,review_status,created_at,updated_at"
     )
     rows = "\n".join(
         [
-            "M1,A,a_metric,a_m,sale,,atomic,口径甲,元,月,,manual,pending,2026-08-03,2026-08-03",
-            "M2,B,a_metric,a_m,sale,,atomic,口径乙,元,月,,manual,pending,2026-08-03,2026-08-03",
+            "M1,A,a_metric,sale,,atomic,口径甲,元,月,,manual,pending,2026-08-03,2026-08-03",
+            "M2,B,a_metric,sale,,atomic,口径乙,元,月,,manual,pending,2026-08-03,2026-08-03",
         ]
     )
     csv_path = base / "metrics" / "sale_metrics.csv"

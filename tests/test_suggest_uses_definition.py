@@ -21,7 +21,7 @@ class _CaptureClient:
     def complete(self, prompt: str) -> str:
         self.prompts.append(prompt)
         return (
-            '{"metric_en":"monthly_rent_amount","metric_abbr":"mra",'
+            '{"metric_en":"monthly_rent_amount",'
             '"caliber_desc":"自然月应收租金","unit":"元","frequency":"月",'
             '"suggested_roots":[]}'
         )

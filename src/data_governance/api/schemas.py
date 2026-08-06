@@ -13,7 +13,6 @@ class MetricCreateRequest(BaseModel):
     metric_id: str = Field(..., min_length=1, description="指标ID，格式 M_DOMAIN_XXX")
     metric_cn: str = Field(..., min_length=1, description="指标中文名")
     metric_en: str = Field("", description="指标英文名 (snake_case)")
-    metric_abbr: str = Field("", description="指标缩写")
     domain_code: str = Field("", description="域代码，为空时从 metric_id 推断")
     root_ids: str = Field("", description="词根ID列表，分号分隔")
     metric_type: str = Field("atomic", description="指标类型")
@@ -37,7 +36,6 @@ class MetricUpdateRequest(BaseModel):
 
     metric_cn: str | None = None
     metric_en: str | None = None
-    metric_abbr: str | None = None
     root_ids: str | None = None
     metric_type: str | None = None
     caliber_desc: str | None = None

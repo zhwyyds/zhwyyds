@@ -6,7 +6,7 @@ from data_governance.cli import main
 from data_governance.validation import ValidationIssue, validate_project
 
 MINI_METRIC_HEADER = (
-    "metric_id,metric_cn,metric_en,metric_abbr,domain_code,root_ids,metric_type,"
+    "metric_id,metric_cn,metric_en,domain_code,root_ids,metric_type,"
     "caliber_desc,unit,frequency,owner,source_model,review_status,created_at,updated_at"
 )
 
@@ -35,7 +35,7 @@ def test_validate_missing_required(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
         metrics.read_text(encoding="utf-8")
-        + "M_SALE_901,,test_901,sale,,,,,,,,,,,\n",
+        + "M_SALE_901,,test_901,,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -46,7 +46,7 @@ def test_validate_duplicate_id(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
         metrics.read_text(encoding="utf-8")
-        + "M_SALE_001,重复指标,dup_metric,,sale,,,,,,,,,,\n",
+        + "M_SALE_001,重复指标,dup_metric,sale,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -57,7 +57,7 @@ def test_validate_bad_root_reference(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
         metrics.read_text(encoding="utf-8")
-        + "M_SALE_900,测试,test_ref,,sale,R_NO_SUCH,atomic,口径,元,月,,,approved,2026-08-05,2026-08-05\n",
+        + "M_SALE_900,测试,test_ref,sale,R_NO_SUCH,atomic,口径,元,月,,,approved,2026-08-05,2026-08-05\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -68,7 +68,7 @@ def test_validate_bad_domain_code(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
         metrics.read_text(encoding="utf-8")
-        + "M_SALE_902,测试,test_dom,,nope,,,,,,,,,,\n",
+        + "M_SALE_902,测试,test_dom,nope,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -93,7 +93,7 @@ def test_cli_validate_dirty_exit_1(mini_project: Path, capsys):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
         metrics.read_text(encoding="utf-8")
-        + "M_SALE_903,测试,test_x,,sale,R_NO_SUCH,atomic,,,,,,,,\n",
+        + "M_SALE_903,测试,test_x,sale,R_NO_SUCH,atomic,,,,,,,,\n",
         encoding="utf-8",
     )
     code = main(["validate", "--base-dir", str(mini_project)])

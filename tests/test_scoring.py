@@ -22,7 +22,6 @@ def _metric(**kw) -> MetricRecord:
         metric_id="M_TEST",
         metric_cn="测试指标",
         metric_en="test_metric",
-        metric_abbr="tst",
         root_ids="",
         metric_type="atomic",
         caliber_desc="统计周期为自然月，计算公式为 SUM(x)，粒度为订单行级",

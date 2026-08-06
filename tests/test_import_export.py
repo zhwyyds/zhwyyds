@@ -19,8 +19,8 @@ ROOTS_CSV = (
     ",渠道,channel,chn,sale,noun,渠道词根,manual,pending,,\n"
 )
 METRICS_CSV = (
-    "metric_id,metric_cn,metric_en,metric_abbr,domain_code,metric_type,caliber_desc\n"
-    "M_SALE_I01,测试导入指标,test_import,tst,sale,atomic,导入测试口径\n"
+    "metric_id,metric_cn,metric_en,domain_code,metric_type,caliber_desc\n"
+    "M_SALE_I01,测试导入指标,test_import,sale,atomic,导入测试口径\n"
 )
 
 

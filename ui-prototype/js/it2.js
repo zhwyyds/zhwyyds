@@ -286,7 +286,6 @@
 
   var AI_FILL_MAP = {
     newMetricEn: 'metric_en',
-    newMetricAbbr: 'metric_abbr',
     newMetricDesc: 'caliber_desc',
     newMetricFormulaLogic: 'formula',
     newMetricFormulaCn: 'formula_cn',
@@ -415,7 +414,6 @@
       // AI 直接填充表单字段（空字段填值+高亮；非空字段行内差异提示）
       var fills = [
         ['newMetricEn', r.metric_en, '英文名'],
-        ['newMetricAbbr', r.metric_abbr, '缩写'],
         ['newMetricDesc', r.caliber_desc, '指标描述'],
         ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
         ['newMetricFormulaLogic', r.formula, '计算公式'],

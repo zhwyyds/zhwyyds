@@ -46,7 +46,6 @@ def test_suggest_degrades_when_metric_en_empty(api_client: TestClient):
     assert body["metric_en"] == ""
     assert "手动填写" in body.get("metric_en_warning", "")
     # 其他字段正常返回
-    assert body["metric_abbr"] == "amt"
     assert body["caliber_desc"] == "统计金额"
     assert body["unit"] == "元"
     assert body["suggested_roots"] == []

@@ -144,25 +144,13 @@ def score_root_coverage(catalog: ProjectCatalog) -> DimensionScore:
     return DimensionScore("词根覆盖", "20%", 20, pts, subs, passed=pts >= 14)
 
 
-def score_naming(catalog: ProjectCatalog, root_abbrs: set[str]) -> DimensionScore:
+def score_naming(catalog: ProjectCatalog) -> DimensionScore:
     subs: list[SubScore] = []
     metrics = catalog.metrics
 
     en_ok = sum(1 for m in metrics if m.metric_en.strip() and METRIC_EN_RE.match(m.metric_en))
     en_rate = _safe_rate(en_ok, len(metrics))
     subs.append(SubScore("英文命名率", 8, _rate_ge_threshold(en_rate, 0.95, 8), f"{en_rate:.1%}"))
-
-    def abbr_composed(m: MetricRecord) -> bool:
-        if not m.metric_abbr.strip():
-            return False
-        tokens = [t for t in m.metric_abbr.split("_") if t]
-        if not tokens:
-            return False
-        return all(t in root_abbrs for t in tokens)
-
-    abbr_ok = sum(1 for m in metrics if abbr_composed(m))
-    abbr_rate = _safe_rate(abbr_ok, len(metrics))
-    subs.append(SubScore("缩写规范率", 5, _rate_ge_threshold(abbr_rate, 0.90, 5), f"{abbr_rate:.1%}"))
 
     subs.append(
         SubScore(
@@ -371,7 +359,7 @@ def run_acceptance(base_dir: Path) -> AcceptanceReport:
 
     dimensions = [
         score_root_coverage(catalog),
-        score_naming(catalog, root_abbrs),
+        score_naming(catalog),
     ]
     homonym_dim, veto, findings = score_homonym_synonym(catalog, root_abbrs)
     dimensions.append(homonym_dim)

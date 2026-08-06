@@ -51,7 +51,7 @@ async def run(url: str) -> None:
             else:
                 await _route.fulfill(status=200, content_type="application/json",
                     body='{"status":"done","completed":2,"total":2,'
-                         '"result":{"metric_en":"monthly_rent_revenue","metric_abbr":"mrr",'
+                         '"result":{"metric_en":"monthly_rent_revenue",'
                          '"caliber_desc":"自然月内生效租赁合同的租金收入","formula_cn":"汇总当月租金",'
                          '"formula":"SUM(amount)","unit":"元","frequency":"月","value_type":"金额",'
                          '"dimensions":"租赁项目,客户,区域","scenario":"月度经营分析","owner":"财务部",'
@@ -68,7 +68,7 @@ async def run(url: str) -> None:
         async def mock_metrics(_route):
             row = (
                 '{"metric_id":"M_SALE_001","metric_cn":"月销售额","metric_en":"monthly_sales_amt",'
-                '"metric_abbr":"msa","domain_code":"sale","metric_type":"atomic",'
+                '"domain_code":"sale","metric_type":"atomic",'
                 '"review_status":"pending","version":"1","formula":"SUM(amt)","unit":"元","frequency":"月"},'
             )
             await _route.fulfill(

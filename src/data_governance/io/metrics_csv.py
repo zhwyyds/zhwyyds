@@ -13,7 +13,6 @@ METRIC_CSV_FIELDS = [
     "metric_id",
     "metric_cn",
     "metric_en",
-    "metric_abbr",
     "domain_code",
     "root_ids",
     "metric_type",

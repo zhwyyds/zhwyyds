@@ -525,7 +525,6 @@
             <th>指标ID</th>
             <th>中文名</th>
             <th>英文名</th>
-            <th>缩写</th>
             <th>主题域</th>
             <th>类型</th>
             <th>评审状态</th>
@@ -805,9 +804,8 @@
         <div class="modal-form-section-title">业务属性</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标名称</label><input class="modal-form-input" id="metricEditCn"></div>
-          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名 / 缩写</label>
-            <input class="modal-form-input" id="metricEditEn" placeholder="metric_en" style="margin-bottom:6px;">
-            <input class="modal-form-input" id="metricEditAbbr" placeholder="abbr">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名</label>
+            <input class="modal-form-input" id="metricEditEn" placeholder="metric_en">
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -2273,10 +2271,9 @@
               <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricAlert" style="width:100%;"></td></tr>
             <tr><th class="indicator-spec-th">精度</th>
               <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricPrecision" placeholder="2位小数" style="width:100%;"></td>
-              <th class="indicator-spec-th">英文名 / 缩写</th>
+              <th class="indicator-spec-th">英文名</th>
               <td class="indicator-spec-td">
-                <input class="modal-form-input" id="newMetricEn" placeholder="monthly_rent_revenue" style="width:100%;margin-bottom:6px;">
-                <input class="modal-form-input" id="newMetricAbbr" placeholder="mrr" style="width:100%;">
+                <input class="modal-form-input" id="newMetricEn" placeholder="monthly_rent_revenue" style="width:100%;">
               </td></tr>
             <tr><th class="indicator-spec-th">数据来源</th>
               <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricDataSources" style="width:100%;"></td>

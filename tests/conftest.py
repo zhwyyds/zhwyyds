@@ -66,14 +66,14 @@ def mini_project(tmp_path: Path, project_root: Path) -> Path:
     )
 
     metric_header = (
-        "metric_id,metric_cn,metric_en,metric_abbr,domain_code,root_ids,metric_type,"
+        "metric_id,metric_cn,metric_en,domain_code,root_ids,metric_type,"
         "caliber_desc,unit,frequency,owner,source_model,review_status,created_at,updated_at"
     )
     _write_csv(
         base / "metrics" / "sale_metrics.csv",
         metric_header,
         [
-            'M_SALE_001,月度销售额,monthly_sales_amt,mon_sal_amt,sale,"R_SALE_001;R_TIME_001",atomic,自然月内已完成订单的销售总金额,元,月,,model_consensus,approved,2026-08-03,2026-08-03',
+            'M_SALE_001,月度销售额,monthly_sales_amt,sale,"R_SALE_001;R_TIME_001",atomic,自然月内已完成订单的销售总金额,元,月,,model_consensus,approved,2026-08-03,2026-08-03',
         ],
     )
     return base
