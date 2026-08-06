@@ -536,29 +536,7 @@
           </tr>
         </thead>
         <tbody id="batchTableBody">
-          <!-- 内联新增行（与表格查看窗口同构，可编辑 + AI） -->
-          <tr id="newMetricInlineRow" style="display:none;background:#f7f9ff;">
-            <td></td>
-            <td><span class="text-sm text-muted" id="inlineNewId">自动生成</span></td>
-            <td style="min-width:150px;">
-              <div class="flex gap-1" style="gap:4px;">
-                <input class="input" id="inlineNewCn" placeholder="中文名" style="flex:1;min-width:80px;">
-                <button type="button" class="btn btn-xs btn-primary" onclick="inlineSuggestMetric()" title="AI 生成">&#129302;</button>
-              </div>
-            </td>
-            <td style="min-width:150px;"><input class="input" id="inlineNewEn" placeholder="monthly_rent_revenue" style="width:100%;"></td>
-            <td style="min-width:80px;"><input class="input" id="inlineNewAbbr" placeholder="mrr" style="width:100%;"></td>
-            <td style="min-width:90px;"><select class="select" id="inlineNewDomain" style="width:100%;"><option value="sale">sale</option><option value="mall">mall</option><option value="cust">cust</option></select></td>
-            <td style="min-width:80px;"><select class="select" id="inlineNewType" style="width:100%;"><option value="atomic">atomic</option><option value="derived">derived</option></select></td>
-            <td class="text-sm text-muted">草稿</td>
-            <td class="text-sm text-muted">0.1.0</td>
-            <td class="text-sm text-muted">—</td>
-            <td class="text-sm text-muted">草稿</td>
-            <td style="white-space:nowrap;">
-              <button class="btn btn-xs btn-primary" onclick="saveInlineNew()">保存</button>
-              <button class="btn btn-xs" onclick="cancelInlineNew()">取消</button>
-            </td>
-          </tr>
+          <!-- 内联新增行由 metric-mgmt.js INLINE_NEW_ROW_HTML 常量提供（避免双份 DOM） -->
         </tbody>
       </table>
     </div>
@@ -583,7 +561,7 @@
         <button class="btn btn-sm">2</button>
         <button class="btn btn-sm">3</button>
         <button class="btn btn-sm">&hellip;</button>
-        <button class="btn btn-sm">155</button>
+        <button class="btn btn-sm" data-page-total>—</button>
         <button class="btn btn-sm">下一页 &#8250;</button>
       </div>
     </div>
@@ -1107,7 +1085,7 @@
     </div>
     <div class="pagination-bar">
       <div class="pagination-info">
-        <span class="text-sm text-muted">共 87 条，显示 <span id="rootPageSizeLabel">8</span> 条</span>
+        <span class="text-sm text-muted">共 <span id="roots-table-count">—</span> 条，显示 <span id="rootPageSizeLabel">8</span> 条</span>
         <div class="page-size-selector">
           <span>每页</span>
           <select onchange="changePageSize(this,'root')">
@@ -1126,7 +1104,7 @@
         <button class="btn btn-sm">2</button>
         <button class="btn btn-sm">3</button>
         <button class="btn btn-sm">&hellip;</button>
-        <button class="btn btn-sm">13</button>
+        <button class="btn btn-sm" data-page-total>—</button>
         <button class="btn btn-sm">下一页 &#8250;</button>
       </div>
     </div>
@@ -2002,7 +1980,7 @@
       <div class="pagination-bar">
         <div class="pagination-info">
           <button class="btn btn-sm">批量替换</button>
-          <span class="text-sm text-muted">共 45 条，显示 <span id="pinyinPageSizeLabel">6</span> 条</span>
+          <span class="text-sm text-muted">共 <span id="pinyin-table-count">—</span> 条，显示 <span id="pinyinPageSizeLabel">6</span> 条</span>
           <div class="page-size-selector">
             <span>每页</span>
             <select onchange="changePageSize(this,'pinyin')">

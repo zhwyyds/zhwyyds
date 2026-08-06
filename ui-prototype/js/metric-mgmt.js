@@ -152,6 +152,30 @@
     if (elReviewed) elReviewed.textContent = '—';
   }
 
+  // 内联新增行 HTML 常量（H2 重构）：renderTable 每次 prepend，保证元素永远在 DOM
+  // （之前用 outerHTML 取元素的方式在 display:none 时会丢失节点）
+  var INLINE_NEW_ROW_HTML =
+    '<tr id="newMetricInlineRow" style="display:none;background:#f7f9ff;">' +
+    '<td></td>' +
+    '<td><span class="text-sm text-muted" id="inlineNewId">自动生成</span></td>' +
+    '<td style="min-width:150px;">' +
+    '<div class="flex gap-1" style="gap:4px;">' +
+    '<input class="input" id="inlineNewCn" placeholder="中文名" style="flex:1;min-width:80px;">' +
+    '<button type="button" class="btn btn-xs btn-primary" onclick="inlineSuggestMetric()" title="AI 生成">&#129302;</button>' +
+    '</div></td>' +
+    '<td style="min-width:150px;"><input class="input" id="inlineNewEn" placeholder="monthly_rent_revenue" style="width:100%;"></td>' +
+    '<td style="min-width:80px;"><input class="input" id="inlineNewAbbr" placeholder="mrr" style="width:100%;"></td>' +
+    '<td style="min-width:90px;"><select class="select" id="inlineNewDomain" style="width:100%;"><option value="sale">sale</option><option value="mall">mall</option><option value="cust">cust</option></select></td>' +
+    '<td style="min-width:80px;"><select class="select" id="inlineNewType" style="width:100%;"><option value="atomic">atomic</option><option value="derived">derived</option></select></td>' +
+    '<td class="text-sm text-muted">草稿</td>' +
+    '<td class="text-sm text-muted">0.1.0</td>' +
+    '<td class="text-sm text-muted">—</td>' +
+    '<td class="text-sm text-muted">草稿</td>' +
+    '<td style="white-space:nowrap;">' +
+    '<button class="btn btn-xs btn-primary" onclick="saveInlineNew()">保存</button>' +
+    '<button class="btn btn-xs" onclick="cancelInlineNew()">取消</button>' +
+    '</td></tr>';
+
   function renderTable(metrics) {
     var tbody = document.getElementById('batchTableBody');
     var countEl = document.getElementById('mgmt-total-count');
@@ -204,11 +228,8 @@
   }
 
   function inlineRowHtml() {
-    // 内联新增行（与表格查看同构）：可见时保留在表格最前，不可见时为空串
-    var row = document.getElementById('newMetricInlineRow');
-    if (!row) return '';
-    if (row.style.display === 'none') return '';
-    return row.outerHTML;
+    // 始终返回内联行 HTML 常量（保证 renderTable 后元素仍在 DOM）
+    return INLINE_NEW_ROW_HTML;
   }
 
   function bindMgmtFilters() {
