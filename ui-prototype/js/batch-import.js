@@ -20,9 +20,21 @@
   };
   // 主题域中文名（迷你卡属性标签用）
   var DOMAIN_CN = {
-    sale: '交易域', cust: '消费者域', prod: '商品域', mall: '商场域',
-    mkt: '营销域', cont: '合同域', fin: '财务域'
+    sale: '交易', cust: '消费者', prod: '商品', mall: '运营',
+    mkt: '营销', cont: '招商租赁', fin: '财务'
   };
+  // 指标卡视觉系统 v5 映射：主题域 → 主题色 | 类型 → 纹样 | 状态 → 稀有度
+  var MC_THEMES = { sale: 'trade', cont: 'lease', fin: 'finance', mall: 'ops', mkt: 'marketing', cust: 'service', prod: 'service' };
+  var MC_RARITY_NAME = { legendary: '传说', epic: '史诗', rare: '稀有', uncommon: '精良', common: '普通' };
+  function mcTheme(domain) { return MC_THEMES[String(domain || '').toLowerCase()] || 'ops'; }
+  function mcCat(type) { return type === 'atomic' ? 'order' : 'contract'; }
+  function mcRarity(st) {
+    return ({ pending: 'uncommon', rejected: 'common', draft: 'epic', skip: 'common', error: 'common' }[st]) || 'uncommon';
+  }
+  function escTags(s) {
+    // 逗号/顿号分隔 → 标签数组
+    return String(s || '').split(/[,，、]/).map(function (t) { return t.trim(); }).filter(Boolean);
+  }
 
   function themeFor(domain) {
     return DOMAIN_THEMES[(domain || '').toLowerCase()] || DOMAIN_THEMES._default;
@@ -172,18 +184,17 @@
       host.innerHTML = '<div class="text-sm text-muted" style="padding:12px;">尚未处理，点击「去重 + AI 生成」开始。</div>';
       return;
     }
-    host.classList.add('import-cards-stack');
+    host.classList.add('mc-table');
 
-    // 扇形展开（打开的扇子）：卡片完整可见，弧形排列——中间正立抬升、两侧倾斜
+    // 扇形展开（卡包桌）：卡片 in-bag 缩小弧形排列，选中 popout 放大为全尺寸卡面
     var n = rows.length;
-    // 卡宽随数量收缩：≤6 张 300px、≤12 张 260px、>12 张 220px（50 张也能平铺可读）
-    var cardW = n <= 6 ? 300 : (n <= 12 ? 260 : 220);
-    var spreadDeg = Math.min(42, 2.5 * n + 12); // 6 张约 27°、50 张约 42°（倾斜克制）
+    var bagScale = n <= 6 ? 0.42 : (n <= 12 ? 0.34 : 0.27); // 包中缩小比例（数量多更小）
+    var spreadDeg = Math.min(36, 2.2 * n + 10); // 倾斜克制
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
-    var liftMax = Math.min(22, 2.5 * n); // 中间卡抬升峰值（弧线）
+    var liftMax = Math.min(20, 2.2 * n); // 中间卡抬升峰值（弧线）
 
-    // 默认不自动选中（扇形完整可见）；仅当选中索引无效时清空
+    // 默认不自动选中（卡包完整可见）；仅当选中索引无效时清空
     // 评审流程中 reviewImportRow 会自动选中下一张
     if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
       SELECTED_INDEX = -1;
@@ -196,65 +207,18 @@
       var z = 100 - dist; // 中间卡在上
       var isSelected = i === SELECTED_INDEX;
       var st = row._status || 'pending';
-      var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
-      var stBadge = st === 'draft' ? 'badge-pass' : (st === 'rejected' || st === 'error' ? 'badge-danger' : (st === 'skip' ? 'badge-neutral' : 'badge-warn'));
-      var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
-      var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
-      var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
-      var en = row.metric_en || '—';
-      var unit = row.unit || '';
-      var freq = row.frequency || '';
-      var desc = row.caliber_desc || '—';
+      var theme = mcTheme(row.domain_code);
+      var rarity = mcRarity(st);
+      var cat = mcCat(row.metric_type);
 
       return (
-        '<div class="import-card-wrap' + (isSelected ? ' selected' : '') + (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + '" ' +
-          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';--card-w:' + cardW + 'px;" ' +
-          'data-index="' + i + '" ' +
+        '<div class="mc-card-slot ' + (isSelected ? 'selected' : 'in-bag') +
+          (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + ' ' +
+          theme + ' ' + rarity + ' ' + cat + '" ' +
+          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';--bag-scale:' + bagScale + ';" ' +
           'onclick="selectImportCard(' + i + ')">' +
-          // 炉石卡（保留金属质感 + 椭圆顶底；信息分层显示）
-          '<div class="warcraft-card" ' +
-            'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
-            '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
-            // 选中卡右上角关闭按钮
-            (isSelected ? '<button class="warcraft-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
-            // 状态徽章行（迷你卡直接可见：去重 + 状态 + 序号）
-            '<div class="import-card-status">' +
-              '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
-              '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
-              '<span class="text-sm text-muted" style="margin-left:auto;">' + (i + 1) + '/' + n + '</span>' +
-            '</div>' +
-            // 左上角黄色水晶数字（装饰角标）
-            '<div class="warcraft-cost">' + cardCost(row) + '</div>' +
-            // 主题域插画条（小，不占信息空间）
-            '<div class="warcraft-art"><span class="warcraft-art-icon">' + themeFor(row.domain_code).icon + '</span></div>' +
-            // 指标名（大字）
-            '<div class="warcraft-name">' + esc(row.metric_cn || '—') + '</div>' +
-            // 信息层：英文名 · 编号 + 属性标签（单位/周期/主题域）
-            '<div class="wc-meta">' +
-              '<div class="wc-en">' + esc(en) + ' · ' + esc(row.metric_id || '—') + '</div>' +
-              '<div class="wc-tags">' +
-                (unit ? '<span class="wc-tag">' + esc(unit) + '</span>' : '') +
-                (freq ? '<span class="wc-tag">' + esc(freq) + '</span>' : '') +
-                '<span class="wc-tag wc-tag-dom">' + esc(domCn) + '</span>' +
-              '</div>' +
-            '</div>' +
-            // 口径描述（3 行截断）
-            '<div class="warcraft-desc">' + esc(desc) + '</div>' +
-            // 完整字段表（仅选中浮层显示）
-            '<div class="warcraft-body">' + buildImportSpecHtml(row) + '</div>' +
-            // 右下角蓝色水晶数字（装饰角标）
-            '<div class="warcraft-stat">' + cardStat(row) + '</div>' +
-            // 错误提示
-            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:8px 12px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
-            // 评审按钮（迷你卡直接评审，不用点开）
-            ((st === 'pending' || st === 'rejected') ?
-              '<div class="import-card-actions">' +
-                '<button class="btn" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
-                '<button class="btn btn-primary" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
-              '</div>' :
-              (st === 'draft' ?
-                '<div class="import-card-done"><span class="ok">已入草稿</span><span class="dim">· 可撤回</span></div>' : '')) +
-          '</div>' +
+          (isSelected ? '<button class="mc-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
+          buildMcCard(row, i, n, st) +
         '</div>'
       );
     }).join('');
@@ -275,6 +239,89 @@
         '　·　点击卡片放大 · ← → 切换 · Esc 关闭' +
       '</div>';
     host.innerHTML = cardsHtml + hint;
+  }
+
+  /* 指标卡视觉系统 v5 卡面渲染（参考 ui-prototype/metric-card-ref.html） */
+  function buildMcCard(row, i, n, st) {
+    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '失败' }[st] || st;
+    var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似' : '新增');
+    var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
+    var typeCn = row.metric_type === 'derived' ? '派生指标' : '原子指标';
+    var unit = row.unit || '—';
+    var freq = row.frequency || '—';
+    var vtype = row.value_type || '—';
+    var prec = row.precision || '—';
+    var dims = escTags(row.dimensions);
+    var formula = row.formula || '';
+    var formulaCn = row.formula_cn || '';
+    var dataSources = row.data_sources || '—';
+    var tech = row.tech_caliber || '—';
+    var owner = row.owner || '—';
+    var version = row.version || 'v1.0.0';
+    var statusClass = { pending: 'b-pending', draft: 'b-draft', rejected: 'b-rejected', skip: 'b-skip' }[st] || 'b-pending';
+
+    return (
+      '<div class="mc-frame">' +
+        '<span class="mc-corner tl"></span><span class="mc-corner tr"></span>' +
+        '<span class="mc-corner bl"></span><span class="mc-corner br"></span>' +
+        '<article class="mc-card" data-id="' + esc(row.metric_id || '') + '">' +
+          '<div class="mc-status-row">' +
+            '<span class="b ' + statusClass + '">' + stLabel + '</span>' +
+            '<span class="b b-new">' + dedupLabel + '</span>' +
+          '</div>' +
+          '<span class="mc-rare-badge"><span class="star">★</span>' + (MC_RARITY_NAME[mcRarity(st)] || '') + '</span>' +
+          '<div class="mc-topline">' +
+            '<span class="mc-faction">' + esc(domCn) + '<span class="sep">/</span>' + typeCn + '</span>' +
+            '<span class="mc-quality"><span class="gem"></span>' + esc(freq) + '</span>' +
+          '</div>' +
+          '<div class="mc-icon-zone">' +
+            '<span class="mc-icon-halo"></span>' +
+            '<span class="mc-icon-ring">' + themeFor(row.domain_code).icon + '</span>' +
+          '</div>' +
+          '<div class="mc-title-zone">' +
+            '<h3 class="mc-title">' + esc(row.metric_cn || '—') + '</h3>' +
+            '<div class="mc-sub-id">' + esc(row.metric_id || '—') + '</div>' +
+          '</div>' +
+          '<section class="mc-stats">' +
+            '<div class="mc-stat"><div class="lbl">计量</div><div class="val">' + esc(unit) + '</div></div>' +
+            '<div class="mc-stat"><div class="lbl">周期</div><div class="val">' + esc(freq) + '</div></div>' +
+            '<div class="mc-stat"><div class="lbl">值类型</div><div class="val">' + esc(vtype) + '</div></div>' +
+            '<div class="mc-stat"><div class="lbl">精度</div><div class="val">' + esc(prec) + '</div></div>' +
+          '</section>' +
+          (dims.length ?
+            '<section class="mc-affix"><div class="mc-affix-head">统计维度</div><div class="mc-affix-tags">' +
+              dims.map(function (d) { return '<span class="mc-tag">' + esc(d) + '</span>'; }).join('') +
+            '</div></section>' : '') +
+          '<section class="mc-desc-box">' + esc(row.caliber_desc || '—') + '</section>' +
+          ((formula || formulaCn) ?
+            '<section class="mc-skill-box">' +
+              '<div class="sl">✦ 计算公式</div>' +
+              (formulaCn ? '<div class="sd">' + esc(formulaCn) + '</div>' : '') +
+              (formula ? '<div class="sc">' + esc(formula) + '</div>' : '') +
+            '</section>' : '') +
+          '<section class="mc-bars">' +
+            '<div class="mc-bar-row"><span class="bname">绿灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-green"><span class="tick">≥ 目标</span></div></div></div>' +
+            '<div class="mc-bar-row"><span class="bname">黄灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-yellow"><span class="tick">-10%</span></div></div></div>' +
+            '<div class="mc-bar-row"><span class="bname">红灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-red"><span class="tick">-20%</span></div></div></div>' +
+          '</section>' +
+          '<section class="mc-meta">' +
+            '<div class="row"><span class="k">来源</span><span class="v sans">' + esc(dataSources) + '</span></div>' +
+            '<div class="row"><span class="k">技术来源</span><span class="v">' + esc(tech) + '</span></div>' +
+            '<div class="row"><span class="k">负责单位</span><span class="v sans">' + esc(owner) + '</span></div>' +
+          '</section>' +
+          '<footer class="mc-foot">' +
+            '<span class="lv"><span class="lvnum">' + esc(version) + '</span>AI 生成</span>' +
+            '<span class="ver">' + (i + 1) + '/' + n + '</span>' +
+          '</footer>' +
+          ((st === 'pending' || st === 'rejected') ?
+            '<div class="mc-actions">' +
+              '<button class="btn btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
+              '<button class="btn btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
+            '</div>' :
+            (st === 'draft' ? '<div class="mc-done">已入草稿 · 可撤回</div>' : '')) +
+        '</article>' +
+      '</div>'
+    );
   }
 
   /* 点击扇形中的卡 → 移到中央放大 */

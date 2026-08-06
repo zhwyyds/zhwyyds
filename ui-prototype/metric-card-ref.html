@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>指标卡视觉系统 · 主题 / 纹样 / 稀有度 预览</title>
+<style>
+  /* ================================================================
+     指标卡视觉系统 v5
+     主题(一级分类) → 主色 | 二级分类 → 边框纹样图案 | 评分 → 稀有度边框
+     .frame = 纹样边框环（承载图案 + 稀有度多层框） + .card = 卡面
+     固定尺寸 380 × 660
+     ================================================================ */
+  :root {
+    --card-bg:    oklch(23% 0.032 278);
+    --card-bg-2:  oklch(19% 0.03 275);
+    --panel:      oklch(29% 0.035 275);
+    --panel-2:    oklch(24% 0.03 272);
+    --paper:      oklch(91% 0.03 70);
+    --paper-ink:  oklch(30% 0.04 60);
+    --text:       oklch(94% 0.02 90);
+    --text-dim:   oklch(72% 0.04 90);
+    --text-faint: oklch(55% 0.03 90);
+    --blue:       oklch(70% 0.11 250);
+    --green:      oklch(72% 0.13 150);
+    --warn:       oklch(76% 0.12 80);
+    --red:        oklch(68% 0.17 25);
+    --frame-bg:   oklch(16% 0.03 275);
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono",
+                 "SFMono-Regular", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* 默认主题：交易（金色） */
+    --accent:      oklch(80% 0.12 82);
+    --accent-deep: oklch(58% 0.12 70);
+    --accent-soft: oklch(88% 0.1 90);
+    --glow: 0 0 14px oklch(80% 0.12 82 / 0.35);
+  }
+
+  /* ============ 主题色（一级分类） ============ */
+  [data-theme="trade"] {
+    --accent:      oklch(80% 0.12 82);
+    --accent-deep: oklch(58% 0.12 70);
+    --accent-soft: oklch(88% 0.1 90);
+    --glow: 0 0 14px oklch(80% 0.12 82 / 0.35);
+  }
+  [data-theme="lease"] {
+    --accent:      oklch(80% 0.11 155);
+    --accent-deep: oklch(56% 0.12 155);
+    --accent-soft: oklch(90% 0.09 155);
+    --glow: 0 0 14px oklch(80% 0.11 155 / 0.35);
+  }
+  [data-theme="finance"] {
+    --accent:      oklch(75% 0.1 265);
+    --accent-deep: oklch(55% 0.11 265);
+    --accent-soft: oklch(88% 0.08 265);
+    --glow: 0 0 14px oklch(75% 0.1 265 / 0.35);
+  }
+  [data-theme="ops"] {
+    --accent:      oklch(78% 0.09 215);
+    --accent-deep: oklch(58% 0.1 215);
+    --accent-soft: oklch(89% 0.07 215);
+    --glow: 0 0 14px oklch(78% 0.09 215 / 0.35);
+  }
+  [data-theme="marketing"] {
+    --accent:      oklch(78% 0.12 350);
+    --accent-deep: oklch(56% 0.13 350);
+    --accent-soft: oklch(89% 0.09 350);
+    --glow: 0 0 14px oklch(78% 0.12 350 / 0.35);
+  }
+  [data-theme="service"] {
+    --accent:      oklch(76% 0.1 300);
+    --accent-deep: oklch(56% 0.11 300);
+    --accent-soft: oklch(88% 0.08 300);
+    --glow: 0 0 14px oklch(76% 0.1 300 / 0.35);
+  }
+
+  /* ============ 稀有度边框（评分映射） ============ */
+  [data-rarity="legendary"] {
+    --frame-1: oklch(86% 0.13 82);
+    --frame-2: oklch(60% 0.14 70);
+    --frame-outer: oklch(92% 0.1 90 / 0.55);
+    --rare-ico: oklch(92% 0.1 90);
+    --corner-hi: oklch(92% 0.12 90);
+    --corner-hi-2: oklch(70% 0.12 70);
+    --frame-fx: animated;
+  }
+  [data-rarity="epic"] {
+    --frame-1: oklch(78% 0.11 300);
+    --frame-2: oklch(52% 0.14 305);
+    --frame-outer: oklch(80% 0.1 300 / 0.5);
+    --rare-ico: oklch(85% 0.1 305);
+    --corner-hi: oklch(82% 0.11 305);
+    --corner-hi-2: oklch(60% 0.12 305);
+    --frame-fx: none;
+  }
+  [data-rarity="rare"] {
+    --frame-1: oklch(72% 0.11 250);
+    --frame-2: oklch(48% 0.12 255);
+    --frame-outer: oklch(74% 0.1 250 / 0.45);
+    --rare-ico: oklch(80% 0.1 250);
+    --corner-hi: oklch(78% 0.11 250);
+    --corner-hi-2: oklch(56% 0.11 255);
+    --frame-fx: none;
+  }
+  [data-rarity="uncommon"] {
+    --frame-1: oklch(74% 0.12 150);
+    --frame-2: oklch(48% 0.12 155);
+    --frame-outer: oklch(76% 0.11 150 / 0.45);
+    --rare-ico: oklch(82% 0.11 150);
+    --corner-hi: oklch(78% 0.12 150);
+    --corner-hi-2: oklch(56% 0.12 155);
+    --frame-fx: none;
+  }
+  [data-rarity="common"] {
+    --frame-1: oklch(74% 0.02 90);
+    --frame-2: oklch(50% 0.02 90);
+    --frame-outer: oklch(76% 0.02 90 / 0.4);
+    --rare-ico: oklch(80% 0.02 90);
+    --corner-hi: oklch(78% 0.02 90);
+    --corner-hi-2: oklch(56% 0.02 90);
+    --frame-fx: none;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(oklch(45% 0.09 270 / 0.18) 0 1px, transparent 1px),
+      radial-gradient(oklch(45% 0.09 270 / 0.1) 0 1px, transparent 1px),
+      oklch(14% 0.02 275);
+    background-size: 12px 12px, 19px 19px;
+    background-position: 0 0, 6px 8px;
+    padding: 1.6rem 1rem 3rem;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex;
+    gap: 2.4rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ============ 控制面板 ============ */
+  .panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: oklch(21% 0.03 278);
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    border-radius: 10px;
+    padding: 1.1rem 1.15rem;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 1.6rem;
+  }
+  .panel h2 {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid oklch(55% 0.04 90 / 0.35);
+  }
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .field > label {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  select {
+    width: 100%;
+    appearance: none;
+    background: oklch(16% 0.025 278);
+    border: 1px solid oklch(50% 0.04 90 / 0.5);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 0.5rem 0.65rem;
+    cursor: pointer;
+  }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .range-row { display: flex; align-items: center; gap: 0.7rem; }
+  input[type="range"] {
+    flex: 1;
+    appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: oklch(40% 0.04 90);
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid oklch(12% 0.02 275);
+    box-shadow: 0 0 8px var(--glow);
+  }
+  .score-badge {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--accent);
+    min-width: 2.4em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .rarity-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: oklch(16% 0.025 278);
+    border: 1px solid oklch(50% 0.04 90 / 0.4);
+    border-radius: 6px;
+    padding: 0.5rem 0.65rem;
+    line-height: 1.6;
+  }
+  .rarity-note b { color: var(--accent); }
+  #btn-toggle {
+    appearance: none;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    border: none;
+    border-radius: 7px;
+    padding: 0.62rem 0.9rem;
+    cursor: pointer;
+    box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 4px 12px oklch(0% 0 0 / 0.3);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+  #btn-toggle:hover { transform: translateY(-2px); filter: brightness(1.06); }
+  #btn-toggle:active { transform: translateY(1px); box-shadow: inset 0 1px 0 oklch(0% 0 0 / 0.25); }
+  #btn-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hint {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    line-height: 1.5;
+    background: oklch(16% 0.025 278);
+    border: 1px solid oklch(50% 0.04 90 / 0.4);
+    border-radius: 6px;
+    padding: 0.45rem 0.6rem;
+  }
+  .hint b { color: var(--accent); }
+  .legend {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    line-height: 1.7;
+    border-top: 1px solid oklch(55% 0.04 90 / 0.3);
+    padding-top: 0.6rem;
+  }
+  .legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: -0.5px; }
+  .legend .pat {
+    display: inline-block; width: 22px; height: 12px;
+    margin-right: 6px; vertical-align: -2px;
+    background-size: 6px 6px;
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    border-radius: 2px;
+    background-color: oklch(16% 0.025 278);
+    background-image: var(--pat-ico, none);
+  }
+
+  /* ============ 边框环（纹样承载） ============ */
+  .frame {
+    width: 404px;               /* 卡片 380 + 纹样环 12*2 */
+    position: relative;
+    z-index: 1;
+    border-radius: 16px;
+    padding: 12px;              /* 纹样环宽度 */
+    background: var(--frame-bg);
+    /* 稀有度多层边框 */
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 4px var(--frame-2),
+      0 0 0 6px var(--frame-1),
+      0 26px 54px oklch(0% 0 0 / 0.55),
+      var(--glow);
+    transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease),
+                filter 0.55s var(--ease);
+    cursor: pointer;
+  }
+  /* ---- 卡包状态机 ---- */
+  /* 卡堆（参照物）：躺在下方的叠卡，抽出时被弹开 */
+  .slot { position: relative; }
+  .deck {
+    position: absolute;
+    left: 2px; right: 2px;
+    bottom: -18px;
+    height: 56px;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .deck span {
+    position: absolute;
+    bottom: 0;
+    width: 92%;
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(180deg, oklch(27% 0.035 275), oklch(17% 0.03 275));
+    border: 1px solid oklch(52% 0.04 90 / 0.45);
+    box-shadow: 0 10px 18px oklch(0% 0 0 / 0.45);
+    transition: transform 0.5s var(--ease);
+  }
+  .deck .d1 { left: 0; transform: rotate(-3.5deg) translateY(2px); }
+  .deck .d2 { left: 4%; transform: rotate(1.5deg); }
+  .deck .d3 { right: 0; transform: rotate(-0.5deg) translateY(5px); }
+  /* 抽出时卡堆被顶开 */
+  .deck.pop .d1 { transform: rotate(-6.5deg) translateY(12px) translateX(-6px); }
+  .deck.pop .d2 { transform: rotate(3.5deg) translateY(16px); }
+  .deck.pop .d3 { transform: rotate(-2deg) translateY(9px) translateX(6px); }
+
+  /* 包中（默认）：缩小下沉、辉光收敛、略带暗调 */
+  .frame.in-bag {
+    transform: scale(0.86) translateY(36px);
+    filter: brightness(0.86) saturate(0.78);
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 3px var(--frame-2),
+      0 0 0 5px var(--frame-1),
+      0 14px 26px oklch(0% 0 0 / 0.45);
+  }
+  /* 取出（选中）：放大上浮、辉光全开 */
+  .frame.selected {
+    transform: scale(1.1) translateY(-10px);
+    filter: none;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7.5px var(--frame-1),
+      0 34px 74px oklch(0% 0 0 / 0.6),
+      0 0 34px color-mix(in oklch, var(--frame-1) 70%, transparent);
+  }
+  /* 跃出动画：蓄力 → 高速抽出 → 回正（一次性） */
+  .frame.popout {
+    animation: popout 0.7s var(--ease);
+  }
+  @keyframes popout {
+    0%   { transform: scale(0.86) translateY(36px) rotateZ(1.5deg); filter: brightness(0.86) saturate(0.78); }
+    18%  { transform: scale(0.88) translateY(30px) rotateZ(3.5deg); filter: brightness(0.86) saturate(0.78); }
+    55%  { transform: scale(1.3) translateY(-46px) rotateZ(-2deg); filter: brightness(1.2) saturate(1.1); }
+    82%  { transform: scale(1.07) translateY(-3px) rotateZ(0deg);  filter: none; }
+    100% { transform: scale(1.1) translateY(-10px); filter: none; }
+  }
+  /* 抽出速度光效：一道光带划过卡面 */
+  .frame::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -25%; right: -25%;
+    background: linear-gradient(105deg, transparent 32%,
+      color-mix(in oklch, var(--accent) 20%, transparent) 50%,
+      transparent 68%);
+    transform: translateX(-70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 6;
+  }
+  .frame.popout::after { animation: flash 0.7s var(--ease); }
+  @keyframes flash {
+    0%   { opacity: 0; transform: translateX(-70%); }
+    28%  { opacity: 1; }
+    70%  { opacity: 0.55; }
+    100% { opacity: 0; transform: translateX(70%); }
+  }
+  /* 收回动画（一次性） */
+  .frame.retract {
+    animation: retract 0.5s var(--ease);
+  }
+  @keyframes retract {
+    from { transform: scale(1.1) translateY(-10px); filter: none; }
+    to   { transform: scale(0.86) translateY(36px); filter: brightness(0.86) saturate(0.78); }
+  }
+  /* 展示中：轻微悬浮呼吸 */
+  .frame.selected.hold {
+    animation: hold 3.6s ease-in-out infinite;
+  }
+  @keyframes hold {
+    0%, 100% { transform: scale(1.1) translateY(-10px); }
+    50%      { transform: scale(1.1) translateY(-15px); }
+  }
+  /* 纹样图案层（覆盖整个边框环） */
+  .frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    pointer-events: none;
+    background-image: var(--pat, none);
+    background-size: 12px 12px;
+    background-position: 0 0;
+  }
+  /* 传说：纹样缓慢流动 */
+  .frame[data-rarity="legendary"]::before {
+    animation: patroll 14s linear infinite;
+  }
+  @keyframes patroll {
+    from { background-position: 0 0; }
+    to   { background-position: 48px 0; }
+  }
+
+  /* ---------- 纹样图案（二级分类） ---------- */
+  /* 订单：菱形编织 */
+  [data-cat="order"] {
+    --pat-ico: repeating-linear-gradient(45deg, var(--accent) 0 1.5px, transparent 1.5px 7px);
+    --pat:
+      repeating-linear-gradient(45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px),
+      repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px);
+  }
+  /* 合同：链条齿纹 */
+  [data-cat="contract"] {
+    --pat-ico: repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 8px);
+    --pat:
+      repeating-linear-gradient(90deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(180deg, color-mix(in oklch, var(--accent) 50%, transparent) 0 2px, transparent 2px 10px);
+  }
+  /* 租金：铜钱圆点 */
+  [data-cat="rent"] {
+    --pat-ico: radial-gradient(circle, var(--accent) 1.4px, transparent 1.6px);
+    --pat:
+      radial-gradient(circle, color-mix(in oklch, var(--accent) 80%, transparent) 2.2px, transparent 2.6px);
+  }
+  /* 会员：星形四芒 */
+  [data-cat="member"] {
+    --pat-ico: conic-gradient(from 45deg at 50% 50%, var(--accent) 0 25%, transparent 25% 100%);
+    --pat:
+      conic-gradient(from 45deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 25%, transparent 25% 100%);
+  }
+
+  /* 四角饰（稀有度色） */
+  .corner {
+    position: absolute;
+    width: 26px; height: 26px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .corner.tl { top: 2px; left: 2px; }
+  .corner.tr { top: 2px; right: 2px; transform: scaleX(-1); }
+  .corner.bl { bottom: 2px; left: 2px; transform: scaleY(-1); }
+  .corner.br { bottom: 2px; right: 2px; transform: scale(-1); }
+  .corner::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 26px; height: 26px;
+    border-top: 3px solid var(--corner-hi);
+    border-left: 3px solid var(--corner-hi);
+    border-top-left-radius: 10px;
+  }
+  .corner::after {
+    content: "";
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 18px; height: 18px;
+    border-top: 1.5px solid var(--corner-hi-2);
+    border-left: 1.5px solid var(--corner-hi-2);
+    border-top-left-radius: 7px;
+    opacity: 0.85;
+  }
+
+  /* ============ 卡面 ============ */
+  .card {
+    width: 380px;
+    height: 636px;
+    position: relative;
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
+      linear-gradient(160deg, var(--card-bg), var(--card-bg-2));
+    border: 1px solid color-mix(in oklch, var(--frame-2) 55%, transparent);
+    border-radius: 10px;
+    padding: 17px 17px 13px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--frame-1) 12%, transparent);
+    transition: background 0.45s var(--ease);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .frame, .card { animation: none !important; transition: none !important; }
+    .frame.in-bag, .frame.selected { transform: none; filter: none; }
+    .deck span { transition: none !important; }
+    [data-rarity="legendary"] .frame::before { animation: none; }
+    .icon-halo { animation: none !important; }
+  }
+
+  /* 稀有度角标 */
+  .rare-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--rare-ico);
+    background: oklch(12% 0.02 275 / 0.85);
+    border: 1px solid var(--frame-2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    box-shadow: 0 0 8px color-mix(in oklch, var(--frame-2) 60%, transparent);
+    font-variant-numeric: tabular-nums;
+  }
+  .rare-badge .star { color: var(--corner-hi); font-size: 10px; line-height: 1; }
+
+  /* 背景编号水印 */
+  .card::after {
+    content: attr(data-id);
+    position: absolute;
+    right: -14px;
+    bottom: 30px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.24em;
+    writing-mode: vertical-rl;
+    color: color-mix(in oklch, var(--accent) 7%, transparent);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* 顶部：阵营 + 品质 */
+  .topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 7px;
+    border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
+    padding-right: 52px;
+  }
+  .faction { font-weight: 700; color: var(--accent-soft); }
+  .faction .sep { color: var(--text-faint); margin: 0 3px; font-weight: 400; }
+  .quality {
+    display: flex; align-items: center; gap: 5px;
+    color: var(--accent-soft); font-weight: 700;
+  }
+  .quality .gem {
+    width: 8px; height: 8px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent-deep));
+    box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 80%, transparent);
+  }
+
+  /* 图标区 */
+  .icon-zone {
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 8px 0 4px;
+  }
+  .icon-halo {
+    position: absolute;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in oklch, var(--accent) 38%, transparent), transparent 70%);
+    filter: blur(2px);
+    animation: pulse 3.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+  .icon-ring {
+    position: absolute;
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in oklch, var(--accent) 60%, transparent);
+    box-shadow: inset 0 0 12px oklch(0% 0 0 / 0.6), 0 0 10px color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--accent) 26%, transparent), oklch(26% 0.05 60 / 0.9));
+  }
+  .icon-ring svg { width: 28px; height: 28px; stroke: var(--accent-soft); }
+
+  /* 标题 */
+  .title-zone { text-align: center; }
+  h1 {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--accent-soft);
+    text-shadow:
+      0 0 10px color-mix(in oklch, var(--accent) 40%, transparent),
+      0 2px 0 oklch(35% 0.06 60),
+      0 3px 3px oklch(0% 0 0 / 0.5);
+    line-height: 1.15;
+  }
+  .sub-id {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    margin-top: 3px;
+  }
+  .badge-row { display: flex; justify-content: center; gap: 5px; margin-top: 7px; }
+  .badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid currentColor;
+    background: oklch(0% 0 0 / 0.25);
+  }
+  .badge.biz { color: var(--accent-soft); }
+  .badge.tech { color: var(--blue); }
+  .badge.dm { color: oklch(75% 0.1 140); }
+
+  /* 属性网格 */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-top: 11px;
+  }
+  .stat {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent);
+    border-radius: 5px;
+    padding: 6px 4px 5px;
+    text-align: center;
+  }
+  .stat .lbl {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .stat .val {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-soft);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .stat .val.mono { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.02em; word-break: break-all; }
+
+  /* 词条 */
+  .affix { margin-top: 9px; }
+  .affix-head {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .affix-head::before {
+    content: "";
+    width: 16px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .affix-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .tag {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--text);
+    background: oklch(0% 0 0 / 0.3);
+    border: 1px solid oklch(70% 0.05 90 / 0.4);
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* 描述框 */
+  .desc-box {
+    margin-top: 9px;
+    background:
+      repeating-linear-gradient(0deg, oklch(91% 0.03 70 / 0.05) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    border: 1px solid color-mix(in oklch, var(--accent) 55%, transparent);
+    border-radius: 5px;
+    padding: 7px 10px;
+    color: var(--paper-ink);
+    font-size: 11px;
+    line-height: 1.55;
+    box-shadow: inset 0 0 10px oklch(0% 0 0 / 0.18);
+    position: relative;
+  }
+  .desc-box::before {
+    content: "◆ 指标描述 ◆";
+    position: absolute;
+    top: -8px; left: 10px;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    color: var(--paper-ink);
+    background: linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    padding: 0 5px;
+  }
+
+  /* 技能/公式框 */
+  .skill-box {
+    margin-top: 10px;
+    background: oklch(15% 0.02 275);
+    border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 5px;
+    padding: 7px 10px;
+  }
+  .skill-box .sl {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .skill-box .sd {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 3px;
+    line-height: 1.5;
+  }
+  .skill-box .sc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-top: 3px;
+    background: oklch(10% 0.02 275);
+    border: 1px solid oklch(35% 0.03 275);
+    border-radius: 3px;
+    padding: 5px 7px;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-variant-ligatures: none;
+  }
+  .sc .kw { color: var(--accent-soft); }
+  .sc .fn { color: oklch(70% 0.11 250); }
+  .sc .str { color: oklch(72% 0.13 150); }
+
+  /* 预警条 */
+  .bars { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .bar-row { display: flex; align-items: center; gap: 7px; }
+  .bar-row .bname {
+    width: 34px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+  .bar-track {
+    flex: 1;
+    height: 9px;
+    border-radius: 2px;
+    background: oklch(10% 0.02 275);
+    border: 1px solid oklch(40% 0.03 275);
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 4px;
+  }
+  .bar-fill .tick { font-size: 7.5px; font-weight: 800; color: oklch(12% 0.02 90); letter-spacing: 0.06em; }
+  .bar-green { width: 100%; background: linear-gradient(90deg, oklch(45% 0.12 150), var(--green)); box-shadow: 0 0 6px oklch(72% 0.13 150 / 0.5); }
+  .bar-yellow { width: 82%; background: linear-gradient(90deg, oklch(50% 0.12 80), var(--warn)); box-shadow: 0 0 6px oklch(76% 0.12 80 / 0.5); }
+  .bar-red { width: 60%; background: linear-gradient(90deg, oklch(48% 0.16 25), var(--red)); box-shadow: 0 0 6px oklch(68% 0.17 25 / 0.5); }
+
+  /* 底部元信息 */
+  .meta {
+    margin-top: auto;
+    padding-top: 9px;
+    border-top: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 9.5px;
+    color: var(--text-faint);
+  }
+  .meta .row { display: flex; gap: 7px; align-items: baseline; }
+  .meta .k {
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    min-width: 3.4em;
+  }
+  .meta .v {
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-size: 9.5px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  .meta .v.sans { font-family: var(--font-sans); }
+
+  /* 版本栏 */
+  .foot {
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+  }
+  .foot .lv {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--accent-soft);
+    font-weight: 800;
+  }
+  .foot .lv .lvnum {
+    font-family: var(--font-mono);
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 800;
+    font-size: 10px;
+    box-shadow: inset 0 -1px 0 oklch(0% 0 0 / 0.35);
+  }
+  .foot .ver { color: var(--text-faint); text-align: right; line-height: 1.4; }
+
+  /* 响应式 */
+  @media (max-width: 780px) {
+    .panel { position: static; width: 100%; max-width: 404px; }
+    .stage { flex-direction: column-reverse; align-items: center; }
+    .frame { width: 380px; padding: 8px; }
+    .card { width: 364px; height: 620px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ============ 控制面板 ============ -->
+  <aside class="panel" aria-label="卡片参数控制">
+    <h2>⚙ 卡片参数</h2>
+
+    <div class="field">
+      <label for="sel-theme">一级分类 · 主题色</label>
+      <select id="sel-theme">
+        <option value="trade" selected>交易（金铜）</option>
+        <option value="lease">招商租赁（翡翠）</option>
+        <option value="finance">财务（靛蓝）</option>
+        <option value="ops">运营（青蓝）</option>
+        <option value="marketing">营销（玫红）</option>
+        <option value="service">服务（紫罗兰）</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="sel-cat">二级分类 · 边框纹样</label>
+      <select id="sel-cat">
+        <option value="order" selected>订单模板 · 菱形编织</option>
+        <option value="contract">合同模板 · 链条齿纹</option>
+        <option value="rent">租金模板 · 铜钱圆点</option>
+        <option value="member">会员模板 · 星形四芒</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="score">治理评分 · 稀有度边框</label>
+      <div class="range-row">
+        <input type="range" id="score" min="0" max="100" value="92" />
+        <span class="score-badge" id="score-val">92</span>
+      </div>
+      <div class="rarity-note" id="rarity-note"></div>
+    </div>
+
+    <div class="field">
+      <label>卡包状态 · 交互演示</label>
+      <button id="btn-toggle" type="button">📤 取出卡片</button>
+      <div class="hint" id="state-hint">当前：包中（点击卡片或按钮取出）</div>
+    </div>
+
+    <div class="legend">
+      <div style="margin-bottom:4px;letter-spacing:.1em;"><b style="color:var(--text-dim)">稀有度</b></div>
+      <div><span class="sw" style="background:oklch(86% 0.13 82)"></span><b>传说</b> ≥90 · 金色流辉</div>
+      <div><span class="sw" style="background:oklch(78% 0.11 300)"></span><b>史诗</b> 80-89 · 紫色</div>
+      <div><span class="sw" style="background:oklch(72% 0.11 250)"></span><b>稀有</b> 70-79 · 蓝色</div>
+      <div><span class="sw" style="background:oklch(74% 0.12 150)"></span><b>精良</b> 60-69 · 绿色</div>
+      <div><span class="sw" style="background:oklch(74% 0.02 90)"></span><b>普通</b> &lt;60 · 灰白</div>
+      <div style="margin:8px 0 4px;letter-spacing:.1em;"><b style="color:var(--text-dim)">边框纹样</b></div>
+      <div><span class="pat" style="--pat-ico:repeating-linear-gradient(45deg, oklch(80% 0.12 82) 0 1.5px, transparent 1.5px 7px)"></span>菱形编织 · 订单</div>
+      <div><span class="pat" style="--pat-ico:repeating-linear-gradient(90deg, oklch(80% 0.12 82) 0 2px, transparent 2px 8px)"></span>链条齿纹 · 合同</div>
+      <div><span class="pat" style="--pat-ico:radial-gradient(circle, oklch(80% 0.12 82) 1.4px, transparent 1.6px)"></span>铜钱圆点 · 租金</div>
+      <div><span class="pat" style="--pat-ico:conic-gradient(from 45deg at 50% 50%, oklch(80% 0.12 82) 0 25%, transparent 25% 100%)"></span>星形四芒 · 会员</div>
+    </div>
+  </aside>
+
+  <!-- ============ 卡片（卡堆 + 边框环 + 卡面） ============ -->
+  <div class="slot">
+    <!-- 卡堆参照物 -->
+    <div class="deck" id="deck" aria-hidden="true">
+      <span class="d1"></span>
+      <span class="d2"></span>
+      <span class="d3"></span>
+    </div>
+
+    <div class="frame in-bag" data-cat="order" id="frame">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+
+    <article class="card" data-theme="trade" data-rarity="legendary" data-id="M_SALE_001" id="card">
+      <span class="rare-badge" id="rare-badge"><span class="star">★</span><span id="rare-name">传说</span></span>
+
+      <!-- 顶部：阵营 + 品质 -->
+      <div class="topline">
+        <span class="faction" id="faction-label">交易<span class="sep">/</span>订单模板</span>
+        <span class="quality"><span class="gem"></span>周期总量</span>
+      </div>
+
+      <!-- 图标 -->
+      <div class="icon-zone">
+        <span class="icon-halo"></span>
+        <span class="icon-ring" aria-hidden="true" id="icon-ring">
+          <svg id="ico-order" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4.5" y="3" width="15" height="18" rx="1.5" opacity="0.9" />
+            <path d="M8.5 8h7M8.5 12h7M8.5 16h4" opacity="0.85" />
+            <path d="M6 3.8c.9.7 1.9.9 2.6.9 1.1 0 1.6-.4 2.2-.8.8-.5 1.7-.6 2.6-.5" opacity="0.6" />
+          </svg>
+          <svg id="ico-contract" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M11 17l-4-4a2.1 2.1 0 0 1 3-3l3 3 1.5-1.5a2.1 2.1 0 0 1 3 3L13 19a3.2 3.2 0 0 1-4.6 0l-2-2" opacity="0.9" />
+            <path d="M9.5 14.5l-3-3a2.1 2.1 0 0 1 3-3" opacity="0.7" />
+          </svg>
+          <svg id="ico-rent" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M6 10h12l-1 9H7z" opacity="0.9" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" opacity="0.8" />
+            <circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none" />
+          </svg>
+          <svg id="ico-member" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M12 3.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7-3.4-3.3 4.7-.7z" opacity="0.9" />
+            <circle cx="12" cy="12" r="1.4" opacity="0.7" />
+          </svg>
+        </span>
+      </div>
+
+      <!-- 标题 -->
+      <div class="title-zone">
+        <h1>月度销售额</h1>
+        <div class="sub-id">M_SALE_001</div>
+        <div class="badge-row">
+          <span class="badge biz">业务</span>
+          <span class="badge tech">技术</span>
+          <span class="badge dm">数据管理</span>
+        </div>
+      </div>
+
+      <!-- 属性网格 -->
+      <section class="stats" aria-label="核心属性">
+        <div class="stat"><div class="lbl">计量</div><div class="val">元</div></div>
+        <div class="stat"><div class="lbl">周期</div><div class="val">月度</div></div>
+        <div class="stat"><div class="lbl">精度</div><div class="val">两位小数</div></div>
+        <div class="stat"><div class="lbl">物理表</div><div class="val mono">dwd_sale_order_df</div></div>
+      </section>
+
+      <!-- 词条 -->
+      <section class="affix">
+        <div class="affix-head">统计维度</div>
+        <div class="affix-tags">
+          <span class="tag">时间</span>
+          <span class="tag">机构</span>
+          <span class="tag">渠道</span>
+          <span class="tag">产品</span>
+        </div>
+      </section>
+
+      <!-- 描述 -->
+      <section class="desc-box">自然月内已完成订单的销售总金额，不含退款。适用：经营分析 / 预警复盘 · 报表：销售月报 / 订单主题汇总报表</section>
+
+      <!-- 公式 -->
+      <section class="skill-box">
+        <div class="sl">✦ 计算公式</div>
+        <div class="sd">月度销售额 = 统计自然月内所有已完成订单的销售金额之和，不包含退款金额。</div>
+        <div class="sc"><span class="fn">SUM</span>(<span>order_amount</span>) <span class="kw">WHERE</span> <span>order_status</span> = <span class="str">'completed'</span> <span class="kw">AND</span> <span>stat_month</span> = 当前自然月</div>
+      </section>
+
+      <!-- 预警条 -->
+      <section class="bars" aria-label="预警标准">
+        <div class="bar-row"><span class="bname">绿灯</span><div class="bar-track"><div class="bar-fill bar-green"><span class="tick">≥ 目标值</span></div></div></div>
+        <div class="bar-row"><span class="bname">黄灯</span><div class="bar-track"><div class="bar-fill bar-yellow"><span class="tick">低于目标 10%</span></div></div></div>
+        <div class="bar-row"><span class="bname">红灯</span><div class="bar-track"><div class="bar-fill bar-red"><span class="tick">低于目标 20%</span></div></div></div>
+      </section>
+
+      <!-- 底部元信息 -->
+      <section class="meta">
+        <div class="row"><span class="k">来源</span><span class="v sans">订单系统、主题报表系统</span></div>
+        <div class="row"><span class="k">技术来源</span><span class="v">SUM(sale_amt) WHERE order_status = 'completed' AND stat_month = 当前自然月</span></div>
+        <div class="row"><span class="k">负责单位</span><span class="v sans">交易分析部</span></div>
+      </section>
+
+      <!-- 版本栏 -->
+      <footer class="foot">
+        <span class="lv"><span class="lvnum">v1.0.0</span>强化等级</span>
+        <span class="ver">2026-08-03 交易分析部<br/>初版发布 · 口径定稿 v2</span>
+      </footer>
+    </article>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const frame = document.getElementById('frame');
+  const card = document.getElementById('card');
+  const themeSel = document.getElementById('sel-theme');
+  const catSel = document.getElementById('sel-cat');
+  const scoreInput = document.getElementById('score');
+  const scoreVal = document.getElementById('score-val');
+  const rarityNote = document.getElementById('rarity-note');
+  const rareName = document.getElementById('rare-name');
+  const factionLabel = document.getElementById('faction-label');
+  const icons = { order: 'ico-order', contract: 'ico-contract', rent: 'ico-rent', member: 'ico-member' };
+  const catNames = { order: '订单模板', contract: '合同模板', rent: '租金模板', member: '会员模板' };
+  const themeNames = {
+    trade: '交易', lease: '招商租赁', finance: '财务',
+    ops: '运营', marketing: '营销', service: '服务'
+  };
+  const rarities = [
+    { min: 90, key: 'legendary', name: '传说', note: '<b>传说</b> ≥90 · 金色双层边框 + 动态辉光，纹样缓慢流动' },
+    { min: 80, key: 'epic', name: '史诗', note: '<b>史诗</b> 80-89 · 紫色双层边框，四角紫纹' },
+    { min: 70, key: 'rare', name: '稀有', note: '<b>稀有</b> 70-79 · 蓝色双层边框，四角蓝纹' },
+    { min: 60, key: 'uncommon', name: '精良', note: '<b>精良</b> 60-69 · 绿色双层边框，四角绿纹' },
+    { min: 0, key: 'common', name: '普通', note: '<b>普通</b> &lt;60 · 灰白双层边框，无辉光' }
+  ];
+
+  function apply() {
+    const theme = themeSel.value;
+    const cat = catSel.value;
+    const score = +scoreInput.value;
+
+    // 主题 / 稀有度变量需同时作用于 .frame（边框环）与 .card（卡面），
+    // 否则父级 .frame 无法继承子级元素上的 CSS 变量
+    frame.dataset.theme = theme;
+    card.dataset.theme = theme;
+    scoreVal.textContent = score;
+
+    const r = rarities.find(x => score >= x.min);
+    card.dataset.rarity = r.key;
+    frame.dataset.rarity = r.key;
+    frame.dataset.cat = cat;
+    rareName.textContent = r.name;
+    rarityNote.innerHTML = r.note;
+
+    factionLabel.innerHTML = `${themeNames[theme]}<span class="sep">/</span>${catNames[cat]}`;
+
+    Object.entries(icons).forEach(([k, id]) => {
+      document.getElementById(id).style.display = (k === cat) ? '' : 'none';
+    });
+  }
+
+  themeSel.addEventListener('change', apply);
+  catSel.addEventListener('change', apply);
+  scoreInput.addEventListener('input', apply);
+  apply();
+
+  /* ============ 卡包状态机：取出 / 收回 ============ */
+  const btnToggle = document.getElementById('btn-toggle');
+  const stateHint = document.getElementById('state-hint');
+  const deck = document.getElementById('deck');
+  let out = false;          // 是否已取出
+  let animating = false;
+
+  function setState(next) {
+    if (animating || next === out) return;
+    animating = true;
+
+    frame.classList.remove('popout', 'retract', 'hold');
+    if (next) {
+      // 取出：蓄力 → 高速抽出 → 卡堆被顶开
+      frame.classList.add('selected', 'popout');
+      frame.classList.remove('in-bag');
+      deck.classList.add('pop');
+      btnToggle.textContent = '📥 收回卡片';
+      stateHint.innerHTML = '当前：<b>已取出</b> · 展示放大中（点击卡片或按钮收回）';
+      setTimeout(() => {
+        frame.classList.remove('popout');
+        frame.classList.add('hold');
+        deck.classList.remove('pop');
+        animating = false;
+      }, 720);
+    } else {
+      // 收回：放大 → 沉入包中
+      frame.classList.remove('selected', 'hold');
+      frame.classList.add('retract');
+      btnToggle.textContent = '📤 取出卡片';
+      stateHint.innerHTML = '当前：<b>包中</b>（点击卡片或按钮取出）';
+      setTimeout(() => {
+        frame.classList.remove('retract');
+        frame.classList.add('in-bag');
+        animating = false;
+      }, 520);
+    }
+    out = next;
+  }
+
+  btnToggle.addEventListener('click', () => setState(!out));
+  frame.addEventListener('click', () => setState(!out));
+
+  // 初始：先包中，加载后自动抽出展示一次
+  frame.classList.add('in-bag');
+  setTimeout(() => setState(true), 500);
+
+</script>
+
+</body>
+</html>

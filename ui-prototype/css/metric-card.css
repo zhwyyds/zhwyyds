@@ -1,0 +1,332 @@
+/* ================================================================
+   指标卡视觉系统 v5（适配版）— 参考 ui-prototype/metric-card-ref.html
+   主题(一级分类) → 主色 | 二级分类 → 边框纹样 | 评分/状态 → 稀有度边框
+   卡包状态机：in-bag（扇形中缩小）→ popout（跃出）→ selected（放大悬浮）
+   ================================================================ */
+
+/* ── 主题色（一级分类 ← domain_code） ── */
+.mc-theme-trade      { --accent: oklch(80% 0.12 82);   --accent-deep: oklch(58% 0.12 70);   --accent-soft: oklch(88% 0.1 90);   --glow: 0 0 14px oklch(80% 0.12 82 / 0.35); }
+.mc-theme-lease      { --accent: oklch(80% 0.11 155);  --accent-deep: oklch(56% 0.12 155);  --accent-soft: oklch(90% 0.09 155);  --glow: 0 0 14px oklch(80% 0.11 155 / 0.35); }
+.mc-theme-finance    { --accent: oklch(75% 0.1 265);   --accent-deep: oklch(55% 0.11 265);  --accent-soft: oklch(88% 0.08 265);  --glow: 0 0 14px oklch(75% 0.1 265 / 0.35); }
+.mc-theme-ops        { --accent: oklch(78% 0.09 215);  --accent-deep: oklch(58% 0.1 215);   --accent-soft: oklch(89% 0.07 215);  --glow: 0 0 14px oklch(78% 0.09 215 / 0.35); }
+.mc-theme-marketing  { --accent: oklch(78% 0.12 350);  --accent-deep: oklch(56% 0.13 350);  --accent-soft: oklch(89% 0.09 350);  --glow: 0 0 14px oklch(78% 0.12 350 / 0.35); }
+.mc-theme-service    { --accent: oklch(76% 0.1 300);   --accent-deep: oklch(56% 0.11 300);  --accent-soft: oklch(88% 0.08 300);  --glow: 0 0 14px oklch(76% 0.1 300 / 0.35); }
+
+/* ── 稀有度边框（状态映射） ── */
+.mc-rarity-legendary { --frame-1: oklch(86% 0.13 82);  --frame-2: oklch(60% 0.14 70);   --frame-outer: oklch(92% 0.1 90 / 0.55);  --rare-ico: oklch(92% 0.1 90);   --corner-hi: oklch(92% 0.12 90);  --corner-hi-2: oklch(70% 0.12 70);  --frame-fx: animated; }
+.mc-rarity-epic      { --frame-1: oklch(78% 0.11 300); --frame-2: oklch(52% 0.14 305);  --frame-outer: oklch(80% 0.1 300 / 0.5);   --rare-ico: oklch(85% 0.1 305);  --corner-hi: oklch(82% 0.11 305);  --corner-hi-2: oklch(60% 0.12 305); --frame-fx: none; }
+.mc-rarity-rare      { --frame-1: oklch(72% 0.11 250); --frame-2: oklch(48% 0.12 255);  --frame-outer: oklch(74% 0.1 250 / 0.45);  --rare-ico: oklch(80% 0.1 250);  --corner-hi: oklch(78% 0.11 250);  --corner-hi-2: oklch(56% 0.11 255); --frame-fx: none; }
+.mc-rarity-uncommon  { --frame-1: oklch(74% 0.12 150); --frame-2: oklch(48% 0.12 155);  --frame-outer: oklch(76% 0.11 150 / 0.45); --rare-ico: oklch(82% 0.11 150); --corner-hi: oklch(78% 0.12 150);  --corner-hi-2: oklch(56% 0.12 155); --frame-fx: none; }
+.mc-rarity-common    { --frame-1: oklch(74% 0.02 90);  --frame-2: oklch(50% 0.02 90);   --frame-outer: oklch(76% 0.02 90 / 0.4);   --rare-ico: oklch(80% 0.02 90);  --corner-hi: oklch(78% 0.02 90);  --corner-hi-2: oklch(56% 0.02 90); --frame-fx: none; }
+
+/* ── 纹样图案（二级分类） ── */
+.mc-cat-order     { --pat-ico: repeating-linear-gradient(45deg, var(--accent) 0 1.5px, transparent 1.5px 7px);
+                    --pat: repeating-linear-gradient(45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px),
+                           repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px); }
+.mc-cat-contract  { --pat-ico: repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 8px);
+                    --pat: repeating-linear-gradient(90deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px, transparent 2px 10px),
+                           repeating-linear-gradient(180deg, color-mix(in oklch, var(--accent) 50%, transparent) 0 2px, transparent 2px 10px); }
+.mc-cat-rent      { --pat-ico: radial-gradient(circle, var(--accent) 1.4px, transparent 1.6px);
+                    --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 80%, transparent) 2.2px, transparent 2.6px); }
+.mc-cat-member    { --pat-ico: conic-gradient(from 45deg at 50% 50%, var(--accent) 0 25%, transparent 25% 100%);
+                    --pat: conic-gradient(from 45deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 25%, transparent 25% 100%); }
+
+/* ============ 布局变量 ============ */
+.mc-root {
+  --card-bg: oklch(23% 0.032 278); --card-bg-2: oklch(19% 0.03 275);
+  --panel: oklch(29% 0.035 275); --panel-2: oklch(24% 0.03 272);
+  --paper: oklch(91% 0.03 70); --paper-ink: oklch(30% 0.04 60);
+  --text: oklch(94% 0.02 90); --text-dim: oklch(72% 0.04 90); --text-faint: oklch(55% 0.03 90);
+  --blue: oklch(70% 0.11 250); --green: oklch(72% 0.13 150); --warn: oklch(76% 0.12 80); --red: oklch(68% 0.17 25);
+  --frame-bg: oklch(16% 0.03 275);
+  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============ 扇形容器（卡包桌） ============ */
+.mc-table {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 18px;
+  min-height: 480px;
+  padding: 24px 16px 50px;
+  overflow: visible;
+}
+.mc-card-slot {
+  position: relative;
+  flex: 0 0 auto;
+  width: 380px;
+  height: 660px;
+  transform: rotate(var(--theta, 0deg)) translateY(var(--lift, 0px));
+  transform-origin: 50% 100%;
+  transition: transform 0.45s var(--ease), filter 0.4s ease, opacity 0.4s ease;
+  z-index: var(--z, 1);
+  cursor: pointer;
+}
+/* 包中（扇形里）：缩小下沉 —— 参考 in-bag */
+.mc-card-slot.in-bag {
+  transform: rotate(var(--theta, 0deg)) translateY(var(--lift, 0px)) scale(var(--bag-scale, 0.42));
+  filter: brightness(0.88) saturate(0.82);
+  z-index: var(--z, 1);
+}
+.mc-card-slot.in-bag:hover {
+  filter: none;
+  z-index: 120;
+  transform: rotate(var(--theta, 0deg)) translateY(calc(var(--lift, 0px) - 10px)) scale(var(--bag-scale, 0.42));
+}
+/* 取出（选中）：放大上浮居中 —— 参考 selected + popout */
+.mc-card-slot.selected {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 380px;
+  height: auto;
+  transform: translate(-50%, -50%) scale(1);
+  z-index: 300;
+  cursor: default;
+  filter: none;
+  animation: mc-popout 0.7s var(--ease);
+}
+@keyframes mc-popout {
+  0%   { transform: translate(-50%, -50%) scale(0.42); filter: brightness(0.86) saturate(0.78); opacity: 0.5; }
+  50%  { transform: translate(-50%, -50%) scale(1.12); filter: brightness(1.15) saturate(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); filter: none; opacity: 1; }
+}
+.mc-card-slot.selected:hover { transform: translate(-50%, -50%) scale(1); }
+.mc-card-slot.selected .mc-frame { box-shadow: 0 0 0 1.5px var(--frame-outer), 0 0 0 5px var(--frame-2), 0 0 0 7.5px var(--frame-1), 0 34px 74px oklch(0% 0 0 / 0.6), 0 0 34px color-mix(in oklch, var(--frame-1) 70%, transparent); }
+/* 非选中变暗 */
+.mc-card-slot.dimmed { opacity: 0.4; filter: saturate(0.5) brightness(0.9); }
+
+/* ============ 边框环（纹样承载 + 稀有度多层框） ============ */
+.mc-frame {
+  position: relative;
+  width: 404px;
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--frame-bg);
+  box-shadow: 0 0 0 1px var(--frame-outer), 0 0 0 4px var(--frame-2), 0 0 0 6px var(--frame-1), 0 26px 54px oklch(0% 0 0 / 0.55), var(--glow);
+  transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease), filter 0.55s var(--ease);
+}
+.mc-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background-image: var(--pat, none);
+  background-size: 12px 12px;
+  background-position: 0 0;
+}
+.mc-frame.mc-legendary::before { animation: mc-patroll 14s linear infinite; }
+@keyframes mc-patroll { from { background-position: 0 0; } to { background-position: 48px 0; } }
+/* 四角饰 */
+.mc-corner {
+  position: absolute; width: 26px; height: 26px; z-index: 4; pointer-events: none;
+}
+.mc-corner.tl { top: 2px; left: 2px; }
+.mc-corner.tr { top: 2px; right: 2px; transform: scaleX(-1); }
+.mc-corner.bl { bottom: 2px; left: 2px; transform: scaleY(-1); }
+.mc-corner.br { bottom: 2px; right: 2px; transform: scale(-1); }
+.mc-corner::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 26px; height: 26px;
+  border-top: 3px solid var(--corner-hi); border-left: 3px solid var(--corner-hi);
+  border-top-left-radius: 10px;
+}
+.mc-corner::after {
+  content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px;
+  border-top: 1.5px solid var(--corner-hi-2); border-left: 1.5px solid var(--corner-hi-2);
+  border-top-left-radius: 7px; opacity: 0.85;
+}
+
+/* ============ 卡面 380×636 ============ */
+.mc-card {
+  width: 380px;
+  height: 636px;
+  position: relative;
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
+              linear-gradient(160deg, var(--card-bg), var(--card-bg-2));
+  border: 1px solid color-mix(in oklch, var(--frame-2) 55%, transparent);
+  border-radius: 10px;
+  padding: 17px 17px 13px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--frame-1) 12%, transparent);
+}
+.mc-card::after {
+  content: attr(data-id);
+  position: absolute; right: -14px; bottom: 30px;
+  font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.24em;
+  writing-mode: vertical-rl;
+  color: color-mix(in oklch, var(--accent) 7%, transparent);
+  white-space: nowrap; pointer-events: none;
+}
+/* 稀有度角标 */
+.mc-rare-badge {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  display: flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+  color: var(--rare-ico);
+  background: oklch(12% 0.02 275 / 0.85);
+  border: 1px solid var(--frame-2); border-radius: 4px;
+  padding: 2px 7px;
+  box-shadow: 0 0 8px color-mix(in oklch, var(--frame-2) 60%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.mc-rare-badge .star { color: var(--corner-hi); font-size: 10px; line-height: 1; }
+/* 顶部：阵营 + 品质 */
+.mc-topline {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim);
+  padding-bottom: 7px;
+  border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
+  padding-right: 52px;
+}
+.mc-faction { font-weight: 700; color: var(--accent-soft); }
+.mc-faction .sep { color: var(--text-faint); margin: 0 3px; font-weight: 400; }
+.mc-quality { display: flex; align-items: center; gap: 5px; color: var(--accent-soft); font-weight: 700; }
+.mc-quality .gem { width: 8px; height: 8px; transform: rotate(45deg); background: linear-gradient(135deg, var(--accent-soft), var(--accent-deep)); box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 80%, transparent); }
+/* 图标区 */
+.mc-icon-zone { height: 74px; display: flex; align-items: center; justify-content: center; position: relative; margin: 8px 0 4px; }
+.mc-icon-halo { position: absolute; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklch, var(--accent) 38%, transparent), transparent 70%); filter: blur(2px); animation: mc-pulse 3.2s ease-in-out infinite; }
+@keyframes mc-pulse { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+.mc-icon-ring {
+  position: absolute; width: 54px; height: 54px; border-radius: 50%;
+  border: 2px solid color-mix(in oklch, var(--accent) 60%, transparent);
+  box-shadow: inset 0 0 12px oklch(0% 0 0 / 0.6), 0 0 10px color-mix(in oklch, var(--accent) 30%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--accent) 26%, transparent), oklch(26% 0.05 60 / 0.9));
+  font-size: 26px;
+}
+/* 标题 */
+.mc-title-zone { text-align: center; }
+.mc-title { font-size: 23px; font-weight: 800; letter-spacing: 0.04em; color: var(--accent-soft); text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5); line-height: 1.15; }
+.mc-sub-id { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.3em; color: var(--accent); margin-top: 3px; }
+/* 属性网格 */
+.mc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 11px; }
+.mc-stat { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent); border-radius: 5px; padding: 6px 4px 5px; text-align: center; }
+.mc-stat .lbl { font-size: 8px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); }
+.mc-stat .val { font-size: 11px; font-weight: 700; color: var(--accent-soft); margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.mc-stat .val.mono { font-family: var(--font-mono); font-size: 8.5px; word-break: break-all; }
+/* 词条 */
+.mc-affix { margin-top: 9px; }
+.mc-affix-head { font-size: 9px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.mc-affix-head::before { content: ""; width: 16px; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); }
+.mc-affix-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.mc-tag { font-size: 9.5px; font-weight: 700; color: var(--text); background: oklch(0% 0 0 / 0.3); border: 1px solid oklch(70% 0.05 90 / 0.4); border-radius: 3px; padding: 1px 6px; letter-spacing: 0.04em; }
+/* 描述框 */
+.mc-desc-box {
+  margin-top: 9px;
+  background: repeating-linear-gradient(0deg, oklch(91% 0.03 70 / 0.05) 0 1px, transparent 1px 4px),
+              linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+  border: 1px solid color-mix(in oklch, var(--accent) 55%, transparent);
+  border-radius: 5px; padding: 7px 10px;
+  color: var(--paper-ink); font-size: 11px; line-height: 1.55;
+  box-shadow: inset 0 0 10px oklch(0% 0 0 / 0.18);
+  position: relative;
+}
+.mc-desc-box::before {
+  content: "◆ 指标描述 ◆";
+  position: absolute; top: -8px; left: 10px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.2em; color: var(--paper-ink);
+  background: linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+  padding: 0 5px;
+}
+/* 公式框 */
+.mc-skill-box { margin-top: 10px; background: oklch(15% 0.02 275); border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent); border-left: 3px solid var(--accent); border-radius: 5px; padding: 7px 10px; }
+.mc-skill-box .sl { font-size: 8px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
+.mc-skill-box .sd { font-size: 10px; color: var(--text-dim); margin-top: 3px; line-height: 1.5; }
+.mc-skill-box .sc { font-family: var(--font-mono); font-size: 10px; line-height: 1.6; color: var(--text); margin-top: 3px; background: oklch(10% 0.02 275); border: 1px solid oklch(35% 0.03 275); border-radius: 3px; padding: 5px 7px; overflow-x: auto; white-space: nowrap; }
+/* 预警条 */
+.mc-bars { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.mc-bar-row { display: flex; align-items: center; gap: 7px; }
+.mc-bar-row .bname { width: 34px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-dim); }
+.mc-bar-track { flex: 1; height: 9px; border-radius: 2px; background: oklch(10% 0.02 275); border: 1px solid oklch(40% 0.03 275); overflow: hidden; }
+.mc-bar-fill { height: 100%; border-radius: 1px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+.mc-bar-fill .tick { font-size: 7.5px; font-weight: 800; color: oklch(12% 0.02 90); letter-spacing: 0.06em; }
+.mc-bar-green { width: 100%; background: linear-gradient(90deg, oklch(45% 0.12 150), var(--green)); }
+.mc-bar-yellow { width: 82%; background: linear-gradient(90deg, oklch(50% 0.12 80), var(--warn)); }
+.mc-bar-red { width: 60%; background: linear-gradient(90deg, oklch(48% 0.16 25), var(--red)); }
+/* 底部元信息 */
+.mc-meta { margin-top: auto; padding-top: 9px; border-top: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); display: flex; flex-direction: column; gap: 4px; font-size: 9.5px; color: var(--text-faint); }
+.mc-meta .row { display: flex; gap: 7px; align-items: baseline; }
+.mc-meta .k { font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; min-width: 3.4em; }
+.mc-meta .v { font-family: var(--font-mono); color: var(--text); font-size: 9.5px; line-height: 1.5; word-break: break-all; }
+.mc-meta .v.sans { font-family: var(--font-sans, system-ui, sans-serif); }
+/* 版本栏 */
+.mc-foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; letter-spacing: 0.08em; }
+.mc-foot .lv { display: flex; align-items: center; gap: 6px; color: var(--accent-soft); font-weight: 800; }
+.mc-foot .lv .lvnum { font-family: var(--font-mono); background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep)); color: oklch(15% 0.02 60); padding: 2px 7px; border-radius: 3px; font-weight: 800; font-size: 10px; }
+.mc-foot .ver { color: var(--text-faint); text-align: right; line-height: 1.4; }
+
+/* ============ 评审操作区（卡面底部，非参考新增） ============ */
+.mc-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.mc-actions .btn {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 8px 0;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), filter 0.2s var(--ease);
+}
+.mc-actions .btn-reject { background: linear-gradient(180deg, oklch(78% 0.15 25), oklch(58% 0.17 25)); color: #fff; }
+.mc-actions .btn-approve { background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep)); color: oklch(15% 0.02 60); }
+.mc-actions .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.mc-actions .btn:active { transform: translateY(1px); }
+.mc-done {
+  flex: 1; text-align: center;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+  color: var(--green);
+  padding: 8px 0;
+  border: 1px solid color-mix(in oklch, var(--green) 45%, transparent);
+  border-radius: 6px;
+}
+/* 状态徽章条（卡面顶部，评审状态） */
+.mc-status-row {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  display: flex; gap: 5px;
+}
+.mc-status-row .b {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+  padding: 2px 6px; border-radius: 3px;
+  border: 1px solid;
+  background: oklch(12% 0.02 275 / 0.85);
+  font-variant-numeric: tabular-nums;
+}
+.mc-status-row .b-pending { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 55%, transparent); }
+.mc-status-row .b-draft   { color: var(--green); border-color: color-mix(in oklch, var(--green) 55%, transparent); }
+.mc-status-row .b-rejected{ color: var(--red);   border-color: color-mix(in oklch, var(--red) 55%, transparent); }
+.mc-status-row .b-skip    { color: var(--text-faint); border-color: color-mix(in oklch, var(--text-faint) 55%, transparent); }
+.mc-status-row .b-new     { color: var(--blue);  border-color: color-mix(in oklch, var(--blue) 55%, transparent); }
+.mc-status-row .b-dup     { color: var(--text-faint); border-color: color-mix(in oklch, var(--text-faint) 55%, transparent); }
+/* 关闭按钮 */
+.mc-close {
+  position: absolute; top: -14px; right: -14px; z-index: 310;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: rgba(30, 20, 8, 0.6); color: #ffd9a0;
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+.mc-close:hover { background: rgba(200, 60, 50, 0.85); transform: rotate(90deg); }
+/* 底部提示条 */
+.mc-hint {
+  position: absolute; bottom: 2px; left: 0; right: 0;
+  text-align: center; font-size: 12px;
+  color: var(--text-secondary, #777);
+  padding: 2px; pointer-events: none; z-index: 500;
+}
