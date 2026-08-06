@@ -27,11 +27,11 @@
       <div class="nav-group-title">指标管理</div>
       <div class="nav-item" data-page="metrics">
         <span class="nav-icon">📏</span> 指标库
-        <span class="nav-badge" id="nav-badge-metrics">—</span>
+        <span class="nav-badge" id="nav-badge-metrics-lib">—</span>
       </div>
       <div class="nav-item" data-page="metric-mgmt">
         <span class="nav-icon">📋</span> 指标管理
-        <span class="nav-badge warning" id="nav-badge-metrics">—</span>
+        <span class="nav-badge warning" id="nav-badge-mgmt">—</span>
       </div>
       <div class="nav-item" data-page="roots">
         <span class="nav-icon">🌱</span> 词根库
@@ -538,6 +538,16 @@
           <!-- 内联新增行由 metric-mgmt.js INLINE_NEW_ROW_HTML 常量提供（避免双份 DOM） -->
         </tbody>
       </table>
+    </div>
+    <div class="pagination-bar" data-page-id="mgmt" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div class="pagination-info">
+        <span class="text-sm text-muted">共 <span id="mgmtPaginationTotal">—</span> 条，显示 <span id="mgmtPaginationSizeLabel">12</span> 条</span>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm" onclick="goToPage('mgmt', 1)">&#8249; 上一页</button>
+        <button class="btn btn-sm btn-primary" onclick="goToPage('mgmt', 1)">1</button>
+        <button class="btn btn-sm" onclick="goToPage('mgmt', 1)">下一页 &#8250;</button>
+      </div>
     </div>
     <div class="pagination-bar">
       <div class="pagination-info">

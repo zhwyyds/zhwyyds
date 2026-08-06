@@ -222,6 +222,10 @@
         );
       })
       .join('');
+    if (typeof applyPagination === 'function') {
+      // H11: 表格重绘后重跑分页，否则分页状态丢失、全部行显示
+      applyPagination('mgmt');
+    }
   }
 
   function inlineRowHtml() {

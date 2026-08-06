@@ -149,12 +149,20 @@
     return '<span class="badge badge-warn">待确认</span>';
   }
 
-  function renderNavBadges(metricsLen, rootsLen, homonymCount, veto) {
-    var m = document.getElementById('nav-badge-metrics');
+  function renderNavBadges(metricsLen, rootsLen, homonymCount, veto, pendingReview) {
+    var lib = document.getElementById('nav-badge-metrics-lib');
+    var mgmt = document.getElementById('nav-badge-mgmt');
     var r = document.getElementById('nav-badge-roots');
     var c = document.getElementById('nav-badge-caliber');
-    if (m) m.textContent = String(metricsLen);
+    var rv = document.getElementById('nav-badge-review');
+    if (lib) lib.textContent = String(metricsLen);
+    if (mgmt) mgmt.textContent = String(metricsLen);
     if (r) r.textContent = String(rootsLen);
+    if (rv) {
+      var n = pendingReview || 0;
+      rv.textContent = n > 0 ? String(n) : '—';
+      rv.style.display = '';
+    }
     if (c) {
       var n = homonymCount || (veto ? 1 : 0);
       c.textContent = String(n);
@@ -467,7 +475,10 @@
       global.__DG_SCORE_SUMMARY__ = scoreSummary || [];
 
       var conflicts = computeCaliberConflicts(metrics);
-      renderNavBadges(metrics.length, roots.length, conflicts.homonyms.length, report && report.veto);
+      var pendingReview = metrics.filter(function(m) {
+        return m.review_status !== 'approved' && m.review_status !== 'offline';
+      }).length;
+      renderNavBadges(metrics.length, roots.length, conflicts.homonyms.length, report && report.veto, pendingReview);
       renderDashboard(report, roots.length, metrics.length, domains);
       renderScoring(report);
       renderCaliberPage(report, metrics);

@@ -925,7 +925,7 @@ function applyPagination(pageId) {
   var isSpecial = false;
 
   if (pageId === 'mgmt') {
-    rows = document.querySelectorAll('#page-metric-mgmt #batchTableBody > tr');
+    rows = document.querySelectorAll('#page-metric-mgmt #batchTableBody > tr.batch-row');
   } else if (pageId === 'log') {
     rows = document.querySelectorAll('#page-metric-mgmt .card:nth-child(4) tbody tr');
     // More specific: find the operation log table
