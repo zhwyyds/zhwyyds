@@ -240,11 +240,12 @@
     host.innerHTML = cardsHtml + hint;
   }
 
-  /* 摘要卡（扇形浏览态）：渐进披露——状态/名称/关键属性 + 直接评审 */
+  /* 摘要卡（扇形浏览态）：明亮工具型卡片——主题色顶边 + 大字 + 直接评审 */
   function buildMiniCard(row, i, n, st) {
     var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '失败' }[st] || st;
-    var stCls = st === 'draft' ? 'st-ok' : (st === 'rejected' || st === 'error' ? 'st-no' : 'st');
+    var stCls = st === 'draft' ? 'st-draft' : (st === 'rejected' || st === 'error' ? 'st-rejected' : (st === 'skip' ? 'st-skip' : 'st-pending'));
     var rarity = MC_RARITY_NAME[mcRarity(st)] || '';
+    var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
     var unit = row.unit || '';
     var freq = row.frequency || '';
     var vtype = row.value_type || '';
@@ -253,10 +254,13 @@
       '<div class="mc-mini">' +
         '<div class="mc-mini-body">' +
           '<div class="mc-mini-status">' +
-            '<span class="b ' + stCls + '">' + stLabel + '</span>' +
-            '<span class="b rare">★ ' + esc(rarity) + '</span>' +
+            '<span class="st ' + stCls + '">' + stLabel + '</span>' +
+            '<span class="rare">★ ' + esc(rarity) + '</span>' +
           '</div>' +
-          '<div class="mc-mini-icon">' + themeFor(row.domain_code).icon + '</div>' +
+          '<div class="mc-mini-topic">' +
+            '<span class="dom-cn">' + esc(domCn) + '域</span>' +
+            '<span class="dom-code">' + esc(row.domain_code || '') + '</span>' +
+          '</div>' +
           '<div class="mc-mini-title">' + esc(row.metric_cn || '—') + '</div>' +
           '<div class="mc-mini-sub">' + esc(row.metric_en || row.metric_id || '—') + '</div>' +
           '<div class="mc-mini-tags">' +
@@ -264,12 +268,13 @@
             (freq ? '<span class="t">' + esc(freq) + '</span>' : '') +
             (vtype ? '<span class="t">' + esc(vtype) + '</span>' : '') +
           '</div>' +
+          (row.caliber_desc ? '<div class="mc-mini-desc">' + esc(row.caliber_desc) + '</div>' : '') +
           ((st === 'pending' || st === 'rejected') ?
             '<div class="mc-mini-actions">' +
-              '<button class="btn btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
-              '<button class="btn btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
+              '<button class="btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
+              '<button class="btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
             '</div>' :
-            (st === 'draft' ? '<div class="mc-mini-done">已入草稿</div>' : '')) +
+            (st === 'draft' ? '<div class="mc-mini-done">✓ 已入草稿</div>' : '')) +
         '</div>' +
       '</div>'
     );
