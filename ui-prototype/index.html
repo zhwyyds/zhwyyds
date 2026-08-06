@@ -500,18 +500,7 @@
       <div class="custom-checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)"></div>
       <span>全选</span>
       <span class="text-muted">|</span>
-      <span class="text-sm text-muted">共 <span id="mgmt-total-count">—</span> 个指标，显示 <span id="mgmtPageSizeLabel">12</span> 条</span>
-      <div class="page-size-selector">
-        <span>每页</span>
-        <select onchange="changePageSize(this,'mgmt')">
-          <option value="10">10</option>
-          <option value="12" selected>12</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-        <span>条</span>
-      </div>
+      <span class="text-sm text-muted">共 <span id="mgmt-total-count">—</span> 个指标</span>
       <div style="margin-left:auto;display:flex;gap:8px;">
         <button class="btn btn-sm" onclick="selectAllReviewed()">全选已评审</button>
         <button class="btn btn-sm">按主题域分组</button>
@@ -540,8 +529,20 @@
       </table>
     </div>
     <div class="pagination-bar" data-page-id="mgmt" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
-      <div class="pagination-info">
-        <span class="text-sm text-muted">共 <span id="mgmtPaginationTotal">—</span> 条，显示 <span id="mgmtPaginationSizeLabel">12</span> 条</span>
+      <div class="pagination-info" style="display:flex;align-items:center;gap:12px;">
+        <span class="text-sm text-muted">共 <span id="mgmtPaginationTotal">—</span> 条</span>
+        <span class="text-sm text-muted">第 <span id="mgmtPaginationCurrent">1</span>/<span id="mgmtPaginationTotalPages">1</span> 页</span>
+        <div class="page-size-selector">
+          <span>每页</span>
+          <select onchange="changePageSize(this,'mgmt')">
+            <option value="10">10</option>
+            <option value="12" selected>12</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span>条</span>
+        </div>
       </div>
       <div class="flex gap-2">
         <button class="btn btn-sm" onclick="goToPage('mgmt', 1)">&#8249; 上一页</button>

@@ -978,12 +978,17 @@ function applyPagination(pageId) {
 }
 
 function updatePaginationBar(pageId, page, totalPages, size, totalRows) {
-  // Find and update page indicators
   var bars = document.querySelectorAll('.pagination-bar[data-page-id="' + pageId + '"]');
   bars.forEach(function(bar) {
-    // Update page info text
+    // 分页指示：mgmt 用专属 id 选择器，避免覆盖含子 span 的 infoSpan
+    var mTotal = bar.querySelector('#mgmtPaginationTotal');
+    var mCur = bar.querySelector('#mgmtPaginationCurrent');
+    var mTotPg = bar.querySelector('#mgmtPaginationTotalPages');
+    if (mTotal && totalRows !== undefined) mTotal.textContent = String(totalRows);
+    if (mCur) mCur.textContent = String(page);
+    if (mTotPg) mTotPg.textContent = String(totalPages);
     var infoSpan = bar.querySelector('.text-sm.text-muted');
-    if (infoSpan) {
+    if (infoSpan && !mTotal) {
       var displayed = Math.min(size, totalRows - (page - 1) * size);
       infoSpan.textContent = '共 ' + totalRows + ' 条，显示 ' + displayed + ' 条';
     }
