@@ -82,8 +82,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
 
     @app.get("/api/meta")
     def meta() -> dict:
-        from data_governance import __version__
         import subprocess
+
+        from data_governance import __version__
 
         def _branch() -> str:
             try:
