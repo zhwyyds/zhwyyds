@@ -513,7 +513,7 @@
 /* 有卡片被查阅时，其余卡片压暗模糊但仍可被 hover */
 #importTaskCards .pack.dimmed .frame:not(.hovered):not(.active-lock) {
 
-    filter: brightness(0.7) saturate(0.7) blur(2px);
+    filter: brightness(0.4) saturate(0.25);
   
 }
 /* 点击锁定：跃出到页面正中央（模态展示） */
