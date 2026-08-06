@@ -31,6 +31,7 @@
 | 20 | 08-06 | **两个分页栏（死代码嵌套）** | 页面显示 2 个分页器 | log 分页器误嵌入 mgmt card，且无数据 | 显示混乱 |
 | 21 | 08-06 | 重复 id 3 处 | 分类保存丢值、roots 计数不更新 | newMetricCatL1/L2 hidden 残留、roots-table-count ×2 | 数据丢失/显示错 |
 | 22 | 08-06 | 死代码残留 | 内联行整套代码还在 | 抽屉接管后未删旧实现 | 维护负担 |
+| 23 | 08-06 | **fcntl 跨平台缺失** | Windows 上 51 个测试 ModuleNotFoundError | 文件锁直接 `import fcntl`（Unix 专属），无平台分支 | 功能不可用 |
 
 ---
 
@@ -147,6 +148,7 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 4. **数据纪律**：测试数据（`_N` 编号指标、mock 评审、临时文件）不得混入正式数据文件；发布前按 §5 验收清单确认数据干净
 
 ### 4.10 模块化开发与文档存档规范
+
 **任何功能开发必须按模块进行，且每模块一份开发文档（任务清单 + 测试结果），存档于 `docs/modules/`。**
 
 1. **按模块开发**：模块划分见 `docs/modules/模块开发规范.md`（当前 13 个模块，按前端页面划分）
@@ -155,6 +157,12 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 4. **索引维护**：`docs/modules/README.md` 登记每模块最新状态（✅/🚧/⚠️/📝）
 5. **留痕原则**：模块文档就是开发证据——"每个功能当时怎么规划、怎么验证的"都可追溯；变更记录追加在模块文件底部
 6. **与分支流程联动**：模块开发在 dev 分支 + `feature/<module>` 子分支 → 测试结果全绿 → PR 合入 main
+
+### 4.11 跨平台兼容规范
+
+- **禁止直接 `import fcntl` 等 Unix 专属模块**：文件锁统一走 `src/data_governance/io/file_lock.py` 的 `file_lock()`（Windows 用 `msvcrt.locking`，Unix 用 `fcntl.flock`）
+- 涉及平台差异的代码必须在 Windows 与 Unix 双平台验证（本次 fcntl 问题即因仅在 Linux 验证导致 Windows 51 个测试失败）
+- 平台专属属性（如 `fcntl.flock`）在 Windows 的 mypy stub 缺失时，用 `# type: ignore[attr-defined]` 局部标注并注释原因
 
 ---
 
