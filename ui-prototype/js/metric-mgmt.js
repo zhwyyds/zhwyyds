@@ -163,11 +163,12 @@
     var pageLabel = document.getElementById('mgmtPageSizeLabel');
     if (pageLabel) pageLabel.textContent = String(rows.length);
     if (!rows.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="10" class="text-sm text-muted" style="padding:20px;">无匹配指标</td></tr>';
+      tbody.innerHTML = inlineRowHtml() +
+        '<tr><td colspan="12" class="text-sm text-muted" style="padding:20px;">无匹配指标</td></tr>';
       return;
     }
-    tbody.innerHTML = rows
+    tbody.innerHTML = inlineRowHtml() +
+      rows
       .map(function (m) {
         return (
           '<tr class="batch-row" data-metric-id="' +
@@ -180,6 +181,8 @@
           esc(m.metric_cn) +
           '</td><td class="text-mono text-sm">' +
           esc(m.metric_en) +
+          '</td><td class="text-mono text-sm">' +
+          esc(m.metric_abbr || '—') +
           '</td><td><span class="badge badge-neutral">' +
           esc(m.domain_code) +
           '</span></td><td>' +
@@ -198,6 +201,14 @@
         );
       })
       .join('');
+  }
+
+  function inlineRowHtml() {
+    // 内联新增行（与表格查看同构）：可见时保留在表格最前，不可见时为空串
+    var row = document.getElementById('newMetricInlineRow');
+    if (!row) return '';
+    if (row.style.display === 'none') return '';
+    return row.outerHTML;
   }
 
   function bindMgmtFilters() {
@@ -608,6 +619,113 @@
     };
   }
 
+  /* ==================== 内联新增指标（与表格查看窗口同构 + AI） ==================== */
+
+  function showNewMetricInline() {
+    var row = document.getElementById('newMetricInlineRow');
+    if (!row) return;
+    ['inlineNewCn', 'inlineNewEn', 'inlineNewAbbr'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    var dom = document.getElementById('inlineNewDomain');
+    if (dom) dom.value = 'sale';
+    var type = document.getElementById('inlineNewType');
+    if (type) type.value = 'atomic';
+    var idEl = document.getElementById('inlineNewId');
+    if (idEl) idEl.textContent = 'M_SALE_N' + String(Math.floor(Math.random() * 900 + 100));
+    global.__DG_INLINE_SUGGEST__ = null;
+    row.style.display = '';
+    var cn = document.getElementById('inlineNewCn');
+    if (cn) cn.focus();
+    if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function cancelInlineNew() {
+    var row = document.getElementById('newMetricInlineRow');
+    if (row) row.style.display = 'none';
+    global.__DG_INLINE_SUGGEST__ = null;
+  }
+
+  function inlineSuggestMetric() {
+    var cn = document.getElementById('inlineNewCn');
+    if (!cn || !cn.value.trim()) { alert('请先填写中文名'); return; }
+    var domain = document.getElementById('inlineNewDomain') ? document.getElementById('inlineNewDomain').value : 'sale';
+    apiFetch('/api/metrics/suggest', {
+      method: 'POST',
+      body: JSON.stringify({ metric_cn: cn.value.trim(), domain_code: domain })
+    })
+      .then(function (r) {
+        global.__DG_INLINE_SUGGEST__ = r;
+        var enEl = document.getElementById('inlineNewEn');
+        if (enEl && r.metric_en) enEl.value = r.metric_en;
+        var abEl = document.getElementById('inlineNewAbbr');
+        if (abEl && r.metric_abbr) abEl.value = r.metric_abbr;
+        alert('🤖 AI 已生成：' + (r.metric_en || '英文名待手动填写') + '\n（口径/公式/负责人/分类已备好，保存时一并写入）');
+      })
+      .catch(function (e) { alert('AI 生成失败: ' + e.message); });
+  }
+
+  function saveInlineNew() {
+    var cn = document.getElementById('inlineNewCn');
+    if (!cn || !cn.value.trim()) { alert('请填写中文名'); return; }
+    var dom = document.getElementById('inlineNewDomain') ? document.getElementById('inlineNewDomain').value : 'sale';
+    var domUp = dom.toUpperCase();
+    var it = global.__DG_INLINE_SUGGEST__ || {};
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    var row = {
+      metric_id: 'M_' + domUp + '_N' + String(Math.floor(Math.random() * 900 + 100)),
+      metric_cn: cn.value.trim(),
+      metric_en: val('inlineNewEn') || it.metric_en || 'pending_naming',
+      metric_abbr: val('inlineNewAbbr') || it.metric_abbr || '',
+      domain_code: dom,
+      metric_type: val('inlineNewType') || 'atomic',
+      caliber_desc: it.caliber_desc || '',
+      formula_cn: it.formula_cn || '',
+      formula: it.formula || '',
+      tech_caliber: it.tech_caliber || '',
+      source_table: it.source_table || '',
+      owner: it.owner || '',
+      version: '0.1.0',
+      version_history: '0.1.0|' + new Date().toISOString().slice(0, 10) + '|—|新建草稿',
+      review_status: 'pending',
+      category_l1: it.category_l1 || '',
+      category_l2: it.category_l2 || '',
+      value_type: it.value_type || '',
+      dimensions: it.dimensions || '',
+      scenario: it.scenario || '',
+      reports: it.reports || '',
+      analysis_methods: it.analysis_methods || '',
+      alert_rules: it.alert_rules || '',
+      precision: it.precision || '',
+      data_sources: it.data_sources || '',
+      unit: it.unit || '',
+      frequency: it.frequency || '月'
+    };
+    apiFetch('/api/metrics', { method: 'POST', body: JSON.stringify(row) })
+      .then(function () {
+        cancelInlineNew();
+        return reloadFromServer();
+      })
+      .catch(function (e) { alert('创建失败: ' + e.message); });
+  }
+
+  /* ==================== 批量新增弹窗入口 ==================== */
+
+  function showBatchMetricModal() {
+    var modal = document.getElementById('newMetricModal');
+    if (!modal) return;
+    var wrap = document.getElementById('newMetricBatchWrap');
+    var single = document.getElementById('newMetricSingleWrap');
+    var title = document.getElementById('newMetricModalTitle');
+    var btn = document.getElementById('newMetricBatchToggle');
+    if (wrap) wrap.style.display = '';
+    if (single) single.style.display = 'none';
+    if (title) title.innerHTML = '&#128203; 批量新增指标';
+    if (btn) btn.textContent = '📝 单个模式';
+    modal.classList.add('show');
+  }
+
   function offline(id, payload) {
     id = (id || '').trim();
     if (!id) return Promise.reject(new Error('缺少指标 ID'));
@@ -633,6 +751,11 @@
   global.toggleBatchMode = toggleBatchMode;
   global.batchSuggestMetrics = batchSuggestMetrics;
   global.batchCreateMetrics = batchCreateMetrics;
+  global.showNewMetricInline = showNewMetricInline;
+  global.cancelInlineNew = cancelInlineNew;
+  global.inlineSuggestMetric = inlineSuggestMetric;
+  global.saveInlineNew = saveInlineNew;
+  global.showBatchMetricModal = showBatchMetricModal;
 
   global.editMetric = function (id) {
     openEdit(id);
