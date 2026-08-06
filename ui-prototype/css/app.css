@@ -1815,29 +1815,62 @@ tr.row-selected td { background: var(--primary-light) !important; }
 
 /* ── 批量导入：炉石卡牌风（H32 增强：参考魔兽卡样式 + 横向层叠） ── */
 .import-cards-stack {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  padding: 60px 24px 80px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+  padding: 20px 8px 40px;
   position: relative;
-  flex-wrap: wrap;
-  gap: 0;
+  align-items: start;
 }
 .import-card-wrap {
   position: relative;
   margin-left: 0;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s;
   z-index: 1;
-  flex: 0 0 auto;
-}
-.import-card-wrap:not(:first-child) {
-  margin-left: -210px;
 }
 .import-card-wrap:hover {
-  transform: translateY(-18px) scale(1.04) !important;
-  z-index: 100 !important;
+  transform: translateY(-8px) scale(1.04) !important;
+  z-index: 50 !important;
   transition-delay: 0s;
+}
+/* 分页控件（占满整行，不在卡片网格里） */
+.import-pager {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 0 6px;
+  flex-wrap: wrap;
+}
+.import-pager .page-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-width: 110px;
+  text-align: center;
+}
+.import-pager .btn {
+  min-width: 64px;
+}
+.import-pager .page-nums {
+  display: flex;
+  gap: 4px;
+}
+.import-pager .page-nums .page-num {
+  min-width: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border-tertiary, #d0d0d0);
+  background: var(--background-primary, #fff);
+}
+.import-pager .page-nums .page-num.active {
+  background: var(--primary, #2e6fd0);
+  border-color: var(--primary, #2e6fd0);
+  color: #fff;
+  font-weight: 600;
 }
 .import-card-wrap .indicator-spec-card {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
@@ -1849,7 +1882,10 @@ tr.row-selected td { background: var(--primary-light) !important; }
 /* 炉石卡牌框架：金属边框 + 椭圆顶/底 + 深色背景 */
 .warcraft-card {
   position: relative;
-  width: 330px;
+  width: 100%;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
   border-radius: 22px 22px 14px 14px;
   background:
     linear-gradient(180deg, #3a2a18 0%, #2a1d10 8%, #5b4220 18%, #2a1d10 30%, #1a1208 100%);
@@ -1870,6 +1906,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 /* 顶部插画区：按主题域映射颜色 + emoji */
 .warcraft-art {
+  flex-shrink: 0;
   position: relative;
   width: 100%;
   height: 100px;
@@ -1928,14 +1965,26 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 /* 卡内容区（在金属框内，米色背景） */
 .warcraft-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: linear-gradient(180deg, #f5e8c8 0%, #ede0bc 50%, #e0d4a8 100%);
   margin: 2px;
   border-radius: 4px 4px 12px 12px;
   padding: 8px 10px 10px;
   position: relative;
+  scrollbar-width: thin;
+}
+.warcraft-body::-webkit-scrollbar {
+  width: 5px;
+}
+.warcraft-body::-webkit-scrollbar-thumb {
+  background: #c9a860;
+  border-radius: 3px;
 }
 /* 卡名条（紧贴插画下方，米色椭圆渐变） */
 .warcraft-name {
+  flex-shrink: 0;
   background: linear-gradient(180deg, #fff9d0 0%, #f0d890 100%);
   border: 1px solid #8a6420;
   border-radius: 16px;
@@ -2015,6 +2064,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
   margin-bottom: 0;
 }
 .import-card-status {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2022,6 +2072,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
   font-size: 13px;
 }
 .import-card-actions {
+  flex-shrink: 0;
   padding: 10px 8px;
   border-top: 1px solid #c9a860;
   display: flex;

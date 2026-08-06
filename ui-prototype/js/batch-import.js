@@ -4,6 +4,9 @@
  */
 (function (global) {
   var CURRENT_TASK = null;
+  // 网格平铺分页：每页 9 张（3×3），50 张时约 6 页
+  var CURRENT_PAGE = 0;
+  var PAGE_SIZE = 9;
 
   // 主题域 → 炉石卡插画配色 + emoji 图标（H32 魔兽卡风格）
   var DOMAIN_THEMES = {
@@ -141,6 +144,7 @@
   function openImportTask(taskId) {
     api('/api/import-tasks/' + encodeURIComponent(taskId)).then(function (task) {
       CURRENT_TASK = task;
+      CURRENT_PAGE = 0; // 打开新任务回到第一页
       var card = document.getElementById('importTaskDetailCard');
       var title = document.getElementById('importTaskDetailTitle');
       var meta = document.getElementById('importTaskDetailMeta');
@@ -165,19 +169,24 @@
       return;
     }
     host.classList.add('import-cards-stack');
-    host.innerHTML = rows.map(function (row, i) {
+
+    // 分页切片：所有卡统一尺寸平铺网格，每页 PAGE_SIZE 张
+    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (CURRENT_PAGE >= totalPages) CURRENT_PAGE = totalPages - 1;
+    var start = CURRENT_PAGE * PAGE_SIZE;
+    var pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    var cardsHtml = pageRows.map(function (row, pi) {
+      var gi = start + pi; // 全局索引（评审/翻页后仍指向正确行）
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
       var stBadge = st === 'draft' ? 'badge-pass' : (st === 'rejected' || st === 'error' ? 'badge-danger' : (st === 'skip' ? 'badge-neutral' : 'badge-warn'));
       var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
       var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
 
-      // 横向层叠 z-index：第一张最上，向后递减
-      var z = 100 - i;
-
       return (
-        '<div class="import-card-wrap" style="z-index:' + z + ';">' +
-          // 卡包容器（H32 魔兽卡包）
+        '<div class="import-card-wrap">' +
+          // 炉石卡（H32 魔兽卡包）
           '<div class="warcraft-card" ' +
             'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
             '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
@@ -186,7 +195,7 @@
               '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
               '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
               (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
-              '<span class="text-sm text-muted" style="margin-left:auto;">卡片 ' + (i + 1) + ' / ' + rows.length + '</span>' +
+              '<span class="text-sm text-muted" style="margin-left:auto;">' + (gi + 1) + ' / ' + rows.length + '</span>' +
             '</div>' +
             // 左上角黄色水晶数字（成本）
             '<div class="warcraft-cost">' + cardCost(row) + '</div>' +
@@ -194,7 +203,7 @@
             '<div class="warcraft-art"><span class="warcraft-art-icon">' + themeFor(row.domain_code).icon + '</span></div>' +
             // 卡名条（米色椭圆渐变，紧贴插画下方）
             '<div class="warcraft-name">' + esc(row.metric_cn || '—') + '</div>' +
-            // 内容区（米色背景，复用指标库完整字段渲染）
+            // 内容区（米色背景，复用指标库完整字段渲染，内部滚动保持卡片等大）
             '<div class="warcraft-body">' + buildImportSpecHtml(row) + '</div>' +
             // 右下角蓝色水晶数字（耐久）
             '<div class="warcraft-stat">' + cardStat(row) + '</div>' +
@@ -202,13 +211,48 @@
             (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 12px;background:#fef2f2;border-radius:0 0 12px 12px;">' + esc(row._error) + '</div>' : '') +
             ((st === 'pending' || st === 'rejected') ?
               '<div class="import-card-actions">' +
-                '<button class="btn" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
-                '<button class="btn btn-primary" onclick="reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
+                '<button class="btn" onclick="reviewImportRow(' + gi + ',\'reject\')">✕ 打回</button>' +
+                '<button class="btn btn-primary" onclick="reviewImportRow(' + gi + ',\'approve\')">✓ 通过入草稿</button>' +
               '</div>' : '') +
           '</div>' +
         '</div>'
       );
     }).join('');
+
+    // 分页控件（50 张时才有意义；少于 PAGE_SIZE 不显示）
+    var pagerHtml = totalPages > 1 ? buildPagerHtml(rows.length, totalPages) : '';
+    host.innerHTML = cardsHtml + pagerHtml;
+  }
+
+  /* 分页控件：上一页 / 页码 / 下一页 */
+  function buildPagerHtml(total, totalPages) {
+    var nums = [];
+    for (var p = 0; p < totalPages; p++) {
+      if (totalPages > 9 && p > 2 && p < totalPages - 3 && p !== CURRENT_PAGE) {
+        if (nums[nums.length - 1] !== '…') nums.push('…');
+        continue;
+      }
+      nums.push(
+        '<span class="page-num' + (p === CURRENT_PAGE ? ' active' : '') + '" onclick="goImportPage(' + p + ')">' + (p + 1) + '</span>'
+      );
+    }
+    return (
+      '<div class="import-pager">' +
+        '<button class="btn" onclick="goImportPage(' + (CURRENT_PAGE - 1) + ')" ' + (CURRENT_PAGE === 0 ? 'disabled' : '') + '>‹ 上一页</button>' +
+        '<span class="page-nums">' + nums.join('') + '</span>' +
+        '<button class="btn" onclick="goImportPage(' + (CURRENT_PAGE + 1) + ')" ' + (CURRENT_PAGE >= totalPages - 1 ? 'disabled' : '') + '>下一页 ›</button>' +
+        '<span class="page-info">第 ' + (CURRENT_PAGE + 1) + ' / ' + totalPages + ' 页 · 共 ' + total + ' 张卡</span>' +
+      '</div>'
+    );
+  }
+
+  function goImportPage(page) {
+    if (!CURRENT_TASK) return;
+    var rows = CURRENT_TASK.generated || [];
+    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (page < 0 || page >= totalPages) return;
+    CURRENT_PAGE = page;
+    renderTaskCards(CURRENT_TASK);
   }
 
   /* 复用指标库卡片的完整字段渲染（与指标库零差异：指标名称/编号、单位/值类型、
@@ -274,6 +318,14 @@
     }).then(function (task) {
       CURRENT_TASK = task;
       if (window.toast) toast(action === 'approve' ? '✓ 已通过，指标进入草稿' : '已打回', action === 'approve' ? 'success' : '');
+      // 当前卡评审完后，自动跳到下一条待评审/待打回卡所在页（50 张连续评审不卡壳）
+      var rows = task.generated || [];
+      var nextIdx = -1;
+      for (var i = 0; i < rows.length; i++) {
+        var s = rows[i]._status;
+        if (s === 'pending' || s === 'rejected') { nextIdx = i; break; }
+      }
+      if (nextIdx >= 0) CURRENT_PAGE = Math.floor(nextIdx / PAGE_SIZE);
       renderTaskCards(task);
       loadImportTasks();
     }).catch(function (e) {
@@ -294,4 +346,5 @@
   global.processImportTask = processImportTask;
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
+  global.goImportPage = goImportPage;
 })(window);
