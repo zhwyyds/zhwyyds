@@ -301,7 +301,10 @@
     newMetricFrequency: 'frequency',
     newMetricDataSources: 'data_sources',
     newMetricTechCaliber: 'tech_caliber',
-    newMetricSourceTable: 'source_table'
+    newMetricSourceTable: 'source_table',
+    newMetricOwner: 'owner',
+    newMetricCatL1: 'category_l1',
+    newMetricCatL2: 'category_l2'
   };
 
   function flashField(el) {
@@ -360,6 +363,26 @@
     removeDiffTip(fieldId);
   }
 
+  /* ==================== 新增指标「更多设置」折叠（P2） ==================== */
+
+  function toggleMetricMore() {
+    var body = document.getElementById('newMetricMoreBody');
+    var arrow = document.getElementById('newMetricMoreArrow');
+    if (!body) return;
+    var expanded = body.style.display !== 'none';
+    body.style.display = expanded ? 'none' : '';
+    if (arrow) arrow.innerHTML = expanded ? '&#9654;' : '&#9660;';
+  }
+
+  function expandMetricMore() {
+    var body = document.getElementById('newMetricMoreBody');
+    var arrow = document.getElementById('newMetricMoreArrow');
+    if (body && body.style.display === 'none') {
+      body.style.display = '';
+      if (arrow) arrow.innerHTML = '&#9660;';
+    }
+  }
+
   /* ==================== 新增指标 AI 辅助（直接填充表单字段，无独立面板） ==================== */
 
   function suggestMetricFields() {
@@ -368,7 +391,7 @@
     var status = document.getElementById('newMetricAiStatus');
     var rootsEl = document.getElementById('newMetricAiRoots');
     var rootsRow = document.getElementById('newMetricAiRootsRow');
-    if (status) status.textContent = '🤔 AI 生成中，请稍候…';
+    if (status) { status.style.display = ''; status.textContent = '🤔 AI 生成中，请稍候…'; }
     if (rootsEl) rootsEl.innerHTML = '';
     if (rootsRow) rootsRow.style.display = 'none';
     var domain = document.getElementById('newMetricDomain');
@@ -396,15 +419,19 @@
         ['newMetricDesc', r.caliber_desc, '指标描述'],
         ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
         ['newMetricFormulaLogic', r.formula, '计算公式'],
+        ['newMetricUnit', r.unit, '计量单位'],
+        ['newMetricFrequency', r.frequency, '时间周期'],
+        // 更多设置区（AI 自动判断，生成后自动展开）
+        ['newMetricCatL1', r.category_l1, '一级分类'],
+        ['newMetricCatL2', r.category_l2, '二级分类'],
         ['newMetricValueType', r.value_type, '值类型'],
         ['newMetricDimensions', r.dimensions, '统计维度'],
         ['newMetricScenario', r.scenario, '应用场景'],
+        ['newMetricOwner', r.owner, '指标负责单位'],
         ['newMetricReports', r.reports, '应用报表'],
         ['newMetricAnalysis', r.analysis_methods, '分析方法'],
         ['newMetricAlert', r.alert_rules, '预警标准'],
         ['newMetricPrecision', r.precision, '精度'],
-        ['newMetricUnit', r.unit, '计量单位'],
-        ['newMetricFrequency', r.frequency, '时间周期'],
         ['newMetricDataSources', r.data_sources, '数据来源'],
         ['newMetricTechCaliber', r.tech_caliber, '技术来源'],
         ['newMetricSourceTable', r.source_table || r.data_sources, '所属物理表']
@@ -412,10 +439,26 @@
       fills.forEach(function (f) { applyAiFill(f[0], f[1], f[2]); });
       renderAiRoots(r.suggested_roots || []);
       if (status) {
-        status.innerHTML = r.metric_en_warning
-          ? '⚠️ ' + esc(r.metric_en_warning)
-          : '已生成（' + src + '）：空字段已自动填充，黄色差异提示请确认';
+        status.style.display = '';
+        if (r.metric_en_warning) {
+          status.innerHTML = '⚠️ ' + esc(r.metric_en_warning);
+        } else {
+          var diffs = document.querySelectorAll('#newMetricModal .ai-diff-tip').length;
+          status.innerHTML = diffs > 0
+            ? '✅ 已生成（' + src + '）：<b>' + diffs + '</b> 处差异待确认（黄色提示条）'
+            : '✅ 已生成（' + src + '），字段已填充，可直接保存';
+        }
       }
+      // 折叠区有内容（分类/负责人/维度等被填充）时自动展开，方便核对
+      var moreFilled = ['newMetricCatL1', 'newMetricCatL2', 'newMetricValueType', 'newMetricOwner', 'newMetricScenario'].some(function (id) {
+        var el = document.getElementById(id);
+        return el && el.value.trim();
+      });
+      if (moreFilled) expandMetricMore();
+      // 差异提示条点击滚动到对应字段
+      document.querySelectorAll('#newMetricModal .ai-diff-tip').forEach(function (tip) {
+        tip.style.cursor = 'pointer';
+      });
     }).catch(function (e) {
       if (status) status.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + esc(e.message) + '</span>';
     });
@@ -979,6 +1022,8 @@
   global.applyAiFill = applyAiFill;
   global.adoptAiValue = adoptAiValue;
   global.dismissAiDiff = dismissAiDiff;
+  global.toggleMetricMore = toggleMetricMore;
+  global.expandMetricMore = expandMetricMore;
   global.suggestRootFields = suggestRootFields;
   global.loadCaliberQueue = loadCaliberQueue;
   global.caliberApprove = caliberApprove;

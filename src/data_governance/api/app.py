@@ -501,6 +501,9 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             f'"scenario":"适用场景","formula":"计算公式","formula_cn":"公式中文说明",'
             f'"reports":"应用报表","analysis_methods":"分析方法",'
             f'"alert_rules":"预警标准(可为空)","precision":"精度(如 2位小数)",'
+            f'"owner":"指标负责单位(根据指标语义判断归属部门，如 财务部/运营部/营销部，不确定填 待定)",'
+            f'"category_l1":"一级分类(如 收入类/成本类/客户类/经营类/财务类，按语义判断)",'
+            f'"category_l2":"二级分类(更细的业务分类，如 租赁收入/租金类)",'
             f'"data_sources":"来源表/数仓层","source_table":"所属物理表(dwd/dws表名)","tech_caliber":"技术口径",'
             f'"suggestions":["需人工确认的点"],'
             f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
@@ -535,6 +538,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 "metric_en", "metric_abbr", "caliber_desc", "unit", "frequency",
                 "value_type", "dimensions", "scenario", "formula", "formula_cn",
                 "reports", "analysis_methods", "alert_rules", "precision",
+                "owner", "category_l1", "category_l2",
                 "data_sources", "source_table", "tech_caliber", "suggestions", "suggested_roots",
             ):
                 v = data.get(key)

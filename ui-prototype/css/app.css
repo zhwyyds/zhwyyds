@@ -1734,3 +1734,18 @@ tr.row-selected td { background: var(--primary-light) !important; }
 .ai-diff-old { text-decoration: line-through; opacity: 0.7; }
 .ai-diff-new { color: var(--primary, #4a7dff); }
 .btn-xs { padding: 1px 8px; font-size: 12px; border-radius: 4px; }
+
+/* ── 新增指标「更多设置」折叠区（P2） ── */
+.modal-form-section--more { padding: 0; }
+.modal-form-more-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; margin: 4px 0;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  background: var(--bg-soft, #f5f7fa); border: 1px solid var(--border-soft, #e5e8ef);
+  border-radius: 6px; color: var(--text, #1f2937);
+  transition: background 0.15s;
+}
+.modal-form-more-toggle:hover { background: #eef2f8; }
+.modal-form-more-toggle .toggle-arrow { font-size: 10px; color: var(--text-muted, #667085); }
+.modal-form-more-body { padding: 10px 2px 0; }
+.modal-form-more-body .modal-form-group { margin-bottom: 12px; }

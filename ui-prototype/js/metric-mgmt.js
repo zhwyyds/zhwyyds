@@ -341,6 +341,17 @@
       else if (el.id === 'newMetricType') el.value = 'atomic';
       else el.value = '';
     });
+    // 重置 AI 状态与折叠区
+    global.__DG_AI_SUGGEST__ = null;
+    var status = document.getElementById('newMetricAiStatus');
+    if (status) { status.style.display = 'none'; status.textContent = ''; }
+    var rootsRow = document.getElementById('newMetricAiRootsRow');
+    if (rootsRow) rootsRow.style.display = 'none';
+    var moreBody = document.getElementById('newMetricMoreBody');
+    var moreArrow = document.getElementById('newMetricMoreArrow');
+    if (moreBody) moreBody.style.display = 'none';
+    if (moreArrow) moreArrow.innerHTML = '&#9654;';
+    document.querySelectorAll('#newMetricModal .ai-diff-tip').forEach(function (t) { t.remove(); });
     modal.classList.add('show');
   }
 
@@ -457,6 +468,146 @@
       });
   }
 
+  /* ==================== 批量新增指标（P4） ==================== */
+
+  function toggleBatchMode() {
+    var wrap = document.getElementById('newMetricBatchWrap');
+    var single = document.getElementById('newMetricSingleWrap');
+    var btn = document.getElementById('newMetricBatchToggle');
+    var title = document.getElementById('newMetricModalTitle');
+    if (!wrap || !single) return;
+    var batch = wrap.style.display !== 'none';
+    wrap.style.display = batch ? 'none' : '';
+    single.style.display = batch ? '' : 'none';
+    if (btn) btn.textContent = batch ? '📋 批量模式' : '📝 单个模式';
+    if (title) title.innerHTML = batch ? '&#10133; 新增指标' : '&#128203; 批量新增指标';
+  }
+
+  function batchSuggestMetrics() {
+    var raw = document.getElementById('batchMetricInput') ? document.getElementById('batchMetricInput').value.trim() : '';
+    if (!raw) { alert('请输入指标（每行一个）'); return; }
+    var domain = document.getElementById('batchMetricDomain') ? document.getElementById('batchMetricDomain').value : 'sale';
+    var terms = raw.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
+      var p = l.split('|');
+      return { metric_cn: (p[0] || '').trim(), caliber_desc: ((p[1] || '').trim()), unit: ((p[2] || '').trim()), frequency: ((p[3] || '').trim()) };
+    }).filter(function (t) { return t.metric_cn; });
+    if (!terms.length) { alert('请至少输入一个指标名称'); return; }
+    var status = document.getElementById('batchStatus');
+    var preview = document.getElementById('batchMetricPreview');
+    var createBtn = document.getElementById('batchCreateBtn');
+    if (status) status.textContent = '🤔 正在生成 0/' + terms.length + '…';
+    if (preview) preview.innerHTML = '';
+    if (createBtn) createBtn.style.display = 'none';
+    var results = [];
+    var chain = Promise.resolve();
+    terms.forEach(function (t) {
+      chain = chain
+        .then(function () {
+          return apiFetch('/api/metrics/suggest', {
+            method: 'POST',
+            body: JSON.stringify({ metric_cn: t.metric_cn, domain_code: domain, caliber_desc: t.caliber_desc, unit: t.unit, frequency: t.frequency })
+          });
+        })
+        .then(function (r) {
+          results.push(r);
+          if (status) status.textContent = '🤔 正在生成 ' + results.length + '/' + terms.length + '…';
+        })
+        .catch(function (e) {
+          results.push({ metric_cn: t.metric_cn, metric_en: '', error: e.message });
+          if (status) status.textContent = '⚠️ 部分生成失败 ' + results.length + '/' + terms.length;
+        });
+    });
+    chain.then(function () {
+      global.__DG_BATCH_SUGGEST__ = results;
+      renderBatchPreview(results);
+      if (status) status.textContent = '✅ 生成完成，勾选后点击「批量创建」';
+      if (createBtn) createBtn.style.display = '';
+    });
+  }
+
+  function renderBatchPreview(items) {
+    var el = document.getElementById('batchMetricPreview');
+    if (!el) return;
+    el.innerHTML = items.map(function (it, i) {
+      var ok = !!it.metric_en;
+      var err = it.error ? '<span style="color:var(--danger);margin-left:6px;">(' + esc(it.error) + ')</span>' : '';
+      var meta = (it.unit || it.frequency) ? ' <span class="text-xs text-muted">' + esc([it.unit, it.frequency].filter(Boolean).join(' / ')) + '</span>' : '';
+      var desc = it.caliber_desc ? '<div class="text-xs text-muted" style="flex-basis:100%;padding-left:24px;">' + esc(it.caliber_desc.slice(0, 64)) + '</div>' : '';
+      return '<label class="revision-item">' +
+        '<input type="checkbox" data-idx="' + i + '"' + (ok ? ' checked' : ' disabled') + '> ' +
+        '<span class="revision-label" style="min-width:110px;">' + esc(it.metric_cn) + '</span>' +
+        ' → <code class="revision-value">' + esc(it.metric_en || '生成失败') + '</code>' + meta + err + desc +
+        '</label>';
+    }).join('') || '<div class="text-sm text-muted">无结果</div>';
+  }
+
+  function batchCreateMetrics() {
+    var items = global.__DG_BATCH_SUGGEST__ || [];
+    var boxes = document.querySelectorAll('#batchMetricPreview input[type="checkbox"]:checked');
+    var chosen = [];
+    for (var i = 0; i < boxes.length; i++) {
+      var it = items[parseInt(boxes[i].getAttribute('data-idx'), 10)];
+      if (it && it.metric_en) chosen.push(it);
+    }
+    if (!chosen.length) { alert('请勾选要创建的指标'); return; }
+    if (!confirm('确认批量创建 ' + chosen.length + ' 个指标？')) return;
+    var status = document.getElementById('batchStatus');
+    var created = 0;
+    var failed = [];
+    var chain = Promise.resolve();
+    chosen.forEach(function (it) {
+      chain = chain
+        .then(function () { return apiFetch('/api/metrics', { method: 'POST', body: JSON.stringify(buildMetricRow(it)) }); })
+        .then(function () { created++; if (status) status.textContent = '创建中 ' + created + '/' + chosen.length + '…'; })
+        .catch(function (e) { failed.push(it.metric_cn + ': ' + e.message); });
+    });
+    chain.then(function () {
+      if (status) {
+        status.textContent = failed.length
+          ? '✅ 创建 ' + created + ' 个，失败 ' + failed.length + ' 个：' + failed.join('；')
+          : '✅ 已创建 ' + created + ' 个指标';
+      }
+      if (global.DG && global.DG.loadAll) global.DG.loadAll(false);
+      reloadFromServer();
+      if (created && !failed.length) setTimeout(function () { closeModal('newMetricModal'); }, 900);
+    });
+  }
+
+  function buildMetricRow(it) {
+    var dom = (document.getElementById('batchMetricDomain') || {}).value || 'sale';
+    var domUp = dom.toUpperCase();
+    var newId = 'M_' + domUp + '_B' + String(Math.floor(Math.random() * 900 + 100));
+    return {
+      metric_id: newId,
+      metric_cn: it.metric_cn,
+      metric_en: it.metric_en || 'pending_naming',
+      metric_abbr: it.metric_abbr || '',
+      domain_code: dom,
+      metric_type: 'atomic',
+      caliber_desc: it.caliber_desc || '',
+      formula_cn: it.formula_cn || '',
+      formula: it.formula || '',
+      tech_caliber: it.tech_caliber || '',
+      source_table: it.source_table || '',
+      owner: it.owner || '',
+      version: '0.1.0',
+      version_history: '0.1.0|' + new Date().toISOString().slice(0, 10) + '|—|批量新建',
+      review_status: 'pending',
+      category_l1: it.category_l1 || '',
+      category_l2: it.category_l2 || '',
+      value_type: it.value_type || '',
+      dimensions: it.dimensions || '',
+      scenario: it.scenario || '',
+      reports: it.reports || '',
+      analysis_methods: it.analysis_methods || '',
+      alert_rules: it.alert_rules || '',
+      precision: it.precision || '',
+      data_sources: it.data_sources || '',
+      unit: it.unit || '',
+      frequency: it.frequency || '月'
+    };
+  }
+
   function offline(id, payload) {
     id = (id || '').trim();
     if (!id) return Promise.reject(new Error('缺少指标 ID'));
@@ -478,6 +629,10 @@
     offline: offline,
     getMetricById: getMetricById
   };
+
+  global.toggleBatchMode = toggleBatchMode;
+  global.batchSuggestMetrics = batchSuggestMetrics;
+  global.batchCreateMetrics = batchCreateMetrics;
 
   global.editMetric = function (id) {
     openEdit(id);
