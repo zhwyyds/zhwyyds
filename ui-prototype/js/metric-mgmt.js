@@ -149,7 +149,7 @@
     if (elPending) elPending.textContent = String(pending);
     if (elPublished) elPublished.textContent = String(published);
     if (elOffline) elOffline.textContent = String(offline);
-    if (elReviewed) elReviewed.textContent = String(published);
+    if (elReviewed) elReviewed.textContent = '—';
   }
 
   function renderTable(metrics) {

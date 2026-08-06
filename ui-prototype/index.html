@@ -31,7 +31,7 @@
       </div>
       <div class="nav-item" data-page="metric-mgmt">
         <span class="nav-icon">📋</span> 指标管理
-        <span class="nav-badge warning">127</span>
+        <span class="nav-badge warning" id="nav-badge-metrics">—</span>
       </div>
       <div class="nav-item" data-page="roots">
         <span class="nav-icon">🌱</span> 词根库
@@ -42,7 +42,7 @@
       </div>
       <div class="nav-item" data-page="review">
         <span class="nav-icon">🤖</span> 模型评审
-        <span class="nav-badge warning">127</span>
+        <span class="nav-badge warning" id="nav-badge-review">—</span>
       </div>
     </div>
     <div class="nav-group">
@@ -564,7 +564,7 @@
     </div>
     <div class="pagination-bar">
       <div class="pagination-info">
-        <span class="text-sm text-muted">共 1,856 条，显示 <span id="logPageSizeLabel">12</span> 条</span>
+        <span class="text-sm text-muted">共 <span id="log-total-count">—</span> 条，显示 <span id="logPageSizeLabel">12</span> 条</span>
         <div class="page-size-selector">
           <span>每页</span>
           <select onchange="changePageSize(this,'log')">
