@@ -35,6 +35,8 @@
 | 5 | mypy：`task = update_import_task()` 变量覆盖导致类型推断错误 | Medium | 独立 `updated` 变量隔离 |
 | 6 | ruff：未使用 `force` 变量 | Low | 删除 |
 | 7 | `test_metric_review_pipeline` 断言依赖运行时 models.csv | Low | 测试自包含固定 models.csv（3 路 fixture 模型），解耦运行时配置 |
+| 8 | 上传时遇到代理/网关 502 HTML 错误页抛 `Unexpected token 'I'...` 低层错误 | Medium | `fetchJson`/`api` 改用"先取 text 再 parse"，捕获 SyntaxError 给 `status + body 前缀` 友好提示 |
+| 9 | `tasks/` 运行时产物未 .gitignore 屏蔽（仓库根残留 12 个测试 JSON） | Low | .gitignore 加 `tasks/`，删除 .gitkeep 占位 |
 
 ## 实现说明
 
@@ -72,5 +74,5 @@
 
 | 日期 | 版本 | 说明 |
 |---|---|---|
-| 2026-08-06 | H31 收尾 | 质量审查修复 7 项（含路径遍历 Critical），回归 186 全绿 |
+| 2026-08-06 | H31 收尾 | 质量审查修复 9 项（含路径遍历 Critical、前端非 JSON 响应处理、tasks 产物屏蔽），回归 186 全绿 |
 | 2026-08-06 | 补档 | 历史功能模块文档补建（H25 规范落地） |
