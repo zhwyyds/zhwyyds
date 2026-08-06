@@ -2317,6 +2317,7 @@
               <div class="ai-progress-track"><div class="ai-progress-fill" id="aiProgressFill" style="width:0%"></div></div>
               <div class="text-xs text-muted" id="aiProgressText" style="margin-top:4px;"></div>
             </div>
+            <div class="ai-rules-hint">&#128221; AI 生成规则：<b>*</b> 为必填（仅指标名称）；英文名须由词根库词根组合（如 租金→rent）；词根库已有同义词时<b>强制复用</b>不新建；中文名口语化时以「指标描述/计算公式」为准；建议先填描述/公式再生成，更准确。</div>
           </div>
           <table class="indicator-spec-table" cellspacing="0" cellpadding="0">
             <tr><th class="indicator-spec-th">指标名称 *</th>
@@ -2463,6 +2464,7 @@
       <button class="modal-close" onclick="closeModal('rootGenModal')">&#10005;</button>
     </div>
     <div class="modal-body">
+      <div class="ai-rules-hint" style="margin:0 0 10px;">&#128221; 词根生成规则：词根库已有同义词（如 租金|租赁|出租→rent）时<b>强制复用</b>、不新建；英文名用标准单词（不用拼音）；缩写不超过 6 字符；建议附带业务上下文更准确。</div>
       <div class="modal-form-group"><label class="modal-form-label">主题域 *</label><input class="modal-form-input" id="rootGenDomain" placeholder="如 sale" value="sale"></div>
       <div class="modal-form-group">
         <label class="modal-form-label">中文词根（每行一个，可带上下文：`词根|业务上下文`）*</label>

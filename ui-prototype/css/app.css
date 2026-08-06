@@ -1760,3 +1760,12 @@ tr.row-selected td { background: var(--primary-light) !important; }
   background: linear-gradient(90deg, #4a7dff, #7aa2ff);
   transition: width 0.3s ease;
 }
+
+/* ── AI 生成规则提示条（H6 硬性要求标识） ── */
+.ai-rules-hint {
+  width: 100%; margin-top: 6px; padding: 6px 10px;
+  font-size: 12px; line-height: 1.7; color: var(--text-muted, #667085);
+  background: var(--bg-soft, #f5f7fa); border: 1px dashed var(--border-soft, #d5dbe6);
+  border-radius: 6px;
+}
+.ai-rules-hint b { color: var(--danger, #e5484d); }
