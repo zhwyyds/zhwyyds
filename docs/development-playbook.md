@@ -127,6 +127,30 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 - 提交信息含：`fix/feat` 前缀 + 问题描述 + 根因 + 验证结果
 - 涉及前端：附 Playwright 截图路径或验证输出
 
+### 4.9 Git 分支与发版规范（v0.1.0 起执行）
+**当前为单人开发，采用「单主干 + 短期功能分支」轻量模型，不引入 GitFlow 全套（develop/release/hotfix 仅多人协作需要）。**
+
+1. **长期分支只有 `main`**：永远可运行，是唯一稳定主干
+2. **开发走短期分支**，命名规范：
+   ```
+   feature/功能描述     # 新功能
+   fix/问题描述         # 修 bug
+   docs/说明            # 文档
+   refactor/描述        # 重构
+   ```
+   生命周期：`main` 切出 → 开发 → **本地全量验证（§4.1）** → 合并回 `main` → 删除分支
+3. **main 保护**（GitHub 已配）：
+   - 禁止直推 main（Require pull request before merging）
+   - CI 必须通过才可合并（Require status checks）
+   - 因此所有改动走 PR：本地分支 → push → PR → CI 自动跑 → 合并
+4. **发版打 tag**（版本基线）：
+   ```bash
+   git tag vX.Y.Z && git push origin vX.Y.Z
+   ```
+   - 当前基线：`v0.1.0`（06d17e3，测试数据清理后的干净版本）
+   - 语义化：v0.2.0 新功能 / v0.2.1 修复
+5. **数据纪律**：测试数据（`_N` 编号指标、mock 评审、临时文件）不得混入正式数据文件；发布前按 §5 验收清单确认数据干净
+
 ---
 
 ## §5 验收清单（每次开发完成对照）
@@ -146,6 +170,9 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 □ 废弃代码已删除（无残留引用）
 □ 测试数据已清理（不污染用户数据）
 □ 已截图保存关键页面（tests/e2e/screenshots/）
+□ 改动走 feature/fix 分支 + PR 合并（不直推 main）
+□ main 保护生效（PR + CI 门禁）
+□ 发版打 tag（语义化版本）
 ```
 
 ---
@@ -158,6 +185,8 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 | 截图目录 | `tests/e2e/screenshots/` | 验收证据留存 |
 | 审查报告 | `reports/review/audit_report.md` | 架构审查记录 |
 | 每日工作日志 | `.workbuddy/memory/YYYY-MM-DD.md` | 问题/决策追溯 |
+| CI 流水线 | `.github/workflows/ci.yml` | push/PR 自动跑 ruff+mypy+pytest（main 门禁） |
+| 版本基线 | `v0.1.0`（06d17e3） | 测试数据清理后的首个正式基线 |
 
 ---
 
