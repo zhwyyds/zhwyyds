@@ -128,28 +128,23 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 - 涉及前端：附 Playwright 截图路径或验证输出
 
 ### 4.9 Git 分支与发版规范（v0.1.0 起执行）
-**当前为单人开发，采用「单主干 + 短期功能分支」轻量模型，不引入 GitFlow 全套（develop/release/hotfix 仅多人协作需要）。**
+**采用「双主干」模型：`dev` 承载全部开发代码，`main` 只保留验证通过的功能。不引入 GitFlow 全套（release/hotfix 仅大型团队需要）。**
 
-1. **长期分支只有 `main`**：永远可运行，是唯一稳定主干
-2. **开发走短期分支**，命名规范：
-   ```
-   feature/功能描述     # 新功能
-   fix/问题描述         # 修 bug
-   docs/说明            # 文档
-   refactor/描述        # 重构
-   ```
-   生命周期：`main` 切出 → 开发 → **本地全量验证（§4.1）** → 合并回 `main` → 删除分支
-3. **main 保护**（GitHub 已配）：
-   - 禁止直推 main（Require pull request before merging）
-   - CI 必须通过才可合并（Require status checks）
-   - 因此所有改动走 PR：本地分支 → push → PR → CI 自动跑 → 合并
-4. **发版打 tag**（版本基线）：
+1. **`dev` = 开发主干（日常开发都在这里）**
+   - 所有新功能、修复先在 `dev` 上开发、验证（§4.1 全量验证）
+   - 开发走短期分支再合回 `dev`：`feature/xxx` → 验证 → 合并到 `dev` → 删分支
+   - CI 对 `dev` 每次 push 自动跑（`ci.yml` 已配置 dev 触发）
+2. **`main` = 稳定主干（只进验证通过的功能）**
+   - **禁止直推 main**：所有进入 main 的改动必须从 `dev` 通过 PR 合入
+   - main 保护（GitHub 已配）：PR + CI 门禁，CI 全绿才可合并
+   - `main` 永远可运行，是发布基线
+3. **发版流程**：`dev` 验证充分 → PR `dev → main` → CI 全绿 → 合并 → 打 tag
    ```bash
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
    - 当前基线：`v0.1.0`（06d17e3，测试数据清理后的干净版本）
    - 语义化：v0.2.0 新功能 / v0.2.1 修复
-5. **数据纪律**：测试数据（`_N` 编号指标、mock 评审、临时文件）不得混入正式数据文件；发布前按 §5 验收清单确认数据干净
+4. **数据纪律**：测试数据（`_N` 编号指标、mock 评审、临时文件）不得混入正式数据文件；发布前按 §5 验收清单确认数据干净
 
 ---
 
@@ -171,6 +166,7 @@ grep -rn "console.log" ui-prototype/js/     # 调试日志清除
 □ 测试数据已清理（不污染用户数据）
 □ 已截图保存关键页面（tests/e2e/screenshots/）
 □ 改动走 feature/fix 分支 + PR 合并（不直推 main）
+□ 双主干模型：开发在 dev，验证通过才 PR 进 main
 □ main 保护生效（PR + CI 门禁）
 □ 发版打 tag（语义化版本）
 ```
