@@ -4,9 +4,8 @@
  */
 (function (global) {
   var CURRENT_TASK = null;
-  // 网格平铺分页：每页 9 张（3×3），50 张时约 6 页
-  var CURRENT_PAGE = 0;
-  var PAGE_SIZE = 9;
+  // 扇形手牌：当前选中卡索引（-1 = 未选中）
+  var SELECTED_INDEX = -1;
 
   // 主题域 → 炉石卡插画配色 + emoji 图标（H32 魔兽卡风格）
   var DOMAIN_THEMES = {
@@ -144,7 +143,7 @@
   function openImportTask(taskId) {
     api('/api/import-tasks/' + encodeURIComponent(taskId)).then(function (task) {
       CURRENT_TASK = task;
-      CURRENT_PAGE = 0; // 打开新任务回到第一页
+      SELECTED_INDEX = -1; // 打开新任务自动选中第一张待评审卡
       var card = document.getElementById('importTaskDetailCard');
       var title = document.getElementById('importTaskDetailTitle');
       var meta = document.getElementById('importTaskDetailMeta');
@@ -170,14 +169,25 @@
     }
     host.classList.add('import-cards-stack');
 
-    // 分页切片：所有卡统一尺寸平铺网格，每页 PAGE_SIZE 张
-    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    if (CURRENT_PAGE >= totalPages) CURRENT_PAGE = totalPages - 1;
-    var start = CURRENT_PAGE * PAGE_SIZE;
-    var pageRows = rows.slice(start, start + PAGE_SIZE);
+    // 扇形手牌：所有卡底部聚拢、顶部扇面展开（不分页，全部一扇）
+    var n = rows.length;
+    var spreadDeg = Math.min(120, 4 * n + 40); // 总扇角（50 张时约 120°）
+    var step = n > 1 ? spreadDeg / (n - 1) : 0;
+    var mid = (n - 1) / 2;
 
-    var cardsHtml = pageRows.map(function (row, pi) {
-      var gi = start + pi; // 全局索引（评审/翻页后仍指向正确行）
+    // 默认选中第一张待评审/待打回卡；已选中则保持
+    if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
+      SELECTED_INDEX = -1;
+      for (var k = 0; k < n; k++) {
+        var st = rows[k]._status;
+        if (st === 'pending' || st === 'rejected') { SELECTED_INDEX = k; break; }
+      }
+    }
+
+    var cardsHtml = rows.map(function (row, i) {
+      var theta = step * (i - mid);
+      var z = 100 - Math.abs(i - mid); // 中间卡在上
+      var isSelected = i === SELECTED_INDEX;
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
       var stBadge = st === 'draft' ? 'badge-pass' : (st === 'rejected' || st === 'error' ? 'badge-danger' : (st === 'skip' ? 'badge-neutral' : 'badge-warn'));
@@ -185,17 +195,20 @@
       var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
 
       return (
-        '<div class="import-card-wrap">' +
-          // 炉石卡（H32 魔兽卡包）
+        '<div class="import-card-wrap' + (isSelected ? ' selected' : '') + (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + '" ' +
+          'style="--theta:' + theta.toFixed(2) + 'deg;--z:' + z + ';" ' +
+          'data-index="' + i + '" ' +
+          'onclick="selectImportCard(' + i + ')">' +
+          // 炉石卡（H32 魔兽卡包；扇形里显示迷你形态，选中显示完整形态）
           '<div class="warcraft-card" ' +
             'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
             '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
-            // 顶部状态条（卡牌上方：去重 / 状态 / 打回原因 / 序号）
+            // 顶部状态条（选中完整卡时显示）
             '<div class="import-card-status">' +
               '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
               '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
               (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
-              '<span class="text-sm text-muted" style="margin-left:auto;">' + (gi + 1) + ' / ' + rows.length + '</span>' +
+              '<span class="text-sm text-muted" style="margin-left:auto;">' + (i + 1) + ' / ' + rows.length + '</span>' +
             '</div>' +
             // 左上角黄色水晶数字（成本）
             '<div class="warcraft-cost">' + cardCost(row) + '</div>' +
@@ -203,7 +216,7 @@
             '<div class="warcraft-art"><span class="warcraft-art-icon">' + themeFor(row.domain_code).icon + '</span></div>' +
             // 卡名条（米色椭圆渐变，紧贴插画下方）
             '<div class="warcraft-name">' + esc(row.metric_cn || '—') + '</div>' +
-            // 内容区（米色背景，复用指标库完整字段渲染，内部滚动保持卡片等大）
+            // 内容区（完整字段渲染，选中时显示）
             '<div class="warcraft-body">' + buildImportSpecHtml(row) + '</div>' +
             // 右下角蓝色水晶数字（耐久）
             '<div class="warcraft-stat">' + cardStat(row) + '</div>' +
@@ -211,47 +224,35 @@
             (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 12px;background:#fef2f2;border-radius:0 0 12px 12px;">' + esc(row._error) + '</div>' : '') +
             ((st === 'pending' || st === 'rejected') ?
               '<div class="import-card-actions">' +
-                '<button class="btn" onclick="reviewImportRow(' + gi + ',\'reject\')">✕ 打回</button>' +
-                '<button class="btn btn-primary" onclick="reviewImportRow(' + gi + ',\'approve\')">✓ 通过入草稿</button>' +
+                '<button class="btn" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
+                '<button class="btn btn-primary" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
               '</div>' : '') +
           '</div>' +
         '</div>'
       );
     }).join('');
 
-    // 分页控件（50 张时才有意义；少于 PAGE_SIZE 不显示）
-    var pagerHtml = totalPages > 1 ? buildPagerHtml(rows.length, totalPages) : '';
-    host.innerHTML = cardsHtml + pagerHtml;
+    // 底部提示条：待评审/已通过/已打回统计
+    var cnt = { pending: 0, draft: 0, rejected: 0, skip: 0, error: 0 };
+    rows.forEach(function (r) { cnt[r._status] = (cnt[r._status] || 0) + 1; });
+    var hint =
+      '<div class="import-fan-hint">' +
+        '共 ' + n + ' 张 · ' +
+        '<span class="dot" style="background:#f0a020;"></span>待评审 ' + (cnt.pending || 0) +
+        '<span class="dot" style="background:#2e8b57;"></span>已通过 ' + (cnt.draft || 0) +
+        '<span class="dot" style="background:#e24b4a;"></span>已打回 ' + (cnt.rejected || 0) +
+        '<span class="dot" style="background:#888;"></span>重复 ' + (cnt.skip || 0) +
+        '　·　点击卡片在中央放大查看' +
+      '</div>';
+    host.innerHTML = cardsHtml + hint;
   }
 
-  /* 分页控件：上一页 / 页码 / 下一页 */
-  function buildPagerHtml(total, totalPages) {
-    var nums = [];
-    for (var p = 0; p < totalPages; p++) {
-      if (totalPages > 9 && p > 2 && p < totalPages - 3 && p !== CURRENT_PAGE) {
-        if (nums[nums.length - 1] !== '…') nums.push('…');
-        continue;
-      }
-      nums.push(
-        '<span class="page-num' + (p === CURRENT_PAGE ? ' active' : '') + '" onclick="goImportPage(' + p + ')">' + (p + 1) + '</span>'
-      );
-    }
-    return (
-      '<div class="import-pager">' +
-        '<button class="btn" onclick="goImportPage(' + (CURRENT_PAGE - 1) + ')" ' + (CURRENT_PAGE === 0 ? 'disabled' : '') + '>‹ 上一页</button>' +
-        '<span class="page-nums">' + nums.join('') + '</span>' +
-        '<button class="btn" onclick="goImportPage(' + (CURRENT_PAGE + 1) + ')" ' + (CURRENT_PAGE >= totalPages - 1 ? 'disabled' : '') + '>下一页 ›</button>' +
-        '<span class="page-info">第 ' + (CURRENT_PAGE + 1) + ' / ' + totalPages + ' 页 · 共 ' + total + ' 张卡</span>' +
-      '</div>'
-    );
-  }
-
-  function goImportPage(page) {
+  /* 点击扇形中的卡 → 移到中央放大 */
+  function selectImportCard(i) {
     if (!CURRENT_TASK) return;
     var rows = CURRENT_TASK.generated || [];
-    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    if (page < 0 || page >= totalPages) return;
-    CURRENT_PAGE = page;
+    if (i < 0 || i >= rows.length) return;
+    SELECTED_INDEX = (SELECTED_INDEX === i) ? -1 : i; // 再次点击取消选中
     renderTaskCards(CURRENT_TASK);
   }
 
@@ -318,14 +319,14 @@
     }).then(function (task) {
       CURRENT_TASK = task;
       if (window.toast) toast(action === 'approve' ? '✓ 已通过，指标进入草稿' : '已打回', action === 'approve' ? 'success' : '');
-      // 当前卡评审完后，自动跳到下一条待评审/待打回卡所在页（50 张连续评审不卡壳）
+      // 当前卡评审完后，自动选中下一条待评审/待打回卡（连续评审不卡壳）
       var rows = task.generated || [];
       var nextIdx = -1;
       for (var i = 0; i < rows.length; i++) {
         var s = rows[i]._status;
         if (s === 'pending' || s === 'rejected') { nextIdx = i; break; }
       }
-      if (nextIdx >= 0) CURRENT_PAGE = Math.floor(nextIdx / PAGE_SIZE);
+      SELECTED_INDEX = nextIdx;
       renderTaskCards(task);
       loadImportTasks();
     }).catch(function (e) {
@@ -337,6 +338,7 @@
     var card = document.getElementById('importTaskDetailCard');
     if (card) card.style.display = 'none';
     CURRENT_TASK = null;
+    SELECTED_INDEX = -1;
   }
 
   /* ---------- 导出 ---------- */
@@ -346,5 +348,5 @@
   global.processImportTask = processImportTask;
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
-  global.goImportPage = goImportPage;
+  global.selectImportCard = selectImportCard;
 })(window);
