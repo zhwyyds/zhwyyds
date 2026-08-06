@@ -281,6 +281,8 @@
     });
 
     bindEvents();
+    // 默认开启网格视图（30 张密集扇形堆叠太乱，网格清爽）
+    if (!gridMode && frames.length > 8) setGrid(true);
 
 
     // 初始/评审后自动抽出指定卡（参考行为）；drawIdx < 0 不抽
