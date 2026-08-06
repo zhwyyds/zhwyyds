@@ -31,6 +31,8 @@ def get_cors_origins() -> list[str]:
             "http://localhost:3000",
             "http://127.0.0.1:5173",
             "http://127.0.0.1:3000",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
         ]
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
@@ -40,6 +42,8 @@ def setup_cors(app: FastAPI) -> None:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_cors_origins(),
+        # H8: 本地开发/演示常用任意端口启静态页面（8080 等），允许本机任意端口跨域
+        allow_origin_regex=r"^http://(127\.0\.0\.1|localhost):\d+$",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-API-Key"],

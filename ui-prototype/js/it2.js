@@ -13,7 +13,7 @@
   }
 
   function api(path, options) {
-    var base = global.DG_API_BASE || '';
+    var base = (typeof dgApiBase === 'function') ? dgApiBase() : '';
     options = options || {};
     options.headers = options.headers || {};
     options.headers['Content-Type'] = 'application/json';
@@ -618,7 +618,7 @@
   }
 
   function exportRootsCsv() {
-    var base = global.DG_API_BASE || '';
+    var base = (typeof dgApiBase === 'function') ? dgApiBase() : '';
     window.open(base + '/api/roots/export', '_blank');
   }
 

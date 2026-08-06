@@ -1,9 +1,31 @@
 /**
  * 连接本地 FastAPI（data-governance serve）与 UI 原型。
  * 同源部署时 API_BASE 留空；file:// 打开时可设为 http://127.0.0.1:8765
+ * 分离部署（静态页面 8080 + API 8765）：自动探测——同源无 API 时回退到 8765
  */
 (function (global) {
   var API_BASE = global.DG_API_BASE || '';
+  var API_FALLBACK = global.DG_API_FALLBACK || 'http://127.0.0.1:8765';
+  var _baseProbe = null;
+
+  // 探测 API 地址（H8）：同源 /health 不可达 → 回退 8765；结果缓存，避免重复探测
+  function resolveBase() {
+    if (API_BASE) return Promise.resolve(API_BASE);
+    if (!_baseProbe) {
+      _baseProbe = fetch('/health', { method: 'GET' })
+        .then(function (r) { return r.ok ? '' : (function () { throw new Error('no-api'); })(); })
+        .catch(function () {
+          API_BASE = API_FALLBACK;
+          global.DG_API_BASE = API_BASE;
+          return API_BASE;
+        });
+    }
+    return _baseProbe;
+  }
+
+  function url(path) {
+    return API_BASE + path;
+  }
 
   var ROOT_TYPE_LABEL = { noun: '名词', verb: '动词', adj: '形容词', unit: '单位', time: '时间' };
   var PROGRESS_COLOR = {
@@ -14,19 +36,17 @@
     '评审完成率': 'amber'
   };
 
-  function url(path) {
-    return API_BASE + path;
-  }
-
   function fetchJson(path, options) {
     options = options || {};
     options.headers = options.headers || {};
     if (options.body && !options.headers['Content-Type']) {
       options.headers['Content-Type'] = 'application/json';
     }
-    return fetch(url(path), options).then(function (res) {
-      if (!res.ok) throw new Error(path + ' ' + res.status);
-      return res.json();
+    return resolveBase().then(function (base) {
+      return fetch(base + path, options).then(function (res) {
+        if (!res.ok) throw new Error(path + ' ' + res.status);
+        return res.json();
+      });
     });
   }
 

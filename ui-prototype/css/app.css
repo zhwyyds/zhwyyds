@@ -1759,6 +1759,12 @@ tr.row-selected td { background: var(--primary-light) !important; }
   height: 100%; border-radius: 3px;
   background: linear-gradient(90deg, #4a7dff, #7aa2ff);
   transition: width 0.3s ease;
+  background-size: 200% 100%;
+  animation: ai-progress-stripes 1.2s linear infinite;
+}
+@keyframes ai-progress-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* ── AI 生成规则提示条（H6 硬性要求标识） ── */

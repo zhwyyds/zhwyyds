@@ -2542,6 +2542,17 @@
 
 </div><!-- /app -->
 
+<script>
+  /* H8: 分离部署（静态页面 + API 8765）时自动探测 API 地址。
+     同源（页面由 API 托管，端口 8765）→ 留空；否则回退 8765（可用 DG_API_FALLBACK 覆盖） */
+  function dgApiBase() {
+    var b = (window.DG && window.DG.API_BASE) || window.DG_API_BASE || '';
+    if (!b && window.location && window.location.protocol === 'http:' && window.location.port !== '8765') {
+      b = window.DG_API_FALLBACK || 'http://127.0.0.1:8765';
+    }
+    return b;
+  }
+</script>
 <script src="js/metric-spec.js"></script>
 <script src="js/metric-tree.js"></script>
 <script src="js/governance-api.js"></script>

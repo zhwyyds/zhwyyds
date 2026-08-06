@@ -25,7 +25,7 @@
   }
 
   function apiFetch(path, options) {
-    var base = (global.DG && global.DG.API_BASE) || global.DG_API_BASE || '';
+    var base = (typeof dgApiBase === 'function') ? dgApiBase() : '';
     options = options || {};
     options.headers = options.headers || {};
     if (options.body && !options.headers['Content-Type']) {

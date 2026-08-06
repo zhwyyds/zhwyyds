@@ -518,7 +518,7 @@ function getMetricsList() {
 }
 
 function submitReview(id) {
-  var base = (window.DG && DG.API_BASE) || '';
+  var base = (typeof dgApiBase === 'function') ? dgApiBase() : '';
   var row = findMetricRow(id);
   if (row) {
     var reviewCell = row.querySelectorAll('td')[6];
