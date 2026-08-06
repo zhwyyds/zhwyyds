@@ -59,7 +59,7 @@ def score_metric(
     model_review_detail: dict | None = None,
 ) -> ScoreResult:
     """对单个指标评分，返回完整 ScoreResult。"""
-    rules = rules or load_scoring_rules()
+    rules = rules or load_scoring_rules(base_dir / "config" / "scoring_rules.json")
     root_en_set = {r.root_en for r in catalog.roots if r.root_en.strip()}
     root_by_id = {r.root_id: r for r in catalog.roots}
 

@@ -51,6 +51,12 @@ def mini_project(tmp_path: Path, project_root: Path) -> Path:
             models_src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
+    rules_src = project_root / "config" / "scoring_rules.json"
+    if rules_src.is_file():
+        (base / "config" / "scoring_rules.json").write_text(
+            rules_src.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
 
     root_header = (
         "root_id,root_cn,root_en,root_abbr,domain_code,root_type,description,"

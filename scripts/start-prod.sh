@@ -25,6 +25,15 @@ if [ ! -d "${BASE_DIR}" ]; then
   exit 1
 fi
 
+# 防污染门禁：生产数据目录中禁止出现测试编号指标（_N 后缀）
+# 误把测试数据当生产启动时直接拒绝，避免污染正式库
+TEST_MARK="$(grep -l "_N[0-9]" "${BASE_DIR}"/metrics/*_metrics.csv 2>/dev/null | head -1)"
+if [ -n "${TEST_MARK}" ]; then
+  echo "❌ 生产数据目录含测试编号指标: ${TEST_MARK}" >&2
+  echo "   生产环境禁止使用测试数据！请检查 BASE_DIR 配置。" >&2
+  exit 1
+fi
+
 # 1. 启动 API（prod-data = 生产数据）
 export PYTHONPATH=src
 PY_BIN="${PY_BIN:-$(pwd)/.venv/bin/python}"
