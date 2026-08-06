@@ -1485,3 +1485,90 @@
   font-weight: 800;
   margin-top: 2px;
 }
+
+
+/* ================================================================
+   v19 抽出编辑表单（真实 input DOM）
+   ================================================================ */
+#importTaskCards .frame.active-lock .edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 2px 2px;
+}
+#importTaskCards .edit-form .ef-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+#importTaskCards .edit-form .ef-status {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+  color: var(--warn);
+  border: 1px solid color-mix(in oklch, var(--warn) 55%, transparent);
+  padding: 2px 7px; border-radius: 3px;
+  background: oklch(12% 0.02 275 / 0.85);
+}
+#importTaskCards .edit-form .ef-id {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+#importTaskCards .edit-form .ef-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent-soft);
+}
+#importTaskCards .edit-form .ef-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+/* 输入控件：白底黑字，在深色卡面上清晰可辨 */
+#importTaskCards .edit-form .ef-row input,
+#importTaskCards .edit-form .ef-row select,
+#importTaskCards .edit-form .ef-row textarea {
+  width: 100%;
+  background: oklch(96% 0.02 90);
+  color: oklch(18% 0.02 60);
+  border: 1.5px solid oklch(55% 0.05 90);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+#importTaskCards .edit-form .ef-row input:focus,
+#importTaskCards .edit-form .ef-row select:focus,
+#importTaskCards .edit-form .ef-row textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 25%, transparent);
+}
+#importTaskCards .edit-form .ef-row textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+#importTaskCards .edit-form .ef-row select option {
+  background: oklch(96% 0.02 90);
+  color: oklch(18% 0.02 60);
+}
+#importTaskCards .edit-form .ef-note {
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--text-faint);
+  text-align: center;
+  letter-spacing: 0.04em;
+  border-top: 1px solid color-mix(in oklch, var(--accent) 25%, transparent);
+  padding-top: 8px;
+}

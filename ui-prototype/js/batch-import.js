@@ -244,6 +244,7 @@
 
   /* ============ 渲染：卡包（参考 v8 状态机） ============ */
   function renderTaskCards(task, drawIdx) {
+    CURRENT_TASK = task; // 保险：draw()/putBack() 依赖 CURRENT_TASK
     var host = document.getElementById('importTaskCards');
     if (!host) return;
     var rows = task.generated || [];
@@ -385,7 +386,47 @@
     );
   }
 
+
+  /* 抽出卡面：编辑表单（真实 input/textarea/select，保证可见可编辑） */
+  function editCardHtml(m, i, n) {
+    var st = m.status;
+    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || '待评审';
+    var r = rarityOf(m.score);
+    var themeOpts = Object.keys(THEME_NAMES).map(function (k) {
+      return '<option value="' + k + '"' + (m.theme === k ? ' selected' : '') + '>' + THEME_NAMES[k] + '</option>';
+    }).join('');
+    return (
+      '<div class="edit-form">' +
+        '<div class="ef-head">' +
+          '<span class="type-badge ' + m.type + '">' + TYPE_NAMES[m.type] + '</span>' +
+          '<span class="rare-badge"><span class="star">★</span>' + r.name + '</span>' +
+          '<span class="ef-status">' + stLabel + '</span>' +
+          '<span class="ef-id">' + esc(m.code) + '</span>' +
+        '</div>' +
+        '<label class="ef-row">指标名称' +
+          '<input data-field="metric_cn" value="' + esc(m.name) + '" placeholder="指标名称">' +
+        '</label>' +
+        '<label class="ef-row">主题域' +
+          '<select data-field="domain_code">' + themeOpts + '</select>' +
+        '</label>' +
+        '<div class="ef-grid2">' +
+          '<label class="ef-row">计量单位' +
+            '<input data-field="unit" value="' + esc(m.unit) + '" placeholder="元 / 人次 / %">' +
+          '</label>' +
+          '<label class="ef-row">统计周期' +
+            '<input data-field="frequency" value="' + esc(m.cycle) + '" placeholder="日度 / 月度 / 季度">' +
+          '</label>' +
+        '</div>' +
+        '<label class="ef-row">业务口径' +
+          '<textarea data-field="caliber_desc" rows="5" placeholder="定义口径、计算逻辑、排除项…">' + esc(m.desc) + '</textarea>' +
+        '</label>' +
+        '<div class="ef-note">编辑后点「💾 保存」，再「✓ 进入草稿」写入指标库。</div>' +
+      '</div>'
+    );
+  }
+
   /* ============ 交互状态机（参考 ch8） ============ */
+
   function peek(el) {
     var idx = +el.dataset.idx;
     if (activeIdx >= 0) return;
@@ -433,9 +474,10 @@
     el.classList.add('active-lock');
     // 强制 z-index 提升（覆盖 buildFrame 设置的 inline z-index）
     el.style.zIndex = '999';
-    // JS 强制切换：隐藏 .f-text、显示 .f-edit（inline style 必胜）
-    el.querySelectorAll('.f-text').forEach(function (n) { n.style.display = 'none'; });
-    el.querySelectorAll('.f-edit').forEach(function (n) { n.style.display = 'inline-block'; });
+    // 抽出 = 编辑表单：把卡面替换为真实 input/textarea/select（保证可见）
+    var row = CURRENT_TASK.generated[idx];
+    var cardEl = el.querySelector('.card');
+    if (row && cardEl) cardEl.innerHTML = editCardHtml(mapRow(row, idx), idx, frames.length);
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
     var actions = document.getElementById('mc8draw-actions');
@@ -451,19 +493,8 @@
     var el = frames[activeIdx];
     el.classList.add('retracting');
     setTimeout(function () {
-      el.classList.remove('active-lock', 'retracting');
-      clearFly(el);
-      el.style.removeProperty('z-index');  // 还原 buildFrame 设置的堆叠 z-index
-      // 还原 .f-text 显示、隐藏 .f-edit
-      el.querySelectorAll('.f-text').forEach(function (n) { n.style.removeProperty('display'); });
-      el.querySelectorAll('.f-edit').forEach(function (n) { n.style.display = 'none'; });
-      activeIdx = -1;
-      var overlay = document.getElementById('mc8overlay');
-      var actions = document.getElementById('mc8draw-actions');
-      var pack = document.getElementById('mc8pack');
-      if (overlay) overlay.classList.remove('show');
-      if (actions) actions.classList.remove('show');
-      if (pack) pack.classList.remove('dimmed');
+      // 重渲染恢复扇形纯文本卡面（编辑表单随之清除）
+      if (CURRENT_TASK) renderTaskCards(CURRENT_TASK, -1);
       drawing = false;
 
     }, 520);
@@ -604,7 +635,7 @@
   function collectEdits() {
     var el = frames[activeIdx];
     if (!el) return null;
-    var inputs = el.querySelectorAll('.f-edit');
+    var inputs = el.querySelectorAll('[data-field]');
     var edits = {};
     for (var i = 0; i < inputs.length; i++) {
       var inp = inputs[i];
