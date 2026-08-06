@@ -677,6 +677,7 @@
 
   global.showBatchMetricModal = showBatchMetricModal;
   global.openNewMetricDrawer = openNewMetricDrawer;
+  global.syncCategoryL1 = syncCategoryL1;
   global.closeNewMetricDrawer = closeNewMetricDrawer;
   global.suggestMetricDrawer = suggestMetricDrawer;
   global.saveNewMetricDrawer = saveNewMetricDrawer;
@@ -705,6 +706,7 @@
       return;
     }
     fillDomainOptions(sel, domains, prev);
+    syncCategoryL1();
   }
   function fillDomainOptions(sel, domains, prev) {
     sel.innerHTML = '';
@@ -717,17 +719,34 @@
     if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
     else if (sel.options.length) sel.value = sel.options[0].value;
   }
+  function syncCategoryL1() {
+    var sel = document.getElementById('newMetricDomain');
+    var l1 = document.getElementById('newMetricCatL1');
+    if (!sel || !l1) return;
+    var domains = window.__DG_DOMAINS__ || [];
+    var d = null;
+    for (var i = 0; i < domains.length; i++) { if (domains[i].domain_code === sel.value) { d = domains[i]; break; } }
+    // 一级分类 = 主题域中文名（自动带出，无需手填）
+    l1.value = d && d.domain_name_cn ? d.domain_name_cn : sel.value;
+    // 同步指标编号预览
+    var idEl = document.getElementById('newMetricIdPreview');
+    if (idEl) idEl.textContent = 'M_' + String(sel.value).toUpperCase() + '_N' + String(Math.floor(Math.random() * 900 + 100));
+  }
+
   function openNewMetricDrawer() {
     var modal = document.getElementById('metricNewDrawer');
     if (!modal) return;
     populateMetricDomainSelect();
+    syncCategoryL1();
     modal.querySelectorAll('input, textarea, select').forEach(function (el) {
       var id = el.id;
       if (id === 'newMetricDomain') { if (el.tagName === 'SELECT' && el.options.length && !el.value) el.value = el.options[0].value; return; }
       else if (id === 'newMetricType') { el.value = 'atomic'; return; }
       else if (id === 'newMetricIdPreview') return;
+      else if (id === 'newMetricCatL1') return; // 一级分类只读，由 syncCategoryL1 维护
       else el.value = '';
     });
+    syncCategoryL1();
     var idEl = document.getElementById('newMetricIdPreview');
     var dom = (document.getElementById('newMetricDomain') || {}).value || 'sale';
     if (idEl) idEl.textContent = 'M_' + String(dom).toUpperCase() + '_N' + String(Math.floor(Math.random() * 900 + 100));

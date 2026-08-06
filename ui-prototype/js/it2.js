@@ -446,7 +446,7 @@
         ['newMetricUnit', r.unit, '计量单位'],
         ['newMetricFrequency', r.frequency, '时间周期'],
         // 更多设置区（AI 自动判断，生成后自动展开）
-        ['newMetricCatL1', r.category_l1, '一级分类'],
+        // 一级分类固定 = 主题域（自动同步），不再由 AI 覆盖
         ['newMetricCatL2', r.category_l2, '二级分类'],
         ['newMetricValueType', r.value_type, '值类型'],
         ['newMetricDimensions', r.dimensions, '统计维度'],

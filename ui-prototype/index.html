@@ -2231,9 +2231,9 @@
               <th class="indicator-spec-th">指标编号</th>
               <td class="indicator-spec-td"><span class="text-sm text-muted" id="newMetricIdPreview">自动生成</span></td></tr>
             <tr><th class="indicator-spec-th">主题域 *</th>
-              <td class="indicator-spec-td"><select class="modal-form-input" id="newMetricDomain" style="width:100%;"></select></td>
+              <td class="indicator-spec-td"><select class="modal-form-input" id="newMetricDomain" style="width:100%;" onchange="syncCategoryL1()"></select></td>
               <th class="indicator-spec-th">一级分类</th>
-              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricCatL1" placeholder="如：收入类 / 成本类" style="width:100%;"></td></tr>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricCatL1" readonly style="width:100%;background:var(--bg);color:var(--text-muted);" title="自动等于主题域"></td></tr>
             <tr><th class="indicator-spec-th">二级分类</th>
               <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricCatL2" placeholder="如：租赁收入 / 租金类" style="width:100%;"></td></tr>
             <tr><th class="indicator-spec-th">计量单位</th>
