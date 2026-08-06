@@ -1787,3 +1787,15 @@ tr.row-selected td { background: var(--primary-light) !important; }
   25% { transform: translateX(-3px); }
   75% { transform: translateX(3px); }
 }
+
+/* ── 全局 toast（H10：替换残留浏览器 alert） ── */
+.dg-toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px);
+  padding: 10px 18px; border-radius: 6px; font-size: 13px;
+  background: var(--danger, #e5484d); color: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  opacity: 0; transition: opacity 0.2s ease, transform 0.25s ease;
+  z-index: 9999;
+}
+.dg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.dg-toast-success { background: var(--success, #2e8b57); }

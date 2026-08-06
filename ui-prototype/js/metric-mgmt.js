@@ -684,9 +684,9 @@
         if (enEl && r.metric_en) enEl.value = r.metric_en;
         var abEl = document.getElementById('inlineNewAbbr');
         if (abEl && r.metric_abbr) abEl.value = r.metric_abbr;
-        alert('🤖 AI 已生成：' + (r.metric_en || '英文名待手动填写') + '\n（口径/公式/负责人/分类已备好，保存时一并写入）');
+        // 不再弹窗，结果已自动填充到字段（内联）
       })
-      .catch(function (e) { alert('AI 生成失败: ' + e.message); });
+      .catch(function (e) { toast('AI 生成失败: ' + e.message); });
   }
 
   function saveInlineNew() {
@@ -730,7 +730,11 @@
         cancelInlineNew();
         return reloadFromServer();
       })
-      .catch(function (e) { alert('创建失败: ' + e.message); });
+      .catch(function (e) {
+        toast('创建失败: ' + e.message);
+        var st = document.getElementById('newMetricAiStatus');
+        if (st) { st.style.display = ''; st.innerHTML = '<span style="color:var(--danger);">⚠️ 创建失败: ' + e.message + '</span>'; }
+      });
   }
 
   /* ==================== 批量新增弹窗入口 ==================== */
@@ -774,6 +778,19 @@
   global.toggleBatchMode = toggleBatchMode;
   global.batchSuggestMetrics = batchSuggestMetrics;
   global.batchCreateMetrics = batchCreateMetrics;
+
+  function toast(msg, kind) {
+    var d = document.createElement('div');
+    d.className = 'dg-toast dg-toast-' + (kind || 'error');
+    d.innerText = msg;
+    document.body.appendChild(d);
+    setTimeout(function () { d.classList.add('show'); }, 10);
+    setTimeout(function () {
+      d.classList.remove('show');
+      setTimeout(function () { d.remove(); }, 300);
+    }, 3500);
+  }
+
   global.showNewMetricInline = showNewMetricInline;
   global.cancelInlineNew = cancelInlineNew;
   global.inlineSuggestMetric = inlineSuggestMetric;
