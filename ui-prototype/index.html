@@ -1056,8 +1056,8 @@
       </div>
       <div class="card-body">
         <div class="filter-bar" style="margin-bottom:12px;">
-          <select class="select"><option>sale 交易</option></select>
-          <input class="input" placeholder="搜索..." style="flex:1;min-width:auto;">
+          <select class="select" id="batchDomainSelect" onchange="filterBatchAtomicsByDomain()"><option value="">全部主题域</option></select>
+          <input class="input" id="batchAtomicSearch" placeholder="搜索..." style="flex:1;min-width:auto;" oninput="filterBatchAtomicsByDomain()">
         </div>
         <table>
           <thead><tr><th></th><th>指标</th><th>类型</th><th>英文名</th></tr></thead>
@@ -2254,6 +2254,12 @@
               <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricCn" placeholder="如：月度租赁收入" style="width:100%;"></td>
               <th class="indicator-spec-th">指标编号</th>
               <td class="indicator-spec-td"><span class="text-sm text-muted" id="newMetricIdPreview">自动生成</span></td></tr>
+            <tr><th class="indicator-spec-th">主题域 *</th>
+              <td class="indicator-spec-td"><select class="modal-form-input" id="newMetricDomain" style="width:100%;"></select></td>
+              <th class="indicator-spec-th">一级分类</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricCatL1" placeholder="如：收入类 / 成本类" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">二级分类</th>
+              <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricCatL2" placeholder="如：租赁收入 / 租金类" style="width:100%;"></td></tr>
             <tr><th class="indicator-spec-th">计量单位</th>
               <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricUnit" placeholder="元" style="width:100%;"></td>
               <th class="indicator-spec-th">值类型</th>
@@ -2301,7 +2307,6 @@
         </div>
       </div>
       <!-- 隐藏字段：AI 填充 / 保存用（主题域/类型/分类） -->
-      <input type="hidden" id="newMetricDomain" value="sale">
       <input type="hidden" id="newMetricType" value="atomic">
       <input type="hidden" id="newMetricCatL1">
       <input type="hidden" id="newMetricCatL2">

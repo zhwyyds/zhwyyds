@@ -28,20 +28,17 @@
   /* ==================== 批量生成（IT2-1） ==================== */
 
   function loadBatchGenOptions() {
+    // 主题域下拉（14 域）
+    var dsel = document.getElementById('batchDomainSelect');
+    if (dsel && window.__DG_DOMAINS__ && window.__DG_DOMAINS__.length) {
+      dsel.innerHTML = '<option value="">全部主题域</option>' + window.__DG_DOMAINS__.map(function (d) {
+        return '<option value="' + esc(d.domain_code) + '">' + esc(d.domain_code) + ' ' + esc(d.domain_name_cn || '') + '</option>';
+      }).join('');
+    }
     api('/api/metrics').then(function (metrics) {
       var atomics = (metrics || []).filter(function (m) { return m.metric_type === 'atomic'; });
-      var tbody = document.getElementById('batchAtomicBody');
-      if (!tbody) return;
-      if (!atomics.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">暂无原子指标，请先在「指标管理」创建</td></tr>';
-        return;
-      }
-      tbody.innerHTML = atomics.map(function (m) {
-        return '<tr><td><input type="checkbox" class="batch-atomic-cb" value="' + esc(m.metric_id) + '"></td>' +
-          '<td>' + esc(m.metric_cn) + '</td>' +
-          '<td><span class="badge badge-info">atomic</span></td>' +
-          '<td class="text-mono text-sm">' + esc(m.metric_en) + '</td></tr>';
-      }).join('');
+      global.__DG_BATCH_ATOMICS__ = atomics;
+      renderBatchAtomics(atomics);
     }).catch(function (e) {
       var tbody = document.getElementById('batchAtomicBody');
       if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">加载失败: ' + esc(e.message) + '</td></tr>';
@@ -65,6 +62,35 @@
       });
       wrap.innerHTML = html;
     }).catch(function () { /* 忽略 */ });
+  }
+
+  function renderBatchAtomics(atomics) {
+    var tbody = document.getElementById('batchAtomicBody');
+    if (!tbody) return;
+    if (!atomics || !atomics.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-sm text-muted" style="padding:12px;">暂无原子指标，请先在「指标管理」创建</td></tr>';
+      return;
+    }
+    tbody.innerHTML = atomics.map(function (m) {
+      return '<tr><td><input type="checkbox" class="batch-atomic-cb" value="' + esc(m.metric_id) + '"></td>' +
+        '<td>' + esc(m.metric_cn) + '</td>' +
+        '<td><span class="badge badge-info">atomic</span></td>' +
+        '<td class="text-mono text-sm">' + esc(m.metric_en) + '</td></tr>';
+    }).join('');
+  }
+
+  function filterBatchAtomicsByDomain() {
+    var sel = document.getElementById('batchDomainSelect');
+    var kw = document.getElementById('batchAtomicSearch');
+    var dom = sel ? sel.value : '';
+    var q = (kw && kw.value || '').trim().toLowerCase();
+    var all = global.__DG_BATCH_ATOMICS__ || [];
+    var rows = all.filter(function (m) {
+      if (dom && m.domain_code !== dom) return false;
+      if (q && (m.metric_cn || '').toLowerCase().indexOf(q) < 0 && (m.metric_en || '').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    renderBatchAtomics(rows);
   }
 
   function toggleBatchModifier(el) { el.classList.toggle('checked'); }
@@ -1011,6 +1037,7 @@
   global.toggleBatchModifier = toggleBatchModifier;
   global.refreshBatchPreview = refreshBatchPreview;
   global.batchGenerate = batchGenerate;
+  global.filterBatchAtomicsByDomain = filterBatchAtomicsByDomain;
   global.loadRoots = loadRoots;
   global.openRootCreateModal = openRootCreateModal;
   global.saveRootCreate = saveRootCreate;

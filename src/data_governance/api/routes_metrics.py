@@ -24,7 +24,7 @@ from data_governance.api.metric_services import (
 from data_governance.api.schemas import MetricCreateRequest, MetricUpdateRequest, RevisionApplyRequest, StatsResponse
 from data_governance.config_loader import load_domains
 from data_governance.io.catalog import load_catalog
-from data_governance.io.metric_tree import load_metric_tree
+from data_governance.io.metric_tree import MetricTreeNode, load_metric_tree
 from data_governance.scoring.store import load_score, score_and_persist
 from data_governance.services import MetricService
 from data_governance.services.ai_service import AiService
@@ -291,7 +291,25 @@ def register(app, base: Path, metric_svc: MetricService, ai_svc: AiService) -> N
         nodes_path = base / "config" / "metric_tree.csv"
         nodes = load_metric_tree(nodes_path)
         catalog = load_catalog(base)
-        domain_map = {d.domain_code: d.domain_name_cn for d in load_domains(base / "config" / "domains.csv")}
+        domains = load_domains(base / "config" / "domains.csv")
+        domain_map = {d.domain_code: d.domain_name_cn for d in domains}
+        # H12: 按 14 个主题域补全指标树 L1 根节点（缺域的自动生成空节点，便于按主题管理）
+        existing_l1 = {n.node_id for n in nodes if n.node_type == "domain"}
+        for d in domains:
+            l1_id = f"L1_{d.domain_code.upper()}"
+            if l1_id not in existing_l1:
+                nodes.append(
+                    MetricTreeNode(
+                        node_id=f"L1_{d.domain_code.upper()}",
+                        node_name=d.domain_name_cn,
+                        node_type="domain",
+                        parent_id="",
+                        domain_code=d.domain_code,
+                        sort_order=99,
+                        description=f"{d.domain_name_cn}主题域",
+                    )
+                )
+        nodes.sort(key=lambda n: (n.domain_code, n.sort_order, n.node_id))
         metrics_by_node: dict[str, list[dict]] = {}
         unassigned: list[dict] = []
         for m in catalog.metrics:

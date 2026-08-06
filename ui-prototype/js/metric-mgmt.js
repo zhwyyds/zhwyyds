@@ -805,18 +805,48 @@
 
   /* ==================== 新增指标抽屉（H4：与「指标详情」同款布局 + AI） ==================== */
 
+  function populateMetricDomainSelect() {
+    var sel = document.getElementById('newMetricDomain');
+    if (!sel) return;
+    var domains = window.__DG_DOMAINS__ || [];
+    var prev = sel.value || 'sale';
+    if (!domains.length) {
+      // 兜底：从 metric-tree 响应或 API 拉取
+      if (window.apiFetch) {
+        apiFetch('/api/domains').then(function (ds) {
+          window.__DG_DOMAINS__ = ds || [];
+          fillDomainOptions(sel, ds, prev);
+        }).catch(function () {});
+      }
+      return;
+    }
+    fillDomainOptions(sel, domains, prev);
+  }
+  function fillDomainOptions(sel, domains, prev) {
+    sel.innerHTML = '';
+    (domains || []).forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d.domain_code;
+      o.textContent = d.domain_code + ' ' + (d.domain_name_cn || '');
+      sel.appendChild(o);
+    });
+    if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+    else if (sel.options.length) sel.value = sel.options[0].value;
+  }
   function openNewMetricDrawer() {
     var modal = document.getElementById('metricNewDrawer');
     if (!modal) return;
-    modal.querySelectorAll('input, textarea').forEach(function (el) {
+    populateMetricDomainSelect();
+    modal.querySelectorAll('input, textarea, select').forEach(function (el) {
       var id = el.id;
-      if (id === 'newMetricDomain') el.value = 'sale';
-      else if (id === 'newMetricType') el.value = 'atomic';
+      if (id === 'newMetricDomain') { if (el.tagName === 'SELECT' && el.options.length && !el.value) el.value = el.options[0].value; return; }
+      else if (id === 'newMetricType') { el.value = 'atomic'; return; }
       else if (id === 'newMetricIdPreview') return;
       else el.value = '';
     });
     var idEl = document.getElementById('newMetricIdPreview');
-    if (idEl) idEl.textContent = 'M_SALE_N' + String(Math.floor(Math.random() * 900 + 100));
+    var dom = (document.getElementById('newMetricDomain') || {}).value || 'sale';
+    if (idEl) idEl.textContent = 'M_' + String(dom).toUpperCase() + '_N' + String(Math.floor(Math.random() * 900 + 100));
     var status = document.getElementById('newMetricAiStatus');
     if (status) { status.style.display = 'none'; status.textContent = ''; }
     var pWrap = document.getElementById('aiProgressWrap');
