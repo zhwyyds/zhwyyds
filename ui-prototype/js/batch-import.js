@@ -264,6 +264,7 @@
       '<div class="overlay" id="mc8overlay"></div>' +
       '<div class="draw-actions" id="mc8draw-actions">' +
         '<button class="act-btn reject" id="mc8btn-reject" type="button">✕ 打回</button>' +
+        '<button class="act-btn ghost2" id="mc8btn-save" type="button">💾 保存</button>' +
         '<button class="act-btn ghost2" id="mc8btn-back" type="button">📥 收回卡包</button>' +
         '<button class="act-btn approve" id="mc8btn-approve" type="button">✓ 进入草稿</button>' +
         '<span class="draw-state" id="mc8draw-state"></span>' +
@@ -336,7 +337,7 @@
         '<span class="type-badge ' + m.type + '">' + TYPE_NAMES[m.type] + '</span>' +
         '<span class="rare-badge"><span class="star">★</span>' + r.name + '</span>' +
         '<div class="topline">' +
-          '<span class="faction">' + (THEME_NAMES[m.theme] || m.theme) + '<span class="sep">/</span>' + (CAT_NAMES[m.cat] || m.cat) + '</span>' +
+          '<span class="faction"><span class="f-text">' + (THEME_NAMES[m.theme] || m.theme) + '</span><select class="f-edit" data-field="domain_code">' + Object.keys(THEME_NAMES).map(function (k) { return '<option value="' + k + '"' + (m.theme === k ? ' selected' : '') + '>' + THEME_NAMES[k] + '</option>'; }).join('') + '</select><span class="sep">/</span>' + (CAT_NAMES[m.cat] || m.cat) + '</span>' +
           '<span class="quality"><span class="gem"></span>周期总量</span>' +
         '</div>' +
         '<div class="icon-zone">' +
@@ -344,7 +345,7 @@
           '<span class="icon-ring" aria-hidden="true">' + (ICONS[m.cat] || ICONS.overview) + '</span>' +
         '</div>' +
         '<div class="title-zone">' +
-          '<h1>' + esc(m.name) + '</h1>' +
+          '<h1><span class="f-text">' + esc(m.name) + '</span><input class="f-edit" data-field="metric_cn" value="' + esc(m.name) + '"></h1>' +
           '<div class="sub-id">' + esc(m.code) + '</div>' +
           '<div class="badge-row">' +
             '<span class="badge biz">业务</span>' +
@@ -353,13 +354,13 @@
           '</div>' +
         '</div>' +
         '<section class="stats">' +
-          '<div class="stat"><div class="lbl">计量</div><div class="val">' + esc(m.unit) + '</div></div>' +
-          '<div class="stat"><div class="lbl">周期</div><div class="val">' + esc(m.cycle) + '</div></div>' +
+          '<div class="stat"><div class="lbl">计量</div><div class="val"><span class="f-text">' + esc(m.unit) + '</span><input class="f-edit" data-field="unit" value="' + esc(m.unit) + '"></div></div>' +
+          '<div class="stat"><div class="lbl">周期</div><div class="val"><span class="f-text">' + esc(m.cycle) + '</span><input class="f-edit" data-field="frequency" value="' + esc(m.cycle) + '"></div></div>' +
           '<div class="stat"><div class="lbl">精度</div><div class="val">' + esc(m.precision) + '</div></div>' +
           '<div class="stat"><div class="lbl">物理表</div><div class="val mono">' + esc(m.table) + '</div></div>' +
         '</section>' +
         (dims ? '<section class="affix"><div class="affix-head">统计维度</div><div class="affix-tags">' + dims + '</div></section>' : '') +
-        '<section class="desc-box">' + esc(m.desc) + '</section>' +
+        '<section class="desc-box"><span class="f-text">' + esc(m.desc) + '</span><textarea class="f-edit" data-field="caliber_desc" rows="4">' + esc(m.desc) + '</textarea></section>' +
         '<section class="skill-box">' +
           '<div class="sl">✦ 计算公式</div>' +
           '<div class="sd">' + esc(m.formula) + '</div>' +
@@ -426,8 +427,10 @@
       f.classList.remove('active-lock', 'retracting');
       clearFly(f);
     });
-    centerOffset(el, 0, 1.15);
+    centerOffset(el, 0, 1.25);
     el.classList.add('active-lock');
+    // 强制 z-index 提升（覆盖 buildFrame 设置的 inline z-index）
+    el.style.zIndex = '999';
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
     var actions = document.getElementById('mc8draw-actions');
@@ -445,6 +448,7 @@
     setTimeout(function () {
       el.classList.remove('active-lock', 'retracting');
       clearFly(el);
+      el.style.removeProperty('z-index');  // 还原 buildFrame 设置的堆叠 z-index
       activeIdx = -1;
       var overlay = document.getElementById('mc8overlay');
       var actions = document.getElementById('mc8draw-actions');
@@ -480,7 +484,9 @@
       btnBack.style.display = '';
       state.style.display = 'none';
       btnReject.onclick = function () { reviewImportRow(activeIdx, 'reject'); };
-      btnApprove.onclick = function () { reviewImportRow(activeIdx, 'approve'); };
+      btnApprove.onclick = function () { reviewImportRow(activeIdx, 'approve', collectEdits()); };
+      var btnSave = document.getElementById('mc8btn-save');
+      if (btnSave) btnSave.onclick = function () { saveEdits(); };
     }
   }
   /* ============ 视图模式（参考 ch9） ============ */
@@ -565,7 +571,7 @@
     }
   });
   window.addEventListener('resize', function () {
-    if (activeIdx >= 0 && frames[activeIdx]) centerOffset(frames[activeIdx], 0, 1.15);
+    if (activeIdx >= 0 && frames[activeIdx]) centerOffset(frames[activeIdx], 0, 1.25);
   });
 
   /* ---------- 处理任务：去重 + AI 生成 ---------- */
@@ -584,12 +590,36 @@
       });
   }
 
+  /* 收集抽出卡中可编辑字段的当前值 */
+  function collectEdits() {
+    var el = frames[activeIdx];
+    if (!el) return null;
+    var inputs = el.querySelectorAll('.f-edit');
+    var edits = {};
+    for (var i = 0; i < inputs.length; i++) {
+      var inp = inputs[i];
+      var f = inp.getAttribute('data-field');
+      if (!f) continue;
+      edits[f] = inp.value;
+    }
+    return Object.keys(edits).length ? edits : null;
+  }
+  /* 把编辑保存到 CURRENT_TASK.generated[activeIdx] */
+  function saveEdits() {
+    if (!CURRENT_TASK || activeIdx < 0) return;
+    var edits = collectEdits();
+    if (!edits) { if (window.toast) toast('未修改'); return; }
+    var row = CURRENT_TASK.generated[activeIdx];
+    Object.keys(edits).forEach(function (k) { row[k] = edits[k]; });
+    if (window.toast) toast('✓ 已保存（待通过入草稿生效）', 'success');
+  }
+
   /* ---------- 逐卡评审 ---------- */
-  function reviewImportRow(rowIndex, action) {
+  function reviewImportRow(rowIndex, action, edits) {
     if (!CURRENT_TASK) return;
     api('/api/import-tasks/' + encodeURIComponent(CURRENT_TASK.task_id) + '/review', {
       method: 'POST',
-      body: JSON.stringify({ row_index: rowIndex, action: action, reason: action === 'reject' ? '人工打回' : '' })
+      body: JSON.stringify({ row_index: rowIndex, action: action, reason: action === 'reject' ? '人工打回' : '', edits: edits || null })
     }).then(function (task) {
       CURRENT_TASK = task;
       if (window.toast) toast(action === 'approve' ? '✓ 已通过，指标进入草稿' : '已打回', action === 'approve' ? 'success' : '');

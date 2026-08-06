@@ -1431,3 +1431,57 @@
 #importTaskCards .frame.active-lock .card::-webkit-scrollbar { width: 6px; }
 #importTaskCards .frame.active-lock .card::-webkit-scrollbar-track { background: oklch(15% 0.02 275); }
 #importTaskCards .frame.active-lock .card::-webkit-scrollbar-thumb { background: oklch(40% 0.03 275); border-radius: 3px; }
+
+
+/* ================================================================
+   v13 可编辑字段：默认显示文本，抽出时显示输入框
+   ================================================================ */
+/* 默认（in-bag 扇形）：文本显示，输入框隐藏 */
+#importTaskCards .frame .f-edit { display: none; }
+/* active-lock 抽出时：文本隐藏，输入框显示 */
+#importTaskCards .frame.active-lock .f-text { display: none !important; }
+#importTaskCards .frame.active-lock .f-edit {
+  display: inline-block;
+  background: oklch(15% 0.02 275);
+  border: 1px solid color-mix(in oklch, var(--accent) 50%, transparent);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: inherit;
+  font-weight: 600;
+  outline: none;
+  width: auto;
+  min-width: 80px;
+  max-width: 100%;
+}
+#importTaskCards .frame.active-lock .f-edit:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+/* textarea：拉伸到容器宽度 */
+#importTaskCards .frame.active-lock textarea.f-edit {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+/* 下拉（domain_code）：深色面板 */
+#importTaskCards .frame.active-lock select.f-edit {
+  background: oklch(15% 0.02 275);
+  color: var(--text);
+  cursor: pointer;
+}
+#importTaskCards .frame.active-lock select.f-edit option {
+  background: oklch(20% 0.02 275);
+  color: var(--text);
+}
+/* h1 内 input 拉伸：指标名输入占整行 */
+#importTaskCards .frame.active-lock h1 .f-edit {
+  width: 100%;
+  font-size: 20px;
+  font-weight: 800;
+  margin-top: 2px;
+}
