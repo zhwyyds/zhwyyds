@@ -321,6 +321,8 @@
     els.innerHTML = cardHtml(m, i, n);
     pack.appendChild(els);
     frames.push(els);
+    // JS 强制隐藏所有可编辑字段（CSS 兜底；inline style 必胜）
+    els.querySelectorAll('.f-edit').forEach(function (n) { n.style.display = 'none'; });
   }
 
   /* 卡面（参考 ch7：18 字段 10 区块；静态元素照抄，动态字段接入） */
@@ -431,6 +433,9 @@
     el.classList.add('active-lock');
     // 强制 z-index 提升（覆盖 buildFrame 设置的 inline z-index）
     el.style.zIndex = '999';
+    // JS 强制切换：隐藏 .f-text、显示 .f-edit（inline style 必胜）
+    el.querySelectorAll('.f-text').forEach(function (n) { n.style.display = 'none'; });
+    el.querySelectorAll('.f-edit').forEach(function (n) { n.style.removeProperty('display'); });
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
     var actions = document.getElementById('mc8draw-actions');
@@ -449,6 +454,9 @@
       el.classList.remove('active-lock', 'retracting');
       clearFly(el);
       el.style.removeProperty('z-index');  // 还原 buildFrame 设置的堆叠 z-index
+      // 还原 .f-text 显示、隐藏 .f-edit
+      el.querySelectorAll('.f-text').forEach(function (n) { n.style.removeProperty('display'); });
+      el.querySelectorAll('.f-edit').forEach(function (n) { n.style.display = 'none'; });
       activeIdx = -1;
       var overlay = document.getElementById('mc8overlay');
       var actions = document.getElementById('mc8draw-actions');
