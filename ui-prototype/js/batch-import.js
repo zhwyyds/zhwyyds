@@ -186,9 +186,8 @@
     }
     host.classList.add('mc-table');
 
-    // 扇形展开（卡包桌）：卡片 in-bag 缩小弧形排列，选中 popout 放大为全尺寸卡面
+    // 扇形展开（卡包桌）：摘要卡弧形排列（渐进披露），选中 popout 放大为完整卡面
     var n = rows.length;
-    var bagScale = n <= 6 ? 0.42 : (n <= 12 ? 0.34 : 0.27); // 包中缩小比例（数量多更小）
     var spreadDeg = Math.min(36, 2.2 * n + 10); // 倾斜克制
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
@@ -215,10 +214,10 @@
         '<div class="mc-card-slot ' + (isSelected ? 'selected' : 'in-bag') +
           (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + ' ' +
           theme + ' ' + rarity + ' ' + cat + '" ' +
-          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';--bag-scale:' + bagScale + ';" ' +
+          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';" ' +
           'onclick="selectImportCard(' + i + ')">' +
           (isSelected ? '<button class="mc-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
-          buildMcCard(row, i, n, st) +
+          (isSelected ? buildMcCard(row, i, n, st) : buildMiniCard(row, i, n, st)) +
         '</div>'
       );
     }).join('');
@@ -239,6 +238,41 @@
         '　·　点击卡片放大 · ← → 切换 · Esc 关闭' +
       '</div>';
     host.innerHTML = cardsHtml + hint;
+  }
+
+  /* 摘要卡（扇形浏览态）：渐进披露——状态/名称/关键属性 + 直接评审 */
+  function buildMiniCard(row, i, n, st) {
+    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '失败' }[st] || st;
+    var stCls = st === 'draft' ? 'st-ok' : (st === 'rejected' || st === 'error' ? 'st-no' : 'st');
+    var rarity = MC_RARITY_NAME[mcRarity(st)] || '';
+    var unit = row.unit || '';
+    var freq = row.frequency || '';
+    var vtype = row.value_type || '';
+
+    return (
+      '<div class="mc-mini">' +
+        '<div class="mc-mini-body">' +
+          '<div class="mc-mini-status">' +
+            '<span class="b ' + stCls + '">' + stLabel + '</span>' +
+            '<span class="b rare">★ ' + esc(rarity) + '</span>' +
+          '</div>' +
+          '<div class="mc-mini-icon">' + themeFor(row.domain_code).icon + '</div>' +
+          '<div class="mc-mini-title">' + esc(row.metric_cn || '—') + '</div>' +
+          '<div class="mc-mini-sub">' + esc(row.metric_en || row.metric_id || '—') + '</div>' +
+          '<div class="mc-mini-tags">' +
+            (unit ? '<span class="t">' + esc(unit) + '</span>' : '') +
+            (freq ? '<span class="t">' + esc(freq) + '</span>' : '') +
+            (vtype ? '<span class="t">' + esc(vtype) + '</span>' : '') +
+          '</div>' +
+          ((st === 'pending' || st === 'rejected') ?
+            '<div class="mc-mini-actions">' +
+              '<button class="btn btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
+              '<button class="btn btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
+            '</div>' :
+            (st === 'draft' ? '<div class="mc-mini-done">已入草稿</div>' : '')) +
+        '</div>' +
+      '</div>'
+    );
   }
 
   /* 指标卡视觉系统 v5 卡面渲染（参考 ui-prototype/metric-card-ref.html） */
