@@ -781,6 +781,8 @@
     }, 3500);
   }
 
+  global.toast = toast;
+
   global.showNewMetricInline = showNewMetricInline;
   global.cancelInlineNew = cancelInlineNew;
   global.inlineSuggestMetric = inlineSuggestMetric;

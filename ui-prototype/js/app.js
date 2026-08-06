@@ -520,7 +520,10 @@ function submitReview(id) {
   var row = findMetricRow(id);
   if (row) {
     var reviewCell = row.querySelectorAll('td')[6];
-    if (reviewCell) reviewCell.innerHTML = '<span class="badge badge-warn">&#9203; 评审中</span>';
+    if (reviewCell) reviewCell.innerHTML = '<span class="badge badge-warn">&#9203; 评审中…</span>';
+  }
+  if (window.toast) {
+    toast('🤖 评审进行中（多模型比对，约 1 分钟）…');
   }
   fetch(base + '/api/metrics/' + encodeURIComponent(id) + '/review', { method: 'POST' })
     .then(function (res) {
@@ -536,10 +539,13 @@ function submitReview(id) {
     })
     .then(function () {
       switchToPage('review');
-      alert('多模型评审完成，结果已写入 reviews/metric_reviews/');
+      if (window.toast) {
+        toast('✅ 评审完成，结果已写入 reviews/metric_reviews/', 'success');
+      }
     })
     .catch(function (e) {
-      alert('评审失败: ' + e.message);
+      if (window.toast) toast('评审失败: ' + e.message);
+      else alert('评审失败: ' + e.message);
       if (window.DG && DG.loadAll) DG.loadAll(false);
     });
 }

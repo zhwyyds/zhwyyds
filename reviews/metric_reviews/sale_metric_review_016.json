@@ -1,0 +1,65 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-06T13:08:45+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_001",
+      "metric_en": "monthly_sales_amt",
+      "model_reviews": [
+        {
+          "model": "deepseek-v4-flash",
+          "naming_score": 3,
+          "naming_issues": [
+            "metric_en 'monthly_sales_amt' 中 'monthly' 与 root_ids 中的 'R_TIME_001' 不匹配，应使用月度词根而非通用时间词根",
+            "root_ids 缺少金额词根（amt/amount），无法完整还原 metric_en",
+            "'monthly' 为形容词，建议使用名词词根 'month' 以保持命名规范性"
+          ],
+          "caliber_score": 3,
+          "caliber_issues": [
+            "'已完成订单' 概念未定义，容易产生歧义",
+            "'销售总金额' 未明确是订单应付金额还是实付金额，建议明确为实付金额",
+            "未明确按订单完成时间统计，易与下单时间混淆"
+          ],
+          "conflict_risks": [
+            "指标中文名 '月度销售额' 与 '月度销售金额'、'月销售额' 存在同义异名风险",
+            "metric_en 'monthly_sales_amt' 可能与其他使用 'monthly_sales_amount' 的指标产生同名异义"
+          ],
+          "root_match": false,
+          "suggestions": "补充金额词根，将时间词根规范为月度词根，建议中文名改为'月度销售金额'并明确统计口径为按订单完成时间的实付金额。",
+          "revision": {
+            "metric_cn": "月度销售金额",
+            "metric_en": null,
+            "caliber_desc": "指统计自然月内，按订单完成时间统计的已完成订单的销售实付金额之和，不含退款及取消订单。",
+            "unit": null,
+            "frequency": null,
+            "root_ids": [
+              "R_SALE_001",
+              "R_MONTH_001",
+              "R_AMT_001"
+            ],
+            "summary": "将'销售额'规范为'销售金额'，补充金额词根，并将时间词根改为月度词根，同时明确口径为按订单完成时间的实付金额。"
+          }
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 3.0,
+        "caliber_score_avg": 3.0,
+        "consistent_issues": [],
+        "conflict_detected": true
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "conflict_review",
+        "action_items": [
+          "补充金额词根，将时间词根规范为月度词根，建议中文名改为'月度销售金额'并明确统计口径为按订单完成时间的实付金额。"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}

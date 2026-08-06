@@ -1,0 +1,68 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-06T13:10:41+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_N493",
+      "metric_en": "operating_cash_flow_yoy",
+      "model_reviews": [
+        {
+          "model": "deepseek-v4-flash",
+          "naming_score": 3,
+          "naming_issues": [
+            "metric_en 中的 yoy 未在词根库中定义，且 root_ids 为空，无法由 root_ids 完整还原 metric_en；",
+            "metric_en 缺少 growth_rate，不能直接体现“同比增长率”语义；",
+            "metric_cn “经营现金流”为“经营活动产生的现金流量净额”的简称，不够精确。"
+          ],
+          "caliber_score": 4,
+          "caliber_issues": [
+            "口径中“经营现金流”应统一为“经营活动产生的现金流量净额”，避免简称；",
+            "“统计周期默认按月度”表述不够严谨，建议直接明确为“按月度统计”。"
+          ],
+          "conflict_risks": [
+            "“经营现金流同比”可能被理解为经营现金流绝对额的同比数据，而非同比增长率，存在同名异义风险；",
+            "“经营现金流”与“经营活动产生的现金流量净额”存在同义异名风险；",
+            "operating_cash_flow_yoy 可能被其他指标直接用作同比绝对额或增长率，需在命名上明确区分。"
+          ],
+          "root_match": false,
+          "suggestions": "建议将指标中文名规范为“经营活动产生的现金流量净额同比增长率”，英文名改为“operating_cash_flow_yoy_growth_rate”，口径明确为月度统计，并新增 yoy/growth/rate 词根后关联 operating/cash/flow 词根。",
+          "revision": {
+            "metric_cn": "经营活动产生的现金流量净额同比增长率",
+            "metric_en": "operating_cash_flow_yoy_growth_rate",
+            "caliber_desc": "统计经营活动产生的现金流量净额的月度同比增长率，即本月经营活动产生的现金流量净额与上年同月经营活动产生的现金流量净额的差额，占上年同月经营活动产生的现金流量净额的比例。",
+            "unit": null,
+            "frequency": null,
+            "root_ids": [
+              "R_OPER_001",
+              "R_CASH_001",
+              "R_FLOW_001",
+              "R_YOY_001",
+              "R_GROWTH_001",
+              "R_RATE_001"
+            ],
+            "summary": "规范中英文名以明确净额同比增长率，补充月度口径表述，并新增 yoy/growth/rate 词根后完成词根关联。"
+          }
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 3.0,
+        "caliber_score_avg": 4.0,
+        "consistent_issues": [],
+        "conflict_detected": true
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "conflict_review",
+        "action_items": [
+          "建议将指标中文名规范为“经营活动产生的现金流量净额同比增长率”，英文名改为“operating_cash_flow_yoy_growth_rate”，口径明确为月度统计，并新增 yoy/growth/rate 词根后关联 operating/cash/flow 词根。"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}

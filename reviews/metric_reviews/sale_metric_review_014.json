@@ -1,0 +1,60 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-06T13:07:45+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "items": [
+    {
+      "metric_id": "M_SALE_N493",
+      "metric_en": "operating_cash_flow_yoy",
+      "model_reviews": [
+        {
+          "model": "deepseek-v4-flash",
+          "naming_score": 4,
+          "naming_issues": [
+            "metric_en 中 'yoy' 不在标准词根库中，不能完全由词根组合还原，需确认是否将同比/增长率纳入词根库",
+            "root_ids 为空，无法由词根关联还原 metric_en"
+          ],
+          "caliber_score": 5,
+          "caliber_issues": [],
+          "conflict_risks": [
+            "“经营现金流同比”可能与其他指标如“经营活动现金流量净额同比增长率”产生同义异名",
+            "“经营现金流”未明确是净额还是总额，依赖口径描述消除歧义"
+          ],
+          "root_match": false,
+          "suggestions": "补充 metric_en 对应的词根关联（operating、cash、flow），并将中文名细化为“经营活动现金流量净额同比增长率”以消除歧义，同时建议在词根库中补充“同比/yoy”或“增长率”词根以支持 yoy 的标准化。",
+          "revision": {
+            "metric_cn": "经营活动现金流量净额同比增长率",
+            "metric_en": null,
+            "caliber_desc": "统计经营活动产生的现金流量净额的同比增长率，即本期经营活动产生的现金流量净额与上年同期经营活动产生的现金流量净额的差额占上年同期经营活动产生的现金流量净额的比例。统计周期默认按月度。",
+            "unit": null,
+            "frequency": null,
+            "root_ids": [
+              "R_OPER_001",
+              "R_CASH_001",
+              "R_FLOW_001"
+            ],
+            "summary": "补充词根关联并细化中文名，使口径更明确。"
+          }
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 4.0,
+        "caliber_score_avg": 5.0,
+        "consistent_issues": [],
+        "conflict_detected": true
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "conflict_review",
+        "action_items": [
+          "补充 metric_en 对应的词根关联（operating、cash、flow），并将中文名细化为“经营活动现金流量净额同比增长率”以消除歧义，同时建议在词根库中补充“同比/yoy”或“增长率”词根以支持 yoy 的标准化。"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}
