@@ -66,6 +66,20 @@ def test_process_dedup_and_generate(client):
     assert row["_status"] == "skip"
 
 
+def test_process_parallel_keeps_order(client):
+    """并发 AI 生成（ThreadPoolExecutor + pool.map）保持卡片顺序与上传一致。"""
+    rows = [(f"并发指标{i}", f"并发指标{i}的测试定义") for i in range(6)]
+    client.post("/api/import-tasks/upload", json={"csv": _csv(*rows)})
+    tid = client.get("/api/import-tasks").json()["tasks"][0]["task_id"]
+
+    resp = client.post(f"/api/import-tasks/{tid}/process")
+    assert resp.status_code == 200
+    task = resp.json()
+    pending = [g for g in task["generated"] if g["_status"] == "pending"]
+    # mock 模式：全新指标全部 new → 顺序与上传一致（pool.map 保序）
+    assert [g["metric_cn"] for g in pending] == [cn for cn, _ in rows]
+
+
 def test_review_approve_writes_draft(client):
     """评审通过 → 指标以 draft 状态写入库。"""
     csv_text = _csv(("全新导入指标", "全新定义描述"))

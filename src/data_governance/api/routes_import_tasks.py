@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -25,6 +27,9 @@ from data_governance.io.task_store import (
 
 # 打回后可编辑字段（人工评审修正范围）
 EDITABLE_FIELDS = ("metric_cn", "caliber_desc", "unit", "frequency", "domain_code")
+
+# AI 批量生成并发度（env AI_GENERATE_PARALLEL 可覆盖，默认 4 路）
+AI_GENERATE_PARALLEL = max(1, int(os.environ.get("AI_GENERATE_PARALLEL", "4")))
 
 
 def register(app, base: Path, metric_svc, ai_svc) -> None:
@@ -71,13 +76,14 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
         catalog = load_catalog(base)
         result = dedup_rows(rows, catalog)
 
-        # AI 生成新条目（复用 suggest_metric；失败则保留原始行标记 error）
+        # AI 生成新条目（并发调用 suggest_metric，pool.map 保持输入顺序；失败保留原始行标记 error）
         generated: list[dict] = []
         for row in result["dup"]:
             generated.append({**row, "_dedup": "dup", "_status": "skip"})
         for row in result["suspect"]:
             generated.append({**row, "_dedup": "suspect", "_status": "pending"})
-        for row in result["new_rows"]:
+
+        def _suggest_row(row: dict) -> dict:
             try:
                 sug = ai_svc.suggest_metric(
                     {
@@ -103,9 +109,13 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
                         merged[k] = v
                 merged["_dedup"] = "new"
                 merged["_status"] = "pending"
-                generated.append(merged)
+                return merged
             except Exception as exc:
-                generated.append({**row, "_dedup": "new", "_status": "error", "_error": str(exc)[:200]})
+                return {**row, "_dedup": "new", "_status": "error", "_error": str(exc)[:200]}
+
+        if result["new_rows"]:
+            with ThreadPoolExecutor(max_workers=AI_GENERATE_PARALLEL) as pool:
+                generated.extend(pool.map(_suggest_row, result["new_rows"]))
 
         updated = update_import_task(
             base,
