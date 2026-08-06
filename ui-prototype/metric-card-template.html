@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>指标卡包 · 多卡堆叠交互演示</title>
+<style>
+  /* ================================================================
+     指标卡包 v8 — 多卡片堆叠 + 卡包抽出交互
+     8 张指标卡层叠放入卡包，悬停/点击时从卡堆跳出放大
+     ================================================================ */
+  :root {
+    --card-bg:    oklch(23% 0.032 278);
+    --card-bg-2:  oklch(19% 0.03 275);
+    --panel:      oklch(29% 0.035 275);
+    --panel-2:    oklch(24% 0.03 272);
+    --paper:      oklch(91% 0.03 70);
+    --paper-ink:  oklch(30% 0.04 60);
+    --text:       oklch(94% 0.02 90);
+    --text-dim:   oklch(72% 0.04 90);
+    --text-faint: oklch(55% 0.03 90);
+    --blue:       oklch(70% 0.11 250);
+    --green:      oklch(72% 0.13 150);
+    --warn:       oklch(76% 0.12 80);
+    --red:        oklch(68% 0.17 25);
+    --frame-bg:   oklch(16% 0.03 275);
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono",
+                 "SFMono-Regular", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --accent:      oklch(80% 0.12 82);
+    --accent-deep: oklch(58% 0.12 70);
+    --accent-soft: oklch(88% 0.1 90);
+    --glow: 0 0 14px oklch(80% 0.12 82 / 0.35);
+  }
+
+  /* ============ 主题色（14 个一级分类） ============ */
+  /* sale 交易 · 金铜橙 */            [data-theme="sale"]    { --accent: oklch(78% 0.14 55);  --accent-deep: oklch(54% 0.13 50);  --accent-soft: oklch(90% 0.09 60);  --glow: 0 0 14px oklch(78% 0.14 55 / 0.35); }
+  /* mall 商场 · 暖红 */              [data-theme="mall"]    { --accent: oklch(72% 0.16 25);  --accent-deep: oklch(50% 0.15 22);  --accent-soft: oklch(88% 0.1 28);  --glow: 0 0 14px oklch(72% 0.16 25 / 0.35); }
+  /* base 基础 · 钢灰蓝 */            [data-theme="base"]    { --accent: oklch(68% 0.05 235); --accent-deep: oklch(48% 0.05 235); --accent-soft: oklch(85% 0.04 235); --glow: 0 0 14px oklch(68% 0.05 235 / 0.35); }
+  /* cont 合同 · 靛青 */              [data-theme="cont"]    { --accent: oklch(70% 0.13 230); --accent-deep: oklch(50% 0.13 230); --accent-soft: oklch(86% 0.08 230); --glow: 0 0 14px oklch(70% 0.13 230 / 0.35); }
+  /* cust 消费者 · 玫粉 */            [data-theme="cust"]    { --accent: oklch(78% 0.13 350); --accent-deep: oklch(54% 0.13 350); --accent-soft: oklch(89% 0.09 350); --glow: 0 0 14px oklch(78% 0.13 350 / 0.35); }
+  /* fin  财务 · 墨绿 */              [data-theme="fin"]     { --accent: oklch(68% 0.1  165); --accent-deep: oklch(46% 0.1  165); --accent-soft: oklch(85% 0.06 165); --glow: 0 0 14px oklch(68% 0.1  165 / 0.35); }
+  /* fund 资金 · 金黄 */              [data-theme="fund"]    { --accent: oklch(82% 0.14 95);  --accent-deep: oklch(56% 0.13 90);  --accent-soft: oklch(92% 0.08 95);  --glow: 0 0 14px oklch(82% 0.14 95 / 0.35); }
+  /* hr   人资 · 薰衣草 */            [data-theme="hr"]      { --accent: oklch(76% 0.09 290); --accent-deep: oklch(52% 0.09 290); --accent-soft: oklch(89% 0.06 290); --glow: 0 0 14px oklch(76% 0.09 290 / 0.35); }
+  /* mkt  营销 · 橙红 */              [data-theme="mkt"]     { --accent: oklch(70% 0.17 28);  --accent-deep: oklch(48% 0.16 25);  --accent-soft: oklch(86% 0.1  30);  --glow: 0 0 14px oklch(70% 0.17 28 / 0.35); }
+  /* prod 商品 · 橄榄绿 */            [data-theme="prod"]    { --accent: oklch(72% 0.1  130); --accent-deep: oklch(50% 0.1  130); --accent-soft: oklch(86% 0.06 130); --glow: 0 0 14px oklch(72% 0.1  130 / 0.35); }
+  /* ptnr 商户 · 青绿 */              [data-theme="ptnr"]    { --accent: oklch(76% 0.12 175); --accent-deep: oklch(52% 0.12 175); --accent-soft: oklch(88% 0.08 175); --glow: 0 0 14px oklch(76% 0.12 175 / 0.35); }
+  /* shop 店铺 · 砖红 */              [data-theme="shop"]    { --accent: oklch(64% 0.14 35);  --accent-deep: oklch(44% 0.14 32);  --accent-soft: oklch(83% 0.1  38);  --glow: 0 0 14px oklch(64% 0.14 35 / 0.35); }
+  /* traf 流量 · 天青 */              [data-theme="traf"]    { --accent: oklch(80% 0.08 220); --accent-deep: oklch(56% 0.08 220); --accent-soft: oklch(90% 0.05 220); --glow: 0 0 14px oklch(80% 0.08 220 / 0.35); }
+  /* wk   流程 · 石青蓝 */            [data-theme="wk"]      { --accent: oklch(72% 0.07 245); --accent-deep: oklch(50% 0.07 245); --accent-soft: oklch(87% 0.04 245); --glow: 0 0 14px oklch(72% 0.07 245 / 0.35); }
+
+  /* ============ 稀有度边框（4 档评分映射） ============ */
+  [data-rarity="excellent"] {
+    --frame-1: oklch(86% 0.13 82);
+    --frame-2: oklch(60% 0.14 70);
+    --frame-outer: oklch(92% 0.1 90 / 0.55);
+    --rare-ico: oklch(92% 0.1 90);
+    --corner-hi: oklch(92% 0.12 90);
+    --corner-hi-2: oklch(70% 0.12 70);
+  }
+  [data-rarity="good"] {
+    --frame-1: oklch(78% 0.11 300);
+    --frame-2: oklch(52% 0.14 305);
+    --frame-outer: oklch(80% 0.1 300 / 0.5);
+    --rare-ico: oklch(85% 0.1 305);
+    --corner-hi: oklch(82% 0.11 305);
+    --corner-hi-2: oklch(60% 0.12 305);
+  }
+  [data-rarity="pass"] {
+    --frame-1: oklch(72% 0.11 250);
+    --frame-2: oklch(48% 0.12 255);
+    --frame-outer: oklch(74% 0.1 250 / 0.45);
+    --rare-ico: oklch(80% 0.1 250);
+    --corner-hi: oklch(78% 0.11 250);
+    --corner-hi-2: oklch(56% 0.11 255);
+  }
+  [data-rarity="poor"] {
+    --frame-1: oklch(74% 0.02 90);
+    --frame-2: oklch(50% 0.02 90);
+    --frame-outer: oklch(76% 0.02 90 / 0.4);
+    --rare-ico: oklch(80% 0.02 90);
+    --corner-hi: oklch(78% 0.02 90);
+    --corner-hi-2: oklch(56% 0.02 90);
+  }
+
+  /* ---------- 指标类型（3 种）边框样式 ---------- */
+  /* atomic 原子：单层细实线，最简洁 */
+  .frame[data-type="atomic"] {
+    box-shadow:
+      0 0 0 1.5px var(--frame-1),
+      0 0 0 4px var(--frame-2),
+      0 18px 36px oklch(0% 0 0 / 0.5),
+      var(--accent-deep);
+  }
+  /* derived 衍生：双层（一实线 + 一虚线点划），由原子计算而来 */
+  .frame[data-type="derived"] {
+    box-shadow:
+      0 0 0 1.5px var(--frame-1),
+      0 0 0 4px var(--frame-2),
+      0 0 0 5.5px color-mix(in oklch, var(--accent) 30%, transparent),
+      0 22px 44px oklch(0% 0 0 / 0.55),
+      var(--accent-deep);
+  }
+  .frame[data-type="derived"]::before {
+    /* 衍生：叠加虚线点划环 */
+    box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.18);
+    outline: 1px dashed color-mix(in oklch, var(--accent) 70%, transparent);
+    outline-offset: -6px;
+  }
+  /* composite 复合：双实线 + 四角加强 + 厚重边框 */
+  .frame[data-type="composite"] {
+    box-shadow:
+      0 0 0 2px var(--frame-1),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7px color-mix(in oklch, var(--accent) 45%, transparent),
+      0 28px 60px oklch(0% 0 0 / 0.6),
+      0 0 40px color-mix(in oklch, var(--accent) 50%, transparent);
+  }
+  .frame[data-type="composite"] .corner {
+    width: 32px;
+    height: 32px;
+  }
+  .frame[data-type="composite"] .corner::before {
+    width: 32px; height: 32px;
+    border-top: 4px solid var(--corner-hi);
+    border-left: 4px solid var(--corner-hi);
+    border-top-left-radius: 14px;
+  }
+  .frame[data-type="composite"] .corner::after {
+    top: 6px; left: 6px;
+    width: 22px; height: 22px;
+    border-top: 2px solid var(--corner-hi-2);
+    border-left: 2px solid var(--corner-hi-2);
+    border-top-left-radius: 9px;
+  }
+  /* 类型徽章：卡片右上角新增 type 标签 */
+  .type-badge {
+    position: absolute;
+    top: 30px; right: 10px;
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+    background: oklch(12% 0.02 275 / 0.85);
+    pointer-events: none;
+  }
+  .type-badge.atomic { color: var(--accent-soft); border-style: solid; }
+  .type-badge.derived {
+    color: var(--accent-soft);
+    border-style: dashed;
+  }
+  .type-badge.composite {
+    color: var(--accent);
+    border-style: double;
+    border-width: 3px;
+  }
+  /* 抽出时类型徽章右上移避免重叠 */
+  .frame.active-lock .type-badge { top: 30px; }
+
+  /* ---------- 纹样图案（二级分类） ---------- */
+  [data-cat="order"] {
+    --pat:
+      repeating-linear-gradient(45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px),
+      repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px);
+  }
+  [data-cat="contract"] {
+    --pat:
+      repeating-linear-gradient(90deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(180deg, color-mix(in oklch, var(--accent) 50%, transparent) 0 2px, transparent 2px 10px);
+  }
+  [data-cat="rent"] {
+    --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 80%, transparent) 2.2px, transparent 2.6px);
+  }
+  [data-cat="member"] {
+    --pat: conic-gradient(from 45deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 25%, transparent 25% 100%);
+  }
+
+  /* 7 类二级分类（新增） */
+  [data-cat="overview"]   { --pat: repeating-linear-gradient(90deg,  color-mix(in oklch, var(--accent) 80%, transparent) 0 2px,   transparent 2px 8px); }
+  [data-cat="report"]     { --pat: repeating-linear-gradient(0deg,    color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 7px); }
+  [data-cat="detail"]     { --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 85%, transparent) 1.8px, transparent 2.2px); }
+  [data-cat="trend"]      { --pat: repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 6px); }
+  [data-cat="alert"]      { --pat: repeating-linear-gradient(135deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px,   transparent 2px 8px); }
+  [data-cat="standard"]   { --pat: conic-gradient(from 0deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 12%, transparent 12% 100%); }
+  [data-cat="dimension"]  { --pat: repeating-linear-gradient(45deg,  color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 9px); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(oklch(45% 0.09 270 / 0.18) 0 1px, transparent 1px),
+      radial-gradient(oklch(45% 0.09 270 / 0.1) 0 1px, transparent 1px),
+      oklch(14% 0.02 275);
+    background-size: 12px 12px, 19px 19px;
+    background-position: 0 0, 6px 8px;
+    padding: 2rem 1rem 4rem;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    color: var(--text);
+  }
+
+  .stage {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ============ 控制面板 ============ */
+  .panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: oklch(21% 0.03 278);
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    border-radius: 10px;
+    padding: 1.1rem 1.15rem;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 1.6rem;
+  }
+  .panel h2 {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid oklch(55% 0.04 90 / 0.35);
+  }
+  .btn-row { display: flex; flex-direction: column; gap: 0.5rem; }
+  .btn {
+    appearance: none;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    border: none;
+    border-radius: 7px;
+    padding: 0.62rem 0.9rem;
+    cursor: pointer;
+    box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 4px 12px oklch(0% 0 0 / 0.3);
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    box-shadow: none;
+  }
+  .hint {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    line-height: 1.6;
+    background: oklch(16% 0.025 278);
+    border: 1px solid oklch(50% 0.04 90 / 0.4);
+    border-radius: 6px;
+    padding: 0.5rem 0.6rem;
+  }
+  .hint b { color: var(--accent); }
+  .cardlist {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    color: var(--text-dim);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .cardlist .li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .cardlist .li:hover { background: oklch(16% 0.025 278); }
+  .cardlist .li.active { border-color: color-mix(in oklch, var(--accent) 55%, transparent); background: oklch(16% 0.025 278); }
+  .cardlist .li .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: color-mix(in oklch, var(--accent) 80%, transparent);
+  }
+  .cardlist .li .code { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+  .cardlist .li .nm { font-weight: 600; color: var(--text); margin-left: auto; }
+
+  /* ============ 卡包区域 ============ */
+  .pack-zone {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .pack-zone .pack, .pack-zone .pack-base { pointer-events: auto; }
+  /* 卡包视觉底座 */
+  .pack-base {
+    position: absolute;
+    left: 50%;
+    bottom: -34px;
+    transform: translateX(-50%);
+    width: 468px;
+    height: 74px;
+    border-radius: 26px 26px 18px 18px;
+    background: linear-gradient(180deg, oklch(30% 0.05 275), oklch(20% 0.04 275));
+    border: 1px solid oklch(55% 0.04 90 / 0.4);
+    box-shadow: inset 0 6px 14px oklch(0% 0 0 / 0.5), 0 18px 34px oklch(0% 0 0 / 0.5);
+    z-index: 0;
+  }
+  .pack-base::before {
+    content: "";
+    position: absolute;
+    left: 18px; right: 18px; top: 10px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg,
+      color-mix(in oklch, var(--accent) 55%, transparent) 0 8px,
+      transparent 8px 16px);
+    opacity: 0.5;
+  }
+
+  .pack {
+    position: relative;
+    width: 600px;               /* 加宽容纳扇形展开 */
+    height: 700px;
+    z-index: 1;
+  }
+
+  /* ============ 卡片（边框环 + 卡面） ============ */
+  .frame {
+    position: absolute;
+    left: 0; top: 0;
+    width: 384px;
+    border-radius: 16px;
+    padding: 12px;
+    background: var(--frame-bg);
+    cursor: pointer;
+    transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease), filter 0.55s var(--ease);
+    will-change: transform;
+    /* 扇形堆叠：底部对齐 + 绕左下角旋转，所有卡统一向左倾倒 */
+    transform-origin: 0% 100%;
+    transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97);
+    filter: brightness(0.92) saturate(0.85);
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 3px var(--frame-2),
+      0 0 0 5px var(--frame-1),
+      0 12px 22px oklch(0% 0 0 / 0.4);
+  }
+  /* 纹样层 */
+  .frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    pointer-events: none;
+    background-image: var(--pat, none);
+    background-size: 12px 12px;
+  }
+  /* 悬停：查阅——卡片脱离卡堆、保持原尺寸，不霸占空间让其他卡也能被 hover */
+  .frame.hovered {
+    z-index: 200;
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 240px)) rotate(0deg) scale(1.05);
+    filter: none;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7.5px var(--frame-1),
+      0 30px 60px oklch(0% 0 0 / 0.55),
+      0 0 28px color-mix(in oklch, var(--frame-1) 60%, transparent);
+  }
+  /* 有卡片被查阅时，其余卡片压暗模糊但仍可被 hover */
+  .pack.dimmed .frame:not(.hovered):not(.active-lock) {
+    filter: brightness(0.7) saturate(0.7) blur(2px);
+  }
+  /* 点击锁定：跃出到页面正中央（模态展示） */
+  /* 点击锁定：抽出——蓄力→倾斜→爆抽→稳定在视口正中（scale 1.3） */
+  .frame.active-lock {
+    z-index: 999;
+    transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) scale(var(--fly-scale, 1.3));
+    filter: none;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 8px var(--frame-1),
+      0 50px 110px oklch(0% 0 0 / 0.7),
+      0 0 50px color-mix(in oklch, var(--frame-1) 85%, transparent);
+    animation: lockpop 0.7s var(--ease);
+  }
+  @keyframes lockpop {
+    0%   { transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97); filter: brightness(0.92) saturate(0.85); }
+    15%  { transform: translate(calc(var(--stack-x, 0px) + 14px), calc(var(--stack-y, 0px) + 22px)) rotate(calc(var(--fan-deg, 0deg) + 8deg)) scale(0.94); filter: brightness(0.78) saturate(0.7); }
+    35%  { transform: translate(calc(var(--fly-x, 0px) * 0.3), calc(var(--fly-y, 0px) * 0.3 - 30px)) rotate(-12deg) scale(1.05); filter: brightness(1.05) saturate(1.05); }
+    55%  { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(6deg) scale(calc(var(--fly-scale, 1.3) + 0.12)); filter: brightness(1.3) saturate(1.15); }
+    75%  { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(-2deg) scale(calc(var(--fly-scale, 1.3) + 0.04)); filter: brightness(1.05); }
+    100% { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(0deg) scale(var(--fly-scale, 1.3)); filter: none; }
+  }
+  /* 收回动画：从中央飞回卡包原位（带反向倾斜） */
+  .frame.active-lock.retracting {
+    animation: lockback 0.55s var(--ease);
+  }
+  @keyframes lockback {
+    0%   { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(0deg) scale(var(--fly-scale, 1.3)); filter: none; }
+    30%  { transform: translate(calc(var(--fly-x, 0px) * 0.6), calc(var(--fly-y, 0px) * 0.6)) rotate(-8deg) scale(1.15); filter: brightness(1.05); }
+    65%  { transform: translate(calc(var(--fly-x, 0px) * 0.25), calc(var(--fly-y, 0px) * 0.25)) rotate(6deg) scale(1.02); filter: brightness(0.95); }
+    100% { transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97); filter: brightness(0.92) saturate(0.85); }
+  }
+  /* 抽出速度光效（仅锁定抽卡时） */
+  .frame::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -25%; right: -25%;
+    background: linear-gradient(105deg, transparent 32%,
+      color-mix(in oklch, var(--accent) 22%, transparent) 50%,
+      transparent 68%);
+    transform: translateX(-70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 6;
+  }
+  .frame.active-lock:not(.retracting)::after { animation: flash 0.6s var(--ease); }
+
+  /* 抽出展示态：遮罩 + 收回按钮（仅压暗，不做模糊，保证背景可读） */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: oklch(10% 0.02 275 / 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease);
+    z-index: 990;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .draw-actions {
+    position: fixed;
+    left: 50%;
+    bottom: 46px;
+    transform: translateX(-50%) translateY(14px);
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+    z-index: 1000;
+  }
+  .draw-actions.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  .act-btn {
+    appearance: none;
+    border: none;
+    border-radius: 999px;
+    padding: 0.65rem 1.3rem;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+  .act-btn.primary {
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 6px 18px oklch(0% 0 0 / 0.4);
+  }
+  .act-btn.ghost2 {
+    background: oklch(30% 0.04 275 / 0.9);
+    color: var(--text);
+    border: 1px solid oklch(60% 0.05 90 / 0.5);
+    box-shadow: 0 6px 18px oklch(0% 0 0 / 0.4);
+  }
+  .act-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .act-btn:active { transform: translateY(1px); }
+  .act-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @keyframes flash {
+    0%   { opacity: 0; transform: translateX(-70%); }
+    28%  { opacity: 1; }
+    70%  { opacity: 0.55; }
+    100% { opacity: 0; transform: translateX(70%); }
+  }
+  /* 传说纹样流动 */
+  .frame[data-rarity="excellent"]::before { animation: patroll 14s linear infinite; }
+  @keyframes patroll {
+    from { background-position: 0 0; }
+    to   { background-position: 48px 0; }
+  }
+
+  /* 四角饰 */
+  .corner { position: absolute; width: 26px; height: 26px; z-index: 4; pointer-events: none; }
+  .corner.tl { top: 2px; left: 2px; }
+  .corner.tr { top: 2px; right: 2px; transform: scaleX(-1); }
+  .corner.bl { bottom: 2px; left: 2px; transform: scaleY(-1); }
+  .corner.br { bottom: 2px; right: 2px; transform: scale(-1); }
+  .corner::before {
+    content: ""; position: absolute; top: 0; left: 0;
+    width: 26px; height: 26px;
+    border-top: 3px solid var(--corner-hi);
+    border-left: 3px solid var(--corner-hi);
+    border-top-left-radius: 10px;
+  }
+  .corner::after {
+    content: ""; position: absolute; top: 4px; left: 4px;
+    width: 18px; height: 18px;
+    border-top: 1.5px solid var(--corner-hi-2);
+    border-left: 1.5px solid var(--corner-hi-2);
+    border-top-left-radius: 7px;
+    opacity: 0.85;
+  }
+
+  /* ============ 卡面 ============ */
+  .card {
+    width: 360px;
+    height: 540px;
+    position: relative;
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
+      linear-gradient(160deg, var(--card-bg), var(--card-bg-2));
+    border: 1px solid color-mix(in oklch, var(--frame-2) 55%, transparent);
+    border-radius: 10px;
+    padding: 15px 15px 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text);
+  }
+
+  /* 稀有度角标 */
+  .rare-badge {
+    position: absolute;
+    top: 9px; right: 9px;
+    z-index: 3;
+    display: flex; align-items: center; gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px; font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--rare-ico);
+    background: oklch(12% 0.02 275 / 0.85);
+    border: 1px solid var(--frame-2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    box-shadow: 0 0 8px color-mix(in oklch, var(--frame-2) 60%, transparent);
+  }
+  .rare-badge .star { color: var(--corner-hi); font-size: 10px; line-height: 1; }
+
+  /* 背景编号水印 */
+  .card::after {
+    content: attr(data-id);
+    position: absolute;
+    right: -14px; bottom: 26px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.24em;
+    writing-mode: vertical-rl;
+    color: color-mix(in oklch, var(--accent) 7%, transparent);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .topline {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim);
+    padding-bottom: 6px;
+    border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
+    padding-right: 52px;
+  }
+  .faction { font-weight: 700; color: var(--accent-soft); }
+  .faction .sep { color: var(--text-faint); margin: 0 3px; font-weight: 400; }
+  .quality { display: flex; align-items: center; gap: 5px; color: var(--accent-soft); font-weight: 700; }
+  .quality .gem {
+    width: 8px; height: 8px; transform: rotate(45deg);
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent-deep));
+    box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 80%, transparent);
+  }
+
+  .icon-zone {
+    height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; margin: 7px 0 3px;
+  }
+  .icon-halo {
+    position: absolute; width: 56px; height: 56px; border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in oklch, var(--accent) 38%, transparent), transparent 70%);
+    filter: blur(2px);
+  }
+  .icon-ring {
+    position: absolute; width: 46px; height: 46px; border-radius: 50%;
+    border: 2px solid color-mix(in oklch, var(--accent) 60%, transparent);
+    box-shadow: inset 0 0 12px oklch(0% 0 0 / 0.6), 0 0 10px color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--accent) 26%, transparent), oklch(26% 0.05 60 / 0.9));
+  }
+  .icon-ring svg { width: 24px; height: 24px; stroke: var(--accent-soft); }
+
+  .title-zone { text-align: center; }
+  h1 {
+    font-size: 22px; font-weight: 800; letter-spacing: 0.04em;
+    color: var(--accent-soft);
+    text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5);
+    line-height: 1.15;
+  }
+  .sub-id {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 10.5px; letter-spacing: 0.3em;
+    color: var(--accent); margin-top: 2px;
+  }
+  .badge-row { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
+  .badge {
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 2px 6px;
+    border: 1px solid currentColor; background: oklch(0% 0 0 / 0.25);
+  }
+  .badge.biz { color: var(--accent-soft); }
+  .badge.tech { color: var(--blue); }
+  .badge.dm { color: oklch(75% 0.1 140); }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 5px; margin-top: 10px;
+  }
+  .stat {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent);
+    border-radius: 5px; padding: 5px 3px 4px; text-align: center;
+  }
+  .stat .lbl {
+    font-size: 7.5px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .stat .val {
+    font-size: 10.5px; font-weight: 700; color: var(--accent-soft);
+    margin-top: 1px; font-variant-numeric: tabular-nums; line-height: 1.2;
+  }
+  .stat .val.mono { font-family: var(--font-mono); font-size: 8px; word-break: break-all; }
+
+  .affix { margin-top: 8px; }
+  .affix-head {
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .affix-head::before {
+    content: ""; width: 16px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .affix-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+  .tag {
+    font-size: 9px; font-weight: 700; color: var(--text);
+    background: oklch(0% 0 0 / 0.3);
+    border: 1px solid oklch(70% 0.05 90 / 0.4);
+    border-radius: 3px; padding: 1px 6px;
+  }
+
+  .desc-box {
+    margin-top: 8px;
+    background:
+      repeating-linear-gradient(0deg, oklch(91% 0.03 70 / 0.05) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    border: 1px solid color-mix(in oklch, var(--accent) 55%, transparent);
+    border-radius: 5px; padding: 6px 9px;
+    color: var(--paper-ink); font-size: 10.5px; line-height: 1.5;
+    box-shadow: inset 0 0 10px oklch(0% 0 0 / 0.18);
+    position: relative;
+  }
+  .desc-box::before {
+    content: "◆ 指标描述 ◆";
+    position: absolute; top: -7px; left: 10px;
+    font-size: 8px; font-weight: 800; letter-spacing: 0.2em;
+    color: var(--paper-ink);
+    background: linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    padding: 0 5px;
+  }
+
+  .skill-box {
+    margin-top: 9px;
+    background: oklch(15% 0.02 275);
+    border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 5px; padding: 6px 9px;
+  }
+  .skill-box .sl {
+    font-size: 7.5px; font-weight: 800; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .skill-box .sd { font-size: 9.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.45; }
+  .skill-box .sc {
+    font-family: var(--font-mono); font-size: 9.5px; line-height: 1.55;
+    color: var(--text); margin-top: 2px;
+    background: oklch(10% 0.02 275); border: 1px solid oklch(35% 0.03 275);
+    border-radius: 3px; padding: 4px 6px;
+    overflow-x: auto; white-space: nowrap;
+    font-variant-ligatures: none;
+  }
+  .sc .kw { color: var(--accent-soft); }
+  .sc .fn { color: oklch(70% 0.11 250); }
+  .sc .str { color: oklch(72% 0.13 150); }
+
+  .bars { margin-top: 9px; display: flex; flex-direction: column; gap: 4px; }
+  .bar-row { display: flex; align-items: center; gap: 7px; }
+  .bar-row .bname {
+    width: 34px; font-size: 8.5px; font-weight: 800;
+    letter-spacing: 0.12em; color: var(--text-dim);
+  }
+  .bar-track {
+    flex: 1; height: 9px; border-radius: 2px;
+    background: oklch(10% 0.02 275); border: 1px solid oklch(40% 0.03 275);
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 1px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+  .bar-fill .tick { font-size: 7px; font-weight: 800; color: oklch(12% 0.02 90); letter-spacing: 0.06em; }
+  .bar-green { width: 100%; background: linear-gradient(90deg, oklch(45% 0.12 150), var(--green)); }
+  .bar-yellow { width: 82%; background: linear-gradient(90deg, oklch(50% 0.12 80), var(--warn)); }
+  .bar-red { width: 60%; background: linear-gradient(90deg, oklch(48% 0.16 25), var(--red)); }
+
+  .meta {
+    margin-top: auto; padding-top: 8px;
+    border-top: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 9px; color: var(--text-faint);
+  }
+  .meta .row { display: flex; gap: 7px; align-items: baseline; }
+  .meta .k {
+    font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); flex-shrink: 0; min-width: 3.4em;
+  }
+  .meta .v {
+    font-family: var(--font-mono); color: var(--text);
+    font-size: 9px; line-height: 1.45; word-break: break-all;
+  }
+  .meta .v.sans { font-family: var(--font-sans); }
+
+  .foot {
+    margin-top: 7px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; letter-spacing: 0.08em;
+  }
+  .foot .lv { display: flex; align-items: center; gap: 6px; color: var(--accent-soft); font-weight: 800; }
+  .foot .lv .lvnum {
+    font-family: var(--font-mono);
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    padding: 2px 7px; border-radius: 3px; font-weight: 800; font-size: 9.5px;
+    box-shadow: inset 0 -1px 0 oklch(0% 0 0 / 0.35);
+  }
+  .foot .ver { color: var(--text-faint); text-align: right; line-height: 1.4; }
+
+  /* ============ 白板模式（仅名称窄条） ============ */
+  .pack.board-mode .frame {
+    width: 300px;                 /* 窄条更细 */
+    border-radius: 12px;
+    padding: 6px;
+  }
+  .pack.board-mode .frame::before { border-radius: 10px; background-size: 10px 10px; }
+  .pack.board-mode .card {
+    width: 288px;
+    height: 64px;
+    border-radius: 8px;
+    padding: 0 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+  }
+  /* 隐藏除名称外的所有内容 */
+  .pack.board-mode .card > *:not(.title-zone):not(.rare-badge):not(.card-accent):not(.type-badge) { display: none; }
+  .pack.board-mode .type-badge {
+    position: static;
+    font-size: 8px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+    border-width: 1.5px;
+  }
+  .pack.board-mode .frame.active-lock .type-badge { position: absolute; top: 30px; right: 10px; font-size: 9px; padding: 2px 7px; border-width: 3px; }
+  /* 左侧主题色竖条 */
+  .card-accent {
+    display: none;
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+  }
+  .pack.board-mode .card-accent { display: block; }
+  .pack.board-mode .title-zone {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+  .pack.board-mode h1 {
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    text-shadow: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pack.board-mode .sub-id {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .pack.board-mode .rare-badge {
+    position: static;
+    font-size: 8px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+  }
+  /* 白板模式堆叠更收敛：窄条角度小、错位小 */
+  .pack.board-mode .frame {
+    transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease), filter 0.45s var(--ease);
+  }
+  .pack.board-mode .frame.hovered {
+    z-index: 200;
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 160px)) rotate(0deg) scale(1.06);
+  }
+  /* 白板模式下抽出：恢复完整卡片 */
+  .pack.board-mode .frame.active-lock .card {
+    height: 540px;
+    width: 360px;
+    flex-direction: column;
+    padding: 15px 15px 12px;
+    align-items: stretch;
+    gap: 0;
+  }
+  .pack.board-mode .frame.active-lock .card > * { display: flex; }
+  .pack.board-mode .frame.active-lock .card-accent { display: none; }
+  .pack.board-mode .frame.active-lock .title-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    text-align: center;
+  }
+  .pack.board-mode .frame.active-lock h1 { font-size: 22px; text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5); }
+  .pack.board-mode .frame.active-lock .sub-id { font-size: 10.5px; margin-top: 2px; letter-spacing: 0.3em; }
+  .pack.board-mode .frame.active-lock .rare-badge { position: absolute; top: 9px; right: 9px; font-size: 9px; padding: 2px 7px; }
+
+  /* ============ 网格视图（全部取出：卡库网格排布） ============ */
+  .pack.grid-view {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    width: 960px;
+    min-height: 420px;
+    align-content: start;
+    justify-items: center;
+  }
+  .pack.grid-view .frame {
+    position: static;
+    width: 222px;
+    padding: 8px;
+    transform: none !important;
+    border-radius: 14px;
+    z-index: auto;
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 3px var(--frame-2),
+      0 0 0 5px var(--frame-1),
+      0 12px 24px oklch(0% 0 0 / 0.45);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    filter: none;
+  }
+  .pack.grid-view .frame::before { background-size: 8px 8px; border-radius: 10px; }
+  .pack.grid-view .frame.hovered {
+    transform: translateY(-8px) scale(1.04) !important;
+    z-index: 5;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7px var(--frame-1),
+      0 18px 36px oklch(0% 0 0 / 0.55),
+      0 0 24px color-mix(in oklch, var(--frame-1) 60%, transparent);
+  }
+  .pack.grid-view .card {
+    width: 206px;
+    height: 148px;
+    border-radius: 8px;
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+  }
+  .pack.grid-view .card > *:not(.title-zone):not(.rare-badge):not(.type-badge):not(.card-accent) { display: none; }
+  .pack.grid-view .card-accent { display: block; width: 5px; border-radius: 3px; }
+  .pack.grid-view .title-zone {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+    padding-left: 6px;
+  }
+  .pack.grid-view h1 {
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    text-shadow: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .pack.grid-view .sub-id { font-size: 10px; letter-spacing: 0.18em; margin: 0; }
+  .pack.grid-view .rare-badge { position: static; font-size: 8.5px; padding: 1px 6px; }
+  .pack.grid-view .type-badge { position: static; font-size: 8.5px; padding: 1px 6px; }
+  .pack.grid-view .frame.active-lock { animation: none !important; }
+  /* 网格模式下卡包区居中展示 */
+  .pack-zone.grid-active {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    width: auto;
+    background: oklch(16% 0.02 275 / 0.92);
+    border: 1px solid oklch(55% 0.04 90 / 0.4);
+    border-radius: 20px;
+    padding: 34px 30px 40px;
+    box-shadow: 0 30px 90px oklch(0% 0 0 / 0.6);
+    backdrop-filter: blur(4px);
+  }
+  .pack-zone.grid-active .pack-base { display: none; }
+  .pack-zone.grid-active .pack { width: 960px; height: auto; }
+
+  /* 响应式 */
+  @media (max-width: 780px) {
+    .panel { position: static; width: 100%; max-width: 384px; }
+    .stage { flex-direction: column-reverse; align-items: center; }
+    .pack-base { width: 440px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .frame { transition: none !important; }
+    .frame::before, .frame::after { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ============ 控制面板 ============ -->
+  <aside class="panel" aria-label="卡包控制">
+    <h2>🎒 指标卡包</h2>
+
+    <div class="btn-row">
+      <button class="btn" id="btn-all" type="button">📤 全部取出</button>
+      <button class="btn ghost" id="btn-back" type="button">📥 全部收回</button>
+      <button class="btn ghost" id="btn-mode" type="button">📄 白板模式</button>
+    </div>
+
+    <div class="hint">
+      悬停卡片<b>在卡包处查阅</b>（抬起放大、其余压暗）；<b>点击</b>才会真正抽出到页面中央展示；再点卡片、遮罩或按钮<b>收回卡包</b>。
+    </div>
+
+    <div style="font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-faint);padding-top:.2rem;">卡包清单 · 8 张</div>
+    <div class="cardlist" id="cardlist"></div>
+  </aside>
+
+  <!-- ============ 卡包区域 ============ -->
+  <div class="pack-zone">
+    <div class="pack-base" aria-hidden="true"></div>
+    <div class="pack" id="pack" aria-label="指标卡包，悬停查阅，点击抽出"></div>
+  </div>
+
+</div>
+
+<!-- 抽出展示态：遮罩 + 操作条 -->
+<div class="overlay" id="overlay"></div>
+<div class="draw-actions" id="draw-actions">
+  <button class="act-btn primary" id="btn-back-single" type="button">📥 收回卡包</button>
+</div>
+
+<script>
+/* ============ 14 主题 x 3 类型 x 4 等级 · 14 张代表卡 ============ */
+  const METRICS = [
+    { code: 'M_SALE_001', name: '月度销售额',     theme: 'sale',  cat: 'overview',   type: 'atomic',    score: 92, unit: '元',     cycle: '月度', precision: '两位小数', table: 'dwd_sale_order_df',       dims: ['时间', '机构', '渠道', '产品'], desc: '自然月内已完成订单的销售总金额，不含退款。',                formula: "SUM(order_amount) WHERE order_status='completed' AND stat_month=当前自然月", source: '订单系统、主题报表系统',   tech: "SUM(sale_amt) WHERE order_status='completed' AND stat_month=当前自然月", owner: '交易分析部',     ver: 'v1.0.0', verNote: '2026-08-03 · 口径定稿 v2' },
+    { code: 'M_MALL_001', name: '商场客流密度',   theme: 'mall',  cat: 'trend',      type: 'derived',   score: 82, unit: '人/㎡',  cycle: '月度', precision: '两位小数', table: 'dwd_mall_visitor_df',     dims: ['时间', '楼层', '区域'],         desc: '单位营业面积上的平均客流强度，衡量商场热度。',              formula: '月客流总量 / 营业面积',                                       source: '客流系统、POS 系统',       tech: "SUM(visitor_cnt) / SUM(area) WHERE stat_month=当前自然月",   owner: '商场运营部',     ver: 'v1.1.0', verNote: '2026-07-20 · 增加楼层维度' },
+    { code: 'M_BASE_001', name: '指标完整率',     theme: 'base',  cat: 'standard',   type: 'derived',   score: 76, unit: '%',      cycle: '月度', precision: '两位小数', table: 'dwd_metric_status_df',    dims: ['时间', '主题域', '指标'],       desc: '已维护且口径明确的指标占全部应有指标的比例。',              formula: '已治理指标数 / 应有指标数 * 100',                              source: '指标管理平台',           tech: 'COUNT(governed) / COUNT(should_be) * 100',                    owner: '数据治理委员会', ver: 'v1.2.0', verNote: '2026-07-10 · 新增主题域统计' },
+    { code: 'M_CONT_001', name: '合同续签率',     theme: 'cont',  cat: 'report',     type: 'composite', score: 88, unit: '%',      cycle: '季度', precision: '两位小数', table: 'dwd_contract_df',        dims: ['时间', '商户', '合同类型'],     desc: '到期合同中完成续签的比例，反映商户稳定度。',                formula: '续签合同数 / 到期合同数 * 100',                                source: '合同管理系统、招商台账',  tech: 'COUNT(CASE WHEN renewed=1 THEN id END) / COUNT(id) * 100',    owner: '招商运营部',     ver: 'v1.0.0', verNote: '2026-08-01 · 初版发布' },
+    { code: 'M_CUST_001', name: '客户满意度',     theme: 'cust',  cat: 'overview',   type: 'composite', score: 65, unit: '分',     cycle: '月度', precision: '两位小数', table: 'dwd_satisfaction_df',    dims: ['时间', '业态', '触点'],         desc: '多触点满意度调查加权得分，反映客户服务水平。',            formula: '求和(评分x权重) / 求和(权重)',                                  source: '调研系统、客服系统',       tech: 'SUM(score * weight) / SUM(weight) WHERE stat_month=当前自然月', owner: '客户体验部',     ver: 'v1.0.0', verNote: '2026-08-05 · 三触点合成' },
+    { code: 'M_FIN_001',  name: '收入完成率',     theme: 'fin',   cat: 'standard',   type: 'atomic',    score: 72, unit: '%',      cycle: '月度', precision: '两位小数', table: 'dwd_revenue_df',         dims: ['时间', '业态', '收入项'],       desc: '实际收入占预算收入的比例，衡量财务达成。',                  formula: '实际收入 / 预算收入 * 100',                                    source: '财务系统、ERP',           tech: 'SUM(actual_amt) / SUM(budget_amt) * 100 WHERE stat_month=当前自然月', owner: '财务部',         ver: 'v0.9.0', verNote: '2026-06-30 · 口径待评审' },
+    { code: 'M_FUND_001', name: '资金周转率',     theme: 'fund',  cat: 'trend',      type: 'atomic',    score: 68, unit: '次',     cycle: '季度', precision: '两位小数', table: 'dwd_capital_flow_df',    dims: ['时间', '账户'],                 desc: '季度内资金流转次数，反映资金使用效率。',                    formula: '流入总额 / 平均占用资金',                                     source: '资金管理系统',           tech: 'SUM(inflow_amt) / AVG(balance) WHERE stat_quarter=当前季度', owner: '资金管理部',     ver: 'v1.0.0', verNote: '2026-05-18 · 初版发布' },
+    { code: 'M_HR_001',   name: '人均产出',       theme: 'hr',    cat: 'overview',   type: 'composite', score: 58, unit: '元/人',  cycle: '月度', precision: '两位小数', table: 'dwd_hr_output_df',       dims: ['时间', '部门', '岗位'],         desc: '单位人力产生的综合产出，衡量组织效能。',                    formula: '综合产出 / 有效人力数',                                         source: 'HR 系统、财务系统',       tech: '(SUM(revenue)+SUM(saved_cost)*0.5) / AVG(headcount) WHERE stat_month=当前自然月', owner: '人力资源部',     ver: 'v0.8.0', verNote: '2026-06-10 · 待优化权重' },
+    { code: 'M_MKT_001',  name: '营销 ROI',       theme: 'mkt',   cat: 'report',     type: 'derived',   score: 82, unit: '倍',     cycle: '月度', precision: '两位小数', table: 'dwd_marketing_roi_df',  dims: ['时间', '渠道', '活动'],         desc: '营销活动产生的净收益与投入成本之比。',                      formula: '(营销收益 - 营销成本) / 营销成本',                              source: '营销系统、财务系统',       tech: '(SUM(revenue_attr) - SUM(cost)) / SUM(cost) WHERE stat_month=当前自然月', owner: '市场营销部',     ver: 'v1.1.0', verNote: '2026-07-15 · 归因模型升级' },
+    { code: 'M_PROD_001', name: '商品动销率',     theme: 'prod',  cat: 'alert',      type: 'atomic',    score: 86, unit: '%',      cycle: '月度', precision: '两位小数', table: 'dwd_product_sales_df',  dims: ['时间', '品类', '商品'],         desc: '月度内有销售记录的商品占比，反映商品活力。',                formula: '动销商品数 / 在售商品数 * 100',                                source: '商品系统、订单系统',       tech: 'COUNT(DISTINCT CASE WHEN sale_qty>0 THEN sku_id END) / COUNT(DISTINCT sku_id) * 100', owner: '商品管理部',     ver: 'v1.0.0', verNote: '2026-08-02 · 初版发布' },
+    { code: 'M_PTNR_001', name: '商户贡献度',     theme: 'ptnr',  cat: 'standard',   type: 'atomic',    score: 90, unit: '分',     cycle: '月度', precision: '两位小数', table: 'dwd_partner_score_df',  dims: ['时间', '商户', '业态'],         desc: '商户综合贡献评分，影响续约谈判与资源倾斜。',                formula: '求和(各维度标准化得分x权重)',                                   source: '招商系统、租赁系统、POS', tech: 'SUM(score * weight) / SUM(weight) WHERE stat_month=当前自然月', owner: '招商运营部',     ver: 'v1.2.0', verNote: '2026-08-10 · 增加合规分' },
+    { code: 'M_SHOP_001', name: '店铺坪效',       theme: 'shop',  cat: 'detail',     type: 'composite', score: 65, unit: '元/㎡',  cycle: '月度', precision: '两位小数', table: 'dwd_shop_perf_df',      dims: ['时间', '店铺', '业态'],         desc: '单店单位面积的销售产出，反映店铺运营效率。',                formula: '店铺销售额 / 营业面积',                                         source: 'POS 系统、商铺档案',     tech: 'SUM(sale_amt) / SUM(area) WHERE shop_id=X AND stat_month=当前自然月', owner: '运营管理部',     ver: 'v0.9.0', verNote: '2026-06-30 · 口径待评审' },
+    { code: 'M_TRAF_001', name: '流量转化率',     theme: 'traf',  cat: 'trend',      type: 'derived',   score: 78, unit: '%',      cycle: '周度', precision: '两位小数', table: 'dwd_traffic_funnel_df', dims: ['时间', '来源', '页面'],         desc: '网站/小程序访客中完成目标行为的比例。',                      formula: '转化数 / 访客数 * 100',                                          source: '埋点系统、订单系统',       tech: 'COUNT(DISTINCT converted_id) / COUNT(DISTINCT visitor_id) * 100 WHERE stat_week=当前自然周', owner: '数字化运营部',   ver: 'v1.0.0', verNote: '2026-08-01 · 初版发布' },
+    { code: 'M_WK_001',   name: '流程效率',       theme: 'wk',    cat: 'standard',   type: 'atomic',    score: 70, unit: '%',      cycle: '月度', precision: '两位小数', table: 'dwd_process_eff_df',    dims: ['时间', '流程', '环节'],         desc: '业务流程在标准工期内完成的比率。',                          formula: '按期完成数 / 总发起数 * 100',                                    source: 'BPM 系统',                 tech: 'COUNT(CASE WHEN completed_on_time=1 THEN id END) / COUNT(id) * 100 WHERE stat_month=当前自然月', owner: '流程治理委员会', ver: 'v1.0.0', verNote: '2026-08-05 · 全流程上线' }
+  ];
+
+  /* ============ 二级分类图标库（7 类） ============ */
+  const ICONS = {
+    overview:   '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity="0.9"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3" opacity="0.85"/><circle cx="12" cy="12" r="2.5"/></svg>',
+    report:     '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5" opacity="0.9"/><path d="M7 8h10M7 12h10M7 16h6" opacity="0.85"/></svg>',
+    detail:     '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6" opacity="0.9"/><path d="M16 16l4 4" opacity="0.85"/><path d="M9 11h4M11 9v4" opacity="0.6"/></svg>',
+    trend:      '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l5-5 4 4 6-8" opacity="0.9"/><path d="M14 9h4v4" opacity="0.85"/><path d="M3 21h18" opacity="0.5"/></svg>',
+    alert:      '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 17H2z" opacity="0.9"/><path d="M12 10v5M12 17v0.5" opacity="0.85"/></svg>',
+    standard:   '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5 5.6.7-4 4 1 5.5L12 16l-5 2.2 1-5.5-4-4 5.6-.7z" opacity="0.9"/></svg>',
+    dimension:  '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1.5" opacity="0.9"/><path d="M3 9h18M9 3v18" opacity="0.85"/></svg>'
+  };
+  const CAT_NAMES = {
+    overview:  '概览',
+    report:    '报表',
+    detail:    '明细',
+    trend:     '趋势',
+    alert:     '预警',
+    standard:  '口径',
+    dimension: '维度'
+  };
+  const TYPE_NAMES = { atomic: '原子', derived: '衍生', composite: '复合' };
+
+  /* ============ 14 主题映射 ============ */
+  const THEME_NAMES = {
+    sale: '交易',  mall: '商场',   base: '基础',   cont: '合同',
+    cust: '消费者', fin: '财务',   fund: '资金',   hr: '人资',
+    mkt: '营销',   prod: '商品',   ptnr: '商户',   shop: '店铺',
+    traf: '流量',  wk: '流程'
+  };
+
+  /* ============ 4 档评分等级 ============ */
+  const RARITIES = [
+    { min: 90, key: 'excellent', name: '优秀' },
+    { min: 75, key: 'good',      name: '良好' },
+    { min: 60, key: 'pass',      name: '合格' },
+    { min: 0,  key: 'poor',      name: '待改进' }
+  ];
+  function rarityOf(score) { return RARITIES.find(r => score >= r.min); }
+
+  /* ============ 渲染卡片 ============ */
+  const pack = document.getElementById('pack');
+  const cardlist = document.getElementById('cardlist');
+  let frames = [];
+
+  METRICS.forEach((m, i) => {
+    const r = rarityOf(m.score);
+    const n = METRICS.length;
+    // 扇形：上层卡压下层卡左边。底部对齐 + 绕左下角旋转，
+    // 所有卡统一向左倾倒，上层卡（i大，在最左）倾得最多
+    const baseAngle = -18 * i / (n - 1);            // i=0: 0°(直立), i=7: -18°(最倾)
+    const jitterA = ((i * 37) % 9) - 4;              // -4..+4 deg 错乱
+    const jitterX = ((i * 53) % 13) - 6;             // -6..+6 px
+    const jitterY = ((i * 29) % 7) - 3;              // -3..+3 px
+    const fanDeg = baseAngle + jitterA;
+    const stackX = (n - 1 - i) * 34 + jitterX;       // i=0 最右(238px) → i=7 最左(0)
+    const stackY = jitterY;                          // 底部对齐，仅随机微抖
+
+    const els = document.createElement('div');
+    els.className = 'frame';
+    els.dataset.theme = m.theme;
+    els.dataset.rarity = r.key;
+    els.dataset.cat = m.cat;
+    els.dataset.type = m.type;
+    els.dataset.idx = i;
+    els.style.setProperty('--stack-x', stackX + 'px');
+    els.style.setProperty('--stack-y', stackY + 'px');
+    els.style.setProperty('--fan-deg', fanDeg + 'deg');
+    els.style.zIndex = i + 1;
+
+    els.innerHTML = `
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <article class="card" data-id="${m.code}">
+        <span class="card-accent"></span>
+        <span class="type-badge ${m.type}">${TYPE_NAMES[m.type]}</span>
+        <span class="rare-badge"><span class="star">★</span>${r.name}</span>
+        <div class="topline">
+          <span class="faction">${THEME_NAMES[m.theme]}<span class="sep">/</span>${CAT_NAMES[m.cat]}</span>
+          <span class="quality"><span class="gem"></span>周期总量</span>
+        </div>
+        <div class="icon-zone">
+          <span class="icon-halo"></span>
+          <span class="icon-ring" aria-hidden="true">${ICONS[m.cat]}</span>
+        </div>
+        <div class="title-zone">
+          <h1>${m.name}</h1>
+          <div class="sub-id">${m.code}</div>
+          <div class="badge-row">
+            <span class="badge biz">业务</span>
+            <span class="badge tech">技术</span>
+            <span class="badge dm">数据管理</span>
+          </div>
+        </div>
+        <section class="stats">
+          <div class="stat"><div class="lbl">计量</div><div class="val">${m.unit}</div></div>
+          <div class="stat"><div class="lbl">周期</div><div class="val">${m.cycle}</div></div>
+          <div class="stat"><div class="lbl">精度</div><div class="val">${m.precision}</div></div>
+          <div class="stat"><div class="lbl">物理表</div><div class="val mono">${m.table}</div></div>
+        </section>
+        <section class="affix">
+          <div class="affix-head">统计维度</div>
+          <div class="affix-tags">${m.dims.map(d => `<span class="tag">${d}</span>`).join('')}</div>
+        </section>
+        <section class="desc-box">${m.desc}</section>
+        <section class="skill-box">
+          <div class="sl">✦ 计算公式</div>
+          <div class="sd">${m.formula}</div>
+          <div class="sc">${m.tech}</div>
+        </section>
+        <section class="bars">
+          <div class="bar-row"><span class="bname">绿灯</span><div class="bar-track"><div class="bar-fill bar-green"><span class="tick">≥ 目标</span></div></div></div>
+          <div class="bar-row"><span class="bname">黄灯</span><div class="bar-track"><div class="bar-fill bar-yellow"><span class="tick">-10%</span></div></div></div>
+          <div class="bar-row"><span class="bname">红灯</span><div class="bar-track"><div class="bar-fill bar-red"><span class="tick">-20%</span></div></div></div>
+        </section>
+        <section class="meta">
+          <div class="row"><span class="k">来源</span><span class="v sans">${m.source}</span></div>
+          <div class="row"><span class="k">负责</span><span class="v sans">${m.owner}</span></div>
+        </section>
+        <footer class="foot">
+          <span class="lv"><span class="lvnum">${m.ver}</span>强化等级</span>
+          <span class="ver">${m.verNote}</span>
+        </footer>
+      </article>
+    `;
+    pack.appendChild(els);
+    frames.push(els);
+
+    // 清单条目
+    const li = document.createElement('div');
+    li.className = 'li';
+    li.innerHTML = `<span class="dot"></span><span class="code">${m.code}</span><span class="nm">${m.name}</span>`;
+    li.addEventListener('click', () => draw(els));
+    cardlist.appendChild(li);
+  });
+
+  /* ============ 交互状态机：查阅 / 抽出 / 收回 ============ */
+  let activeIdx = -1;      // 当前抽出的卡（-1 = 无）
+  let hoverIdx = -1;       // 当前查阅的卡（-1 = 无）
+  let drawing = false;     // 动画进行中锁
+
+  const overlay = document.getElementById('overlay');
+  const drawActions = document.getElementById('draw-actions');
+  const btnBackSingle = document.getElementById('btn-back-single');
+  const packEl = document.getElementById('pack');
+
+  /* 计算卡片飞到视口正中央的位移（相对当前位置） */
+  function centerOffset(el, dy = 0, scale = 1.3) {
+    const r = el.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    const cx = vw / 2 - (r.left + r.width / 2);
+    const cy = vh / 2 - (r.top + r.height / 2) + dy;
+    el.style.setProperty('--fly-x', cx + 'px');
+    el.style.setProperty('--fly-y', cy + 'px');
+    el.style.setProperty('--fly-scale', scale);
+  }
+  function clearFly(el) {
+    el.style.removeProperty('--fly-x');
+    el.style.removeProperty('--fly-y');
+    el.style.removeProperty('--fly-scale');
+  }
+
+  /* ---- 查阅（悬停，卡包处抬起，不飞走） ---- */
+  function peek(el) {
+    const idx = +el.dataset.idx;
+    if (activeIdx >= 0) return;                    // 展示态下不查阅
+    if (hoverIdx === idx) return;
+    frames.forEach(f => f.classList.remove('hovered'));
+    hoverIdx = idx;
+    el.classList.add('hovered');
+    packEl.classList.add('dimmed');                // 其余卡压暗
+    syncList();
+  }
+  function peekOut() {
+    frames.forEach(f => f.classList.remove('hovered'));
+    packEl.classList.remove('dimmed');
+    hoverIdx = -1;
+    syncList();
+  }
+
+  /* ---- 抽出（点击，飞到正中央，模态展示） ---- */
+  function draw(el) {
+    if (drawing) return;
+    const idx = +el.dataset.idx;
+    if (activeIdx === idx) return;                 // 已抽出
+    drawing = true;
+    peekOut();
+    frames.forEach(f => { f.classList.remove('active-lock', 'retracting'); clearFly(f); });
+    centerOffset(el, -60, 1.3);
+    el.classList.add('active-lock');
+    activeIdx = idx;
+    // 模态：遮罩 + 操作条
+    overlay.classList.add('show');
+    drawActions.classList.add('show');
+    setTimeout(() => { drawing = false; }, 580);
+    syncList();
+  }
+
+  /* ---- 收回（飞回卡包原位） ---- */
+  function putBack() {
+    if (drawing || activeIdx < 0) return;
+    drawing = true;
+    const el = frames[activeIdx];
+    el.classList.add('retracting');
+    // 收回后清除锁定态
+    setTimeout(() => {
+      el.classList.remove('active-lock', 'retracting');
+      clearFly(el);
+      activeIdx = -1;
+      overlay.classList.remove('show');
+      drawActions.classList.remove('show');
+      packEl.classList.remove('dimmed');
+      drawing = false;
+      syncList();
+    }, 520);
+  }
+
+  function syncList() {
+    [...cardlist.children].forEach((li, i) => {
+      li.classList.toggle('active', i === activeIdx || i === hoverIdx);
+    });
+  }
+
+  /* 事件绑定 */
+  frames.forEach(f => {
+    f.addEventListener('mouseenter', () => {
+      if (!gridMode) peek(f);                      // 网格视图下 hover 用 CSS 高亮
+    });
+    f.addEventListener('mouseleave', () => {
+      if (!gridMode) peekOut();
+    });
+    f.addEventListener('click', () => {
+      if (gridMode) {                              // 网格视图下点击 → 退出网格并抽出
+        setGrid(false);
+        requestAnimationFrame(() => draw(f));
+        return;
+      }
+      if (activeIdx === +f.dataset.idx) { putBack(); return; }
+      draw(f);
+    });
+  });
+
+  overlay.addEventListener('click', putBack);
+  btnBackSingle.addEventListener('click', putBack);
+
+  window.addEventListener('resize', () => {
+    if (activeIdx >= 0) centerOffset(frames[activeIdx], -60, 1.3);
+  });
+
+  /* 全部取出（网格视图）/ 全部收回 */
+  const btnAll = document.getElementById('btn-all');
+  const btnBack = document.getElementById('btn-back');
+  const packZone = document.querySelector('.pack-zone');
+  let gridMode = false;
+
+  function setGrid(on) {
+    gridMode = on;
+    packEl.classList.toggle('grid-view', on);
+    packZone.classList.toggle('grid-active', on);
+    btnAll.textContent = on ? '📊 网格视图' : '📤 全部取出';
+    if (!on) {
+      frames.forEach(f => { f.classList.remove('active-lock', 'retracting', 'hovered'); clearFly(f); });
+      packEl.classList.remove('dimmed');
+      overlay.classList.remove('show');
+      drawActions.classList.remove('show');
+    }
+  }
+
+  btnAll.addEventListener('click', () => {
+    if (drawing) return;
+    peekOut();
+    if (gridMode) { setGrid(false); return; }
+    setGrid(true);
+    activeIdx = -1;
+    syncList();
+  });
+  btnBack.addEventListener('click', () => {
+    setGrid(false);
+    putBack();
+  });
+
+  /* 白板模式：仅名称窄条 */
+  const btnMode = document.getElementById('btn-mode');
+  let boardMode = false;
+  btnMode.addEventListener('click', () => {
+    if (gridMode) setGrid(false);                  // 先退出网格视图
+    boardMode = !boardMode;
+    packEl.classList.toggle('board-mode', boardMode);
+    btnMode.textContent = boardMode ? '🎴 完整模式' : '📄 白板模式';
+    // 切换时收回所有已抽出的卡，回到白板窄条堆叠
+    putBack();
+  });
+
+  /* 初始：布局完成后第一张卡自动抽出展示一次 */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => draw(frames[0]));
+  });
+</script>
+
+</body>
+</html>
