@@ -968,7 +968,9 @@ function applyPagination(pageId) {
   });
 
   // Update all pagination bars for this page
-  updatePaginationBar(pageId, page, totalPages, size, rows.length, 'all' in select ? select.value : size);
+  var selectEl = document.querySelector('#page-' + pageId + ' .page-size-selector select');
+  var sizeHint = selectEl && ('all' in selectEl) ? selectEl.value : size;
+  updatePaginationBar(pageId, page, totalPages, size, rows.length, sizeHint);
 }
 
 function updatePaginationBar(pageId, page, totalPages, size, totalRows) {
