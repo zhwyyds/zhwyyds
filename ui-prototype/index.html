@@ -2313,6 +2313,10 @@
             <span class="text-bold">基本信息</span>
             <button type="button" class="btn btn-sm btn-primary" onclick="suggestMetricDrawer()">&#129302; AI 辅助（按中文名生成全部字段）</button>
             <span class="text-xs text-muted" id="newMetricAiStatus" style="display:none;"></span>
+            <div id="aiProgressWrap" style="display:none;width:100%;margin-top:2px;">
+              <div class="ai-progress-track"><div class="ai-progress-fill" id="aiProgressFill" style="width:0%"></div></div>
+              <div class="text-xs text-muted" id="aiProgressText" style="margin-top:4px;"></div>
+            </div>
           </div>
           <table class="indicator-spec-table" cellspacing="0" cellpadding="0">
             <tr><th class="indicator-spec-th">指标名称 *</th>

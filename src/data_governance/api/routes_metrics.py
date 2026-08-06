@@ -42,6 +42,20 @@ def register(app, base: Path, metric_svc: MetricService, ai_svc: AiService) -> N
         """AI 辅助生成指标定义（逻辑已下沉 AiService.suggest_metric）。"""
         return ai_svc.suggest_metric(body)
 
+    @app.post("/api/metrics/suggest/async")
+    def metric_suggest_async(body: dict) -> dict:
+        """异步版 AI 生成（I1 多 AI 进度）：创建任务返回 task_id，进度由 /api/ai-tasks/{id} 轮询。"""
+        task_id = ai_svc.suggest_metric_async(body)
+        return {"task_id": task_id}
+
+    @app.get("/api/ai-tasks/{task_id}")
+    def ai_task_status(task_id: str) -> dict:
+        """查询异步 AI 任务进度：{status, completed, total, result?, error?}。"""
+        task = ai_svc.get_task(task_id)
+        if task is None:
+            raise HTTPException(404, f"task not found: {task_id}")
+        return task
+
     @app.get("/api/metrics/stats", response_model=StatsResponse)
     def metrics_statistics() -> StatsResponse:
         stats = metric_svc.get_stats()

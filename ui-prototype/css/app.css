@@ -1749,3 +1749,14 @@ tr.row-selected td { background: var(--primary-light) !important; }
 .modal-form-more-toggle .toggle-arrow { font-size: 10px; color: var(--text-muted, #667085); }
 .modal-form-more-body { padding: 10px 2px 0; }
 .modal-form-more-body .modal-form-group { margin-bottom: 12px; }
+
+/* ── AI 进度条（I1：多 AI 生成进度） ── */
+.ai-progress-track {
+  width: 100%; height: 6px; border-radius: 3px;
+  background: var(--bg-soft, #eef1f6); overflow: hidden;
+}
+.ai-progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #4a7dff, #7aa2ff);
+  transition: width 0.3s ease;
+}

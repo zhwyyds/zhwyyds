@@ -35,8 +35,12 @@ def run_models_parallel_prompt(
     complete_fn: Callable[[Any, str], str] | None = None,
     retries: int = 1,
     cache_base_dir: Path | None = None,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> list[tuple[str, str]]:
-    """Call each client's complete(prompt); skip failures; require ≥2 success."""
+    """Call each client's complete(prompt); skip failures; require ≥1 success.
+
+    on_progress(completed, total)：每成功完成一个模型回调一次（多 AI 进度条用）。
+    """
 
     from data_governance.llm.cache import get_cached_response, set_cached_response
 
@@ -60,12 +64,15 @@ def run_models_parallel_prompt(
 
     results: list[tuple[str, str]] = []
     errors: list[str] = []
-    with ThreadPoolExecutor(max_workers=len(clients) or 1) as pool:
+    total = len(clients) or 1
+    with ThreadPoolExecutor(max_workers=total) as pool:
         futures = {pool.submit(_complete, c): c for c in clients}
         for fut in as_completed(futures):
             client = futures[fut]
             try:
                 results.append(fut.result())
+                if on_progress is not None:
+                    on_progress(len(results), total)
             except Exception as exc:
                 errors.append(f"{client.model_name}: {exc}")
     results.sort(key=lambda x: x[0])

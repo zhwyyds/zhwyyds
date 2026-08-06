@@ -377,6 +377,8 @@
     global.__DG_AI_SUGGEST__ = null;
     var status = document.getElementById('newMetricAiStatus');
     if (status) { status.style.display = 'none'; status.textContent = ''; }
+    var pWrap = document.getElementById('aiProgressWrap');
+    if (pWrap) pWrap.style.display = 'none';
     var rootsRow = document.getElementById('newMetricAiRootsRow');
     if (rootsRow) rootsRow.style.display = 'none';
     var moreBody = document.getElementById('newMetricMoreBody');
@@ -804,6 +806,8 @@
     if (idEl) idEl.textContent = 'M_SALE_N' + String(Math.floor(Math.random() * 900 + 100));
     var status = document.getElementById('newMetricAiStatus');
     if (status) { status.style.display = 'none'; status.textContent = ''; }
+    var pWrap = document.getElementById('aiProgressWrap');
+    if (pWrap) pWrap.style.display = 'none';
     var rootsRow = document.getElementById('newMetricAiRootsRow');
     if (rootsRow) rootsRow.style.display = 'none';
     var rootsEl = document.getElementById('newMetricAiRoots');
@@ -829,9 +833,13 @@
     var formulaEl = document.getElementById('newMetricFormulaLogic');
     var hasDef = (descEl && descEl.value.trim()) || (formulaEl && formulaEl.value.trim());
     if (status) { status.style.display = ''; status.textContent = '🤔 AI 生成中，请稍候…'; }
+    // 进度条（I1：单 AI 显示动画，多 AI 显示「模型 N/M」真实进度）
+    var pWrap = document.getElementById('aiProgressWrap');
+    if (pWrap) pWrap.style.display = '';
+    setAiProgress(0, 1, 'AI 生成中…');
     var domain = document.getElementById('newMetricDomain');
     var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    apiFetch('/api/metrics/suggest', {
+    apiFetch('/api/metrics/suggest/async', {
       method: 'POST',
       body: JSON.stringify({
         metric_cn: cn.value.trim(),
@@ -842,34 +850,67 @@
         frequency: val('newMetricFrequency')
       })
     }).then(function (r) {
-      global.__DG_AI_SUGGEST__ = r;
-      var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || '';
-      var fills = [
-        ['newMetricEn', r.metric_en, '英文名'], ['newMetricAbbr', r.metric_abbr, '缩写'],
-        ['newMetricDesc', r.caliber_desc, '指标描述'], ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
-        ['newMetricFormulaLogic', r.formula, '计算公式'], ['newMetricUnit', r.unit, '计量单位'],
-        ['newMetricFrequency', r.frequency, '时间周期'], ['newMetricValueType', r.value_type, '值类型'],
-        ['newMetricDimensions', r.dimensions, '统计维度'], ['newMetricScenario', r.scenario, '应用场景'],
-        ['newMetricOwner', r.owner, '指标负责单位'], ['newMetricReports', r.reports, '应用报表'],
-        ['newMetricAnalysis', r.analysis_methods, '分析方法'], ['newMetricAlert', r.alert_rules, '预警标准'],
-        ['newMetricPrecision', r.precision, '精度'], ['newMetricDataSources', r.data_sources, '数据来源'],
-        ['newMetricTechCaliber', r.tech_caliber, '技术来源'], ['newMetricSourceTable', r.source_table || r.data_sources, '所属物理表'],
-        ['newMetricCatL1', r.category_l1, '一级分类'], ['newMetricCatL2', r.category_l2, '二级分类']
-      ];
-      fills.forEach(function (f) { if (window.applyAiFill) applyAiFill(f[0], f[1], f[2]); });
-      if (window.renderAiRoots) renderAiRoots(r.suggested_roots || []);
-      if (status) {
-        var diffs = document.querySelectorAll('#metricNewDrawer .ai-diff-tip').length;
-        var baseTip = hasDef
-          ? '已结合业务定义/公式生成'
-          : '仅依据名称生成——建议填写「指标描述/计算公式」后重新生成，更准确';
-        status.innerHTML = diffs > 0
-          ? '✅ ' + baseTip + '（' + src + '）：' + diffs + ' 处差异待确认'
-          : '✅ ' + baseTip + '（' + src + '），可直接保存';
-      }
+      return pollAiTask(r.task_id);
+    }).then(function (result) {
+      fillDrawerWithResult(result, hasDef);
     }).catch(function (e) {
+      if (pWrap) pWrap.style.display = 'none';
       if (status) status.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + e.message + '</span>';
     });
+  }
+
+  function setAiProgress(completed, total, text) {
+    var fill = document.getElementById('aiProgressFill');
+    var txt = document.getElementById('aiProgressText');
+    var pct = total > 0 ? Math.round(completed / total * 100) : 0;
+    if (fill) fill.style.width = pct + '%';
+    if (txt) txt.textContent = text || (pct + '%');
+  }
+
+  function pollAiTask(taskId) {
+    return new Promise(function (resolve, reject) {
+      var tick = function () {
+        apiFetch('/api/ai-tasks/' + taskId).then(function (t) {
+          if (t.status === 'done') { resolve(t.result); return; }
+          if (t.status === 'error') { reject(new Error(t.error || 'AI 生成失败')); return; }
+          setAiProgress(t.completed, t.total,
+            t.total > 1 ? ('AI 模型 ' + t.completed + '/' + t.total + ' 生成中…') : 'AI 生成中…');
+          setTimeout(tick, 400);
+        }).catch(reject);
+      };
+      tick();
+    });
+  }
+
+  function fillDrawerWithResult(r, hasDef) {
+    var status = document.getElementById('newMetricAiStatus');
+    var pWrap = document.getElementById('aiProgressWrap');
+    if (pWrap) pWrap.style.display = 'none';
+    global.__DG_AI_SUGGEST__ = r;
+    var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || '';
+    var fills = [
+      ['newMetricEn', r.metric_en, '英文名'], ['newMetricAbbr', r.metric_abbr, '缩写'],
+      ['newMetricDesc', r.caliber_desc, '指标描述'], ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
+      ['newMetricFormulaLogic', r.formula, '计算公式'], ['newMetricUnit', r.unit, '计量单位'],
+      ['newMetricFrequency', r.frequency, '时间周期'], ['newMetricValueType', r.value_type, '值类型'],
+      ['newMetricDimensions', r.dimensions, '统计维度'], ['newMetricScenario', r.scenario, '应用场景'],
+      ['newMetricOwner', r.owner, '指标负责单位'], ['newMetricReports', r.reports, '应用报表'],
+      ['newMetricAnalysis', r.analysis_methods, '分析方法'], ['newMetricAlert', r.alert_rules, '预警标准'],
+      ['newMetricPrecision', r.precision, '精度'], ['newMetricDataSources', r.data_sources, '数据来源'],
+      ['newMetricTechCaliber', r.tech_caliber, '技术来源'], ['newMetricSourceTable', r.source_table || r.data_sources, '所属物理表'],
+      ['newMetricCatL1', r.category_l1, '一级分类'], ['newMetricCatL2', r.category_l2, '二级分类']
+    ];
+    fills.forEach(function (f) { if (window.applyAiFill) applyAiFill(f[0], f[1], f[2]); });
+    if (window.renderAiRoots) renderAiRoots(r.suggested_roots || []);
+    if (status) {
+      var diffs = document.querySelectorAll('#metricNewDrawer .ai-diff-tip').length;
+      var baseTip = hasDef
+        ? '已结合业务定义/公式生成'
+        : '仅依据名称生成——建议填写「指标描述/计算公式」后重新生成，更准确';
+      status.innerHTML = diffs > 0
+        ? '✅ ' + baseTip + '（' + src + '）：' + diffs + ' 处差异待确认'
+        : '✅ ' + baseTip + '（' + src + '），可直接保存';
+    }
   }
 
   function saveNewMetricDrawer() {

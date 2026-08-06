@@ -11,7 +11,12 @@
 
 from __future__ import annotations
 
+import threading
+import uuid
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 from fastapi import HTTPException
 
@@ -44,11 +49,70 @@ _METRIC_FIELDS = (
 )
 
 
+
+class AsyncTaskManager:
+    """进程内异步任务管理器（I1：多 AI 进度条）。
+
+    - 内存 dict 存任务状态：{status, completed, total, result, error}
+    - 后台线程池执行任务，run_fn 通过 on_progress(completed, total) 上报进度
+    - 秒级任务，进程重启即清空（可接受）；并发访问用锁保护
+    """
+
+    def __init__(self, max_workers: int = 2) -> None:
+        self._tasks: dict[str, dict[str, Any]] = {}
+        self._lock = threading.Lock()
+        self._pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ai-task")
+
+    def create(self, task_type: str, run_fn: Callable[[Callable[[int, int], None]], Any]) -> str:
+        """创建任务并立即返回 task_id；run_fn(on_progress) 在后台线程执行。"""
+        task_id = f"task_{uuid.uuid4().hex[:12]}"
+        with self._lock:
+            self._tasks[task_id] = {
+                "task_id": task_id, "type": task_type,
+                "status": "running", "completed": 0, "total": 0,
+                "result": None, "error": None,
+            }
+        self._pool.submit(self._execute, task_id, run_fn)
+        return task_id
+
+    def _execute(self, task_id: str, run_fn: Callable[[Callable[[int, int], None]], Any]) -> None:
+        def on_progress(completed: int, total: int) -> None:
+            with self._lock:
+                task = self._tasks.get(task_id)
+                if task is not None:
+                    task["completed"] = completed
+                    task["total"] = total
+
+        try:
+            result = run_fn(on_progress)
+            with self._lock:
+                task = self._tasks.get(task_id)
+                if task is not None:
+                    task["status"] = "done"
+                    task["result"] = result
+                    task["completed"] = task["total"] or task["completed"]
+        except Exception as exc:
+            with self._lock:
+                task = self._tasks.get(task_id)
+                if task is not None:
+                    task["status"] = "error"
+                    task["error"] = str(exc)
+
+    def get(self, task_id: str) -> dict[str, Any] | None:
+        """查询任务快照；不存在返回 None。"""
+        with self._lock:
+            task = self._tasks.get(task_id)
+            return dict(task) if task is not None else None
+
+
+
 class AiService:
     """指标/词根 AI 生成服务，聚合 LLM 调用与词根归并规则。"""
 
     def __init__(self, base_dir: Path) -> None:
         self.base = base_dir
+        # 异步任务管理器（多 AI 进度：进程内内存存储，秒级任务可接受）
+        self.tasks = AsyncTaskManager()
 
     # ── 指标 AI 生成 ─────────────────────────────────────────────
 
@@ -74,6 +138,44 @@ class AiService:
         merged.setdefault("suggestions", [])
         merged["suggested_roots"] = self._filter_missing_roots(catalog, merged.get("suggested_roots") or [])
         return merged
+
+    def suggest_metric_async(self, body: dict) -> str:
+        """异步版 suggest（多 AI 进度）：创建任务并立即返回 task_id，进度由 get_task 轮询。
+
+        mock 模式：任务直接完成（无 LLM 进度）；live 模式：逐模型完成时更新 completed/total。
+        """
+        metric_cn = str((body or {}).get("metric_cn") or "").strip()
+        if not metric_cn:
+            raise HTTPException(400, "metric_cn 必填")
+
+        def _run(on_progress: Callable[[int, int], None]) -> dict:
+            domain = str((body or {}).get("domain_code") or "").strip().lower()
+            desc = str((body or {}).get("caliber_desc") or "").strip()
+            formula = str((body or {}).get("formula") or "").strip()
+            unit = str((body or {}).get("unit") or "").strip()
+            frequency = str((body or {}).get("frequency") or "").strip()
+            catalog = load_catalog(self.base)
+            if resolve_use_mock(None):
+                on_progress(1, 1)
+                result = self._suggest_metric_mock(catalog, metric_cn, domain, desc)
+            else:
+                merged = self._suggest_metric_live(
+                    catalog, metric_cn, domain, desc, formula, unit, frequency,
+                    on_progress=on_progress,
+                )
+                result = merged
+            result.setdefault("metric_cn", metric_cn)
+            result.setdefault("frequency", "月")
+            result.setdefault("suggestions", [])
+            result["suggested_roots"] = self._filter_missing_roots(catalog, result.get("suggested_roots") or [])
+            return result
+
+        return self.tasks.create("metric_suggest", _run)
+
+    def get_task(self, task_id: str) -> dict | None:
+        """查询异步任务状态：{status, completed, total, result?, error?}。"""
+        return self.tasks.get(task_id)
+
 
     def _suggest_metric_mock(self, catalog, metric_cn: str, domain: str, desc: str) -> dict:
         """mock 模式：同名指标复用 / 词根组合提示。"""
@@ -112,9 +214,13 @@ class AiService:
         }
 
     def _suggest_metric_live(
-        self, catalog, metric_cn: str, domain: str, desc: str, formula: str, unit: str, frequency: str
+        self, catalog, metric_cn: str, domain: str, desc: str, formula: str, unit: str, frequency: str,
+        on_progress: Callable[[int, int], None] | None = None,
     ) -> dict:
-        """live 模式：LLM 生成指标定义，多模型取首个非空字段（合并）。"""
+        """live 模式：LLM 生成指标定义，多模型取首个非空字段（合并）。
+
+        on_progress(completed, total)：每完成一个模型回调一次（多 AI 进度条）。
+        """
         models = load_models("metric_review", config_path=self.base / "config" / "models.csv")
         clients = llm_factory.build_live_clients(models)
         entries = build_root_dictionary(catalog.roots, domain=domain)
@@ -130,7 +236,9 @@ class AiService:
             context_lines.append(f"统计频率：{frequency}")
         context_block = "\n".join(context_lines)
         prompt = _build_metric_prompt(metric_cn, domain, root_text, context_block)
-        raws = run_models_parallel_prompt(clients, prompt, cache_base_dir=self.base)
+        raws = run_models_parallel_prompt(
+            clients, prompt, cache_base_dir=self.base, on_progress=on_progress
+        )
 
         merged: dict = {}
         for _mname, raw in raws:
