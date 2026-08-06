@@ -152,29 +152,6 @@
     if (elReviewed) elReviewed.textContent = '—';
   }
 
-  // 内联新增行 HTML 常量（H2 重构）：renderTable 每次 prepend，保证元素永远在 DOM
-  // （之前用 outerHTML 取元素的方式在 display:none 时会丢失节点）
-  var INLINE_NEW_ROW_HTML =
-    '<tr id="newMetricInlineRow" style="display:none;background:#f7f9ff;">' +
-    '<td></td>' +
-    '<td><span class="text-sm text-muted" id="inlineNewId">自动生成</span></td>' +
-    '<td style="min-width:150px;">' +
-    '<div class="flex gap-1" style="gap:4px;">' +
-    '<input class="input" id="inlineNewCn" placeholder="中文名" style="flex:1;min-width:80px;">' +
-    '<button type="button" class="btn btn-xs btn-primary" onclick="inlineSuggestMetric()" title="AI 生成">&#129302;</button>' +
-    '</div></td>' +
-    '<td style="min-width:150px;"><input class="input" id="inlineNewEn" placeholder="monthly_rent_revenue" style="width:100%;"></td>' +
-    '<td style="min-width:90px;"><select class="select" id="inlineNewDomain" style="width:100%;"><option value="sale">sale</option><option value="mall">mall</option><option value="cust">cust</option></select></td>' +
-    '<td style="min-width:80px;"><select class="select" id="inlineNewType" style="width:100%;"><option value="atomic">atomic</option><option value="derived">derived</option></select></td>' +
-    '<td class="text-sm text-muted">草稿</td>' +
-    '<td class="text-sm text-muted">0.1.0</td>' +
-    '<td class="text-sm text-muted">—</td>' +
-    '<td class="text-sm text-muted">草稿</td>' +
-    '<td style="white-space:nowrap;">' +
-    '<button class="btn btn-xs btn-primary" onclick="saveInlineNew()">保存</button>' +
-    '<button class="btn btn-xs" onclick="cancelInlineNew()">取消</button>' +
-    '</td></tr>';
-
   function renderTable(metrics) {
     var tbody = document.getElementById('batchTableBody');
     var countEl = document.getElementById('mgmt-total-count');
@@ -183,15 +160,12 @@
     renderStatusFlow(all);
     var rows = applyFilters(all);
     if (countEl) countEl.textContent = String(all.length);
-    var pageLabel = document.getElementById('mgmtPageSizeLabel');
-    if (pageLabel) pageLabel.textContent = String(rows.length);
     if (!rows.length) {
       tbody.innerHTML = inlineRowHtml() +
         '<tr><td colspan="12" class="text-sm text-muted" style="padding:20px;">无匹配指标</td></tr>';
       return;
     }
-    tbody.innerHTML = inlineRowHtml() +
-      rows
+    tbody.innerHTML = rows
       .map(function (m) {
         return (
           '<tr class="batch-row" data-metric-id="' +
@@ -229,8 +203,8 @@
   }
 
   function inlineRowHtml() {
-    // 始终返回内联行 HTML 常量（保证 renderTable 后元素仍在 DOM）
-    return INLINE_NEW_ROW_HTML;
+    // 新增已由 metricNewDrawer 抽屉接管（H9），不再渲染内联行
+    return '';
   }
 
   function bindMgmtFilters() {
@@ -641,95 +615,9 @@
 
   /* ==================== 内联新增指标（与表格查看窗口同构 + AI） ==================== */
 
-  function showNewMetricInline() {
-    var row = document.getElementById('newMetricInlineRow');
-    if (!row) return;
-    ['inlineNewCn', 'inlineNewEn'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    var dom = document.getElementById('inlineNewDomain');
-    if (dom) dom.value = 'sale';
-    var type = document.getElementById('inlineNewType');
-    if (type) type.value = 'atomic';
-    var idEl = document.getElementById('inlineNewId');
-    if (idEl) idEl.textContent = 'M_SALE_N' + String(Math.floor(Math.random() * 900 + 100));
-    global.__DG_INLINE_SUGGEST__ = null;
-    row.style.display = '';
-    var cn = document.getElementById('inlineNewCn');
-    if (cn) cn.focus();
-    if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }
 
-  function cancelInlineNew() {
-    var row = document.getElementById('newMetricInlineRow');
-    if (row) row.style.display = 'none';
-    global.__DG_INLINE_SUGGEST__ = null;
-  }
 
-  function inlineSuggestMetric() {
-    var cn = document.getElementById('inlineNewCn');
-    if (!cn || !cn.value.trim()) { alert('请先填写中文名'); return; }
-    var domain = document.getElementById('inlineNewDomain') ? document.getElementById('inlineNewDomain').value : 'sale';
-    apiFetch('/api/metrics/suggest', {
-      method: 'POST',
-      body: JSON.stringify({ metric_cn: cn.value.trim(), domain_code: domain })
-    })
-      .then(function (r) {
-        global.__DG_INLINE_SUGGEST__ = r;
-        var enEl = document.getElementById('inlineNewEn');
-        if (enEl && r.metric_en) enEl.value = r.metric_en;
-        // 不再弹窗，结果已自动填充到字段（内联）
-      })
-      .catch(function (e) { toast('AI 生成失败: ' + e.message); });
-  }
 
-  function saveInlineNew() {
-    var cn = document.getElementById('inlineNewCn');
-    if (!cn || !cn.value.trim()) { alert('请填写中文名'); return; }
-    var dom = document.getElementById('inlineNewDomain') ? document.getElementById('inlineNewDomain').value : 'sale';
-    var domUp = dom.toUpperCase();
-    var it = global.__DG_INLINE_SUGGEST__ || {};
-    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    var row = {
-      metric_id: 'M_' + domUp + '_N' + String(Math.floor(Math.random() * 900 + 100)),
-      metric_cn: cn.value.trim(),
-      metric_en: val('inlineNewEn') || it.metric_en || 'pending_naming',
-      domain_code: dom,
-      metric_type: val('inlineNewType') || 'atomic',
-      caliber_desc: it.caliber_desc || '',
-      formula_cn: it.formula_cn || '',
-      formula: it.formula || '',
-      tech_caliber: it.tech_caliber || '',
-      source_table: it.source_table || '',
-      owner: it.owner || '',
-      version: '0.1.0',
-      version_history: '0.1.0|' + new Date().toISOString().slice(0, 10) + '|—|新建草稿',
-      review_status: 'pending',
-      category_l1: it.category_l1 || '',
-      category_l2: it.category_l2 || '',
-      value_type: it.value_type || '',
-      dimensions: it.dimensions || '',
-      scenario: it.scenario || '',
-      reports: it.reports || '',
-      analysis_methods: it.analysis_methods || '',
-      alert_rules: it.alert_rules || '',
-      precision: it.precision || '',
-      data_sources: it.data_sources || '',
-      unit: it.unit || '',
-      frequency: it.frequency || '月'
-    };
-    apiFetch('/api/metrics', { method: 'POST', body: JSON.stringify(row) })
-      .then(function () {
-        cancelInlineNew();
-        return reloadFromServer();
-      })
-      .catch(function (e) {
-        toast('创建失败: ' + e.message);
-        var st = document.getElementById('newMetricAiStatus');
-        if (st) { st.style.display = ''; st.innerHTML = '<span style="color:var(--danger);">⚠️ 创建失败: ' + e.message + '</span>'; }
-      });
-  }
 
   /* ==================== 批量新增弹窗入口 ==================== */
 
@@ -787,10 +675,6 @@
 
   global.toast = toast;
 
-  global.showNewMetricInline = showNewMetricInline;
-  global.cancelInlineNew = cancelInlineNew;
-  global.inlineSuggestMetric = inlineSuggestMetric;
-  global.saveInlineNew = saveInlineNew;
   global.showBatchMetricModal = showBatchMetricModal;
   global.openNewMetricDrawer = openNewMetricDrawer;
   global.closeNewMetricDrawer = closeNewMetricDrawer;

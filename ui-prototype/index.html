@@ -880,7 +880,7 @@
   <div class="card">
     <div class="card-header">
       <div class="card-title">词根列表</div>
-      <span class="text-sm text-muted" id="roots-table-count">共 — 条</span>
+      <span class="text-sm text-muted" id="roots-table-count-head">共 — 条</span>
     </div>
     <div class="table-wrap">
       <table>
@@ -2282,10 +2282,8 @@
           </div>
         </div>
       </div>
-      <!-- 隐藏字段：AI 填充 / 保存用（主题域/类型/分类） -->
+      <!-- 隐藏字段：AI 填充 / 保存用（主题域/类型） -->
       <input type="hidden" id="newMetricType" value="atomic">
-      <input type="hidden" id="newMetricCatL1">
-      <input type="hidden" id="newMetricCatL2">
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeNewMetricDrawer()">取消</button>
