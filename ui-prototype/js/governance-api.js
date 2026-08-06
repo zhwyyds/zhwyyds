@@ -149,12 +149,13 @@
     return '<span class="badge badge-warn">待确认</span>';
   }
 
-  function renderNavBadges(metricsLen, rootsLen, homonymCount, veto, pendingReview) {
+  function renderNavBadges(metricsLen, rootsLen, homonymCount, veto, pendingReview, caliberPending) {
     var lib = document.getElementById('nav-badge-metrics-lib');
     var mgmt = document.getElementById('nav-badge-mgmt');
     var r = document.getElementById('nav-badge-roots');
     var c = document.getElementById('nav-badge-caliber');
     var rv = document.getElementById('nav-badge-review');
+    var cc = document.getElementById('nav-badge-caliber-check');
     if (lib) lib.textContent = String(metricsLen);
     if (mgmt) mgmt.textContent = String(metricsLen);
     if (r) r.textContent = String(rootsLen);
@@ -164,10 +165,16 @@
       rv.style.display = '';
     }
     if (c) {
-      var n = homonymCount || (veto ? 1 : 0);
-      c.textContent = String(n);
-      c.style.display = n > 0 ? '' : 'none';
+      var n = caliberPending || 0;
+      c.textContent = n > 0 ? String(n) : '—';
+      c.style.display = '';
       c.className = 'nav-badge' + (n > 0 ? ' danger' : '');
+    }
+    if (cc) {
+      var n2 = caliberPending || 0;
+      cc.textContent = n2 > 0 ? String(n2) : '—';
+      cc.style.display = '';
+      cc.className = 'nav-badge' + (n2 > 0 ? ' danger' : '');
     }
   }
 
@@ -460,6 +467,9 @@
       }),
       fetchJson('/api/scores/summary').catch(function () {
         return [];
+      }),
+      fetchJson('/api/caliber/pending').catch(function () {
+        return [];
       })
     ]).then(function (arr) {
       var report = arr[0];
@@ -468,6 +478,7 @@
       var domains = arr[3];
       var metricTree = arr[4];
       var scoreSummary = arr[5];
+      var caliberPending = arr[6];
       global.__DG_ROOTS__ = roots;
       global.__DG_METRICS__ = metrics;
       global.__DG_METRIC_ROWS__ = metrics;
@@ -478,7 +489,7 @@
       var pendingReview = metrics.filter(function(m) {
         return m.review_status !== 'approved' && m.review_status !== 'offline';
       }).length;
-      renderNavBadges(metrics.length, roots.length, conflicts.homonyms.length, report && report.veto, pendingReview);
+      renderNavBadges(metrics.length, roots.length, conflicts.homonyms.length, report && report.veto, pendingReview, caliberPending ? caliberPending.length : 0);
       renderDashboard(report, roots.length, metrics.length, domains);
       renderScoring(report);
       renderCaliberPage(report, metrics);
