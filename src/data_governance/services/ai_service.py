@@ -515,6 +515,10 @@ def _build_metric_prompt(metric_cn: str, domain: str, root_text: str, context_bl
         f'"suggested_roots":[{{"root_cn":"中文词根","root_en":"词根英文","root_abbr":"缩写",'
         f'"root_type":"noun/verb/adj/unit/time","description":"说明"}}]}}\n\n'
         "强制要求（必须遵守，缺失将视为生成失败）：\n"
+        "- 输出 JSON 必须包含上面列出的【全部字段键】（metric_cn / metric_en / caliber_desc / unit / frequency /\n"
+        "  value_type / dimensions / scenario / formula / formula_cn / reports / analysis_methods / alert_rules /\n"
+        "  precision / owner / category_l1 / category_l2 / data_sources / source_table / tech_caliber / suggestions /\n"
+        "  suggested_roots），一个键都不能少；无法确定的值填 待定 或空字符串，但键必须存在\n"
         "- metric_en 必须是非空 snake_case 英文名（如 monthly_rent_amount），绝不能为空、不能含中文、不能是单字母占位\n"
         "- 如确实难以命名（中文名极含糊），可用 <英文占位>_pending_<序号> 并在 suggestions 中说明\n"
         "- suggested_roots 只列出 metric_en 用到的词根中【词根库缺失】的部分，词根库已有的绝不要列\n\n"
