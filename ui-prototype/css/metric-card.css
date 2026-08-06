@@ -1437,11 +1437,11 @@
    v13 可编辑字段：默认显示文本，抽出时显示输入框
    ================================================================ */
 /* 默认（in-bag 扇形）：文本显示，输入框隐藏 */
-#importTaskCards .frame .f-edit { display: none; }
+#importTaskCards .frame .f-edit { display: none !important; }
 /* active-lock 抽出时：文本隐藏，输入框显示 */
 #importTaskCards .frame.active-lock .f-text { display: none !important; }
 #importTaskCards .frame.active-lock .f-edit {
-  display: inline-block;
+  display: inline-block !important;
   background: oklch(15% 0.02 275);
   border: 1px solid color-mix(in oklch, var(--accent) 50%, transparent);
   border-radius: 3px;
@@ -1461,7 +1461,7 @@
 }
 /* textarea：拉伸到容器宽度 */
 #importTaskCards .frame.active-lock textarea.f-edit {
-  display: block;
+  display: block !important;
   width: 100%;
   min-height: 60px;
   resize: vertical;
@@ -1470,6 +1470,7 @@
 }
 /* 下拉（domain_code）：深色面板 */
 #importTaskCards .frame.active-lock select.f-edit {
+  display: inline-block !important;
   background: oklch(15% 0.02 275);
   color: var(--text);
   cursor: pointer;

@@ -534,7 +534,9 @@
       f.addEventListener('mouseleave', function () {
         if (!gridMode) peekOut();
       });
-      f.addEventListener('click', function () {
+      f.addEventListener('click', function (e) {
+        // 排除编辑元素：点击 input/textarea/select/button 不触发抽卡/收回
+        if (e && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON')) return;
         if (gridMode) {
           setGrid(false);
           requestAnimationFrame(function () { draw(f); });
