@@ -110,3 +110,23 @@ prompts/   108 行（提示词模板 ✅）
 ---
 
 *报告由 code-reviewer 技能 + 架构人工核查生成*
+
+---
+
+## 整改完成情况（2026-08-06，commit 4852833）
+
+**P1-1 app.py 拆分** ✅
+- 1165 行 / 57 路由 → **365 行 / 24 系统路由 + 静态托管**
+- 新增 `api/routes_roots.py`（8 路由）、`api/routes_metrics.py`（23 路由）
+- register 闭包装配，行为与拆分前完全一致
+
+**P1-2 逻辑下沉 services** ✅
+- 新建 `services/ai_service.py`（424 行）：`AiService.suggest_metric / suggest_root / generate_roots / commit_roots`
+- 提示词构建抽为模块级函数（`_build_metric_prompt` 等），便于单测
+
+**P2 注释** ✅
+- 核心函数补 docstring：score_metric / score_root_coverage / main / load_models
+- 覆盖率 1.0% → 5.7%（docstring 口径）
+
+**验证**：pytest 168 全绿 / mypy 65 文件零错误 / ruff 全绿
+**实测**：拆分后 8 词根 / 15 指标 / suggest 复用 / metric-tree·models 系统路由全部 200
