@@ -354,10 +354,6 @@
     if (pWrap) pWrap.style.display = 'none';
     var rootsRow = document.getElementById('newMetricAiRootsRow');
     if (rootsRow) rootsRow.style.display = 'none';
-    var moreBody = document.getElementById('newMetricMoreBody');
-    var moreArrow = document.getElementById('newMetricMoreArrow');
-    if (moreBody) moreBody.style.display = 'none';
-    if (moreArrow) moreArrow.innerHTML = '&#9654;';
     document.querySelectorAll('#newMetricModal .ai-diff-tip').forEach(function (t) { t.remove(); });
     modal.classList.add('show');
   }
@@ -475,19 +471,6 @@
   }
 
   /* ==================== 批量新增指标（P4） ==================== */
-
-  function toggleBatchMode() {
-    var wrap = document.getElementById('newMetricBatchWrap');
-    var single = document.getElementById('newMetricSingleWrap');
-    var btn = document.getElementById('newMetricBatchToggle');
-    var title = document.getElementById('newMetricModalTitle');
-    if (!wrap || !single) return;
-    var batch = wrap.style.display !== 'none';
-    wrap.style.display = batch ? 'none' : '';
-    single.style.display = batch ? '' : 'none';
-    if (btn) btn.textContent = batch ? '📋 批量模式' : '📝 单个模式';
-    if (title) title.innerHTML = batch ? '&#10133; 新增指标' : '&#128203; 批量新增指标';
-  }
 
   function batchSuggestMetrics() {
     var raw = document.getElementById('batchMetricInput') ? document.getElementById('batchMetricInput').value.trim() : '';
@@ -621,17 +604,31 @@
 
   /* ==================== 批量新增弹窗入口 ==================== */
 
+  function fillBatchMetricDomain() {
+    var sel = document.getElementById('batchMetricDomain');
+    if (!sel) return;
+    var domains = window.__DG_DOMAINS__ || [];
+    if (!domains.length) { try { apiFetch('/api/domains').then(function (ds) { window.__DG_DOMAINS__ = ds || []; fillBatchMetricDomain(); }).catch(function () {}); } catch (e) {} return; }
+    var prev = sel.value || 'sale';
+    sel.innerHTML = '';
+    domains.forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d.domain_code;
+      o.textContent = d.domain_code + ' ' + (d.domain_name_cn || '');
+      sel.appendChild(o);
+    });
+    if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+    else if (sel.options.length) sel.value = sel.options[0].value;
+  }
+
   function showBatchMetricModal() {
     var modal = document.getElementById('newMetricModal');
     if (!modal) return;
+    fillBatchMetricDomain();
     var wrap = document.getElementById('newMetricBatchWrap');
-    var single = document.getElementById('newMetricSingleWrap');
     var title = document.getElementById('newMetricModalTitle');
-    var btn = document.getElementById('newMetricBatchToggle');
     if (wrap) wrap.style.display = '';
-    if (single) single.style.display = 'none';
     if (title) title.innerHTML = '&#128203; 批量新增指标';
-    if (btn) btn.textContent = '📝 单个模式';
     modal.classList.add('show');
   }
 
@@ -657,7 +654,6 @@
     getMetricById: getMetricById
   };
 
-  global.toggleBatchMode = toggleBatchMode;
   global.batchSuggestMetrics = batchSuggestMetrics;
   global.batchCreateMetrics = batchCreateMetrics;
 
@@ -697,12 +693,12 @@
     var prev = sel.value || 'sale';
     if (!domains.length) {
       // 兜底：从 metric-tree 响应或 API 拉取
-      if (window.apiFetch) {
+      try {
         apiFetch('/api/domains').then(function (ds) {
           window.__DG_DOMAINS__ = ds || [];
           fillDomainOptions(sel, ds, prev);
         }).catch(function () {});
-      }
+      } catch (e) {}
       return;
     }
     fillDomainOptions(sel, domains, prev);

@@ -22,5 +22,7 @@ def next_metric_review_path(reviews_dir: Path, domain: str) -> Path:
 def write_metric_review(doc: MetricReviewDocument, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = doc.model_dump(mode="json")
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(path)  # 原子写：先写 tmp 再 rename，避免并发下写一半的损坏文件
     return path

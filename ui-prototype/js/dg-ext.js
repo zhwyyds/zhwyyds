@@ -148,30 +148,6 @@
     );
   }
 
-  function loadModifierRules() {
-    return fetchJson('/api/modifier-rules').then(function (rows) {
-      global.__DG_MODIFIER_RULES__ = rows;
-      var host = document.getElementById('batchModifierList');
-      if (!host || !rows.length) return rows;
-      host.innerHTML = rows
-        .map(function (r) {
-          return (
-            '<div class="checkbox-item" data-mod-id="' +
-            esc(r.modifier_id) +
-            '" onclick="this.classList.toggle(\'checked\'); refreshBatchPreview();">' +
-            '<div class="checkbox-box"></div>' +
-            '<span>' +
-            esc(r.modifier_cn) +
-            '(' +
-            esc(r.modifier_abbr) +
-            ')</span></div>'
-          );
-        })
-        .join('');
-      return rows;
-    });
-  }
-
   function loadLineageMeta() {
     return fetchJson('/api/lineage?domain=sale').then(function (payload) {
       global.__DG_LINEAGE_SALE__ = payload;
@@ -193,7 +169,6 @@
 
   global.DGExt = {
     loadReviewExtras: loadReviewExtras,
-    loadModifierRules: loadModifierRules,
     loadLineageMeta: loadLineageMeta,
     exportMetricsCsv: exportMetricsCsv,
     renderReviewDetail: renderReviewDetail

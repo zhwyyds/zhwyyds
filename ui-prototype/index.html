@@ -745,7 +745,6 @@
     <div class="modal-header">
       <span class="modal-title" id="newMetricModalTitle">&#10133; 新增指标</span>
       <div class="flex gap-2">
-        <button type="button" class="btn btn-sm" id="newMetricBatchToggle" onclick="toggleBatchMode()">&#128203; 批量模式</button>
         <button class="modal-close" onclick="closeModal('newMetricModal')">&#10005;</button>
       </div>
     </div>
@@ -757,7 +756,7 @@
           <textarea class="modal-form-textarea" id="batchMetricInput" rows="7" placeholder="如：&#10;月度租赁收入|自然月内生效租赁合同的租金收入，不含物业费|元|月&#10;年度客流人数|全年进店客流量|人|年"></textarea>
         </div>
         <div class="modal-form-group"><label class="modal-form-label">主题域</label>
-          <select class="modal-form-select" id="batchMetricDomain"><option value="sale">sale 交易</option><option value="mall">mall 商场</option><option value="cust">cust 消费者</option></select>
+          <select class="modal-form-select" id="batchMetricDomain"></select>
         </div>
         <div class="flex gap-2" style="margin-bottom:10px;">
           <button class="btn btn-sm btn-primary" onclick="batchSuggestMetrics()">&#129302; AI 批量生成</button>

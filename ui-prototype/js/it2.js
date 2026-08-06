@@ -390,24 +390,6 @@
 
   /* ==================== 新增指标「更多设置」折叠（P2） ==================== */
 
-  function toggleMetricMore() {
-    var body = document.getElementById('newMetricMoreBody');
-    var arrow = document.getElementById('newMetricMoreArrow');
-    if (!body) return;
-    var expanded = body.style.display !== 'none';
-    body.style.display = expanded ? 'none' : '';
-    if (arrow) arrow.innerHTML = expanded ? '&#9654;' : '&#9660;';
-  }
-
-  function expandMetricMore() {
-    var body = document.getElementById('newMetricMoreBody');
-    var arrow = document.getElementById('newMetricMoreArrow');
-    if (body && body.style.display === 'none') {
-      body.style.display = '';
-      if (arrow) arrow.innerHTML = '&#9660;';
-    }
-  }
-
   /* ==================== 新增指标 AI 辅助（直接填充表单字段，无独立面板） ==================== */
 
   function suggestMetricFields() {
@@ -473,12 +455,6 @@
             : '✅ 已生成（' + src + '），字段已填充，可直接保存';
         }
       }
-      // 折叠区有内容（分类/负责人/维度等被填充）时自动展开，方便核对
-      var moreFilled = ['newMetricCatL1', 'newMetricCatL2', 'newMetricValueType', 'newMetricOwner', 'newMetricScenario'].some(function (id) {
-        var el = document.getElementById(id);
-        return el && el.value.trim();
-      });
-      if (moreFilled) expandMetricMore();
       // 差异提示条点击滚动到对应字段
       document.querySelectorAll('#newMetricModal .ai-diff-tip').forEach(function (tip) {
         tip.style.cursor = 'pointer';
@@ -1047,8 +1023,6 @@
   global.applyAiFill = applyAiFill;
   global.adoptAiValue = adoptAiValue;
   global.dismissAiDiff = dismissAiDiff;
-  global.toggleMetricMore = toggleMetricMore;
-  global.expandMetricMore = expandMetricMore;
   global.suggestRootFields = suggestRootFields;
   global.loadCaliberQueue = loadCaliberQueue;
   global.caliberApprove = caliberApprove;

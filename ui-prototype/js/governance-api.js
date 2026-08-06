@@ -512,9 +512,6 @@
       if (global.DGExt && global.DGExt.loadReviewExtras) {
         extras.push(global.DGExt.loadReviewExtras(metrics));
       }
-      if (global.DGExt && global.DGExt.loadModifierRules) {
-        extras.push(global.DGExt.loadModifierRules());
-      }
       if (global.DGExt && global.DGExt.loadLineageMeta) {
         extras.push(global.DGExt.loadLineageMeta().catch(function () {}));
       }
