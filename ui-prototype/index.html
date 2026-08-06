@@ -754,7 +754,7 @@
 
 <!-- New Metric Modal -->
 <div class="modal-overlay" id="newMetricModal">
-  <div class="modal-dialog" style="max-width:640px;">
+  <div class="modal-dialog" style="max-width:760px;">
     <div class="modal-header">
       <span class="modal-title" id="newMetricModalTitle">&#10133; 新增指标</span>
       <div class="flex gap-2">
@@ -791,15 +791,19 @@
             <button type="button" class="btn btn-sm btn-primary" onclick="suggestMetricFields()">&#129302; AI 辅助</button>
           </div>
         </div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名 / 缩写</label>
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">英文名</label>
             <input class="modal-form-input" id="newMetricEn" placeholder="monthly_rent_revenue（AI 可生成）">
-            <input class="modal-form-input" id="newMetricAbbr" placeholder="abbr">
+          </div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">缩写</label>
+            <input class="modal-form-input" id="newMetricAbbr" placeholder="如 mrr（AI 可生成）">
           </div>
         </div>
         <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标描述（业务口径）</label><textarea class="modal-form-textarea" id="newMetricDesc" placeholder="统计口径、包含/排除边界，如：自然月内生效租赁合同的租金收入，不含物业费"></textarea></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="newMetricFormulaCn" placeholder="全中文公式说明"></textarea></div>
-        <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 伪代码逻辑</label><textarea class="modal-form-textarea" id="newMetricFormulaLogic" placeholder="SUM(…) WHERE …" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 中文口径</label><textarea class="modal-form-textarea" id="newMetricFormulaCn" placeholder="全中文公式说明"></textarea></div>
+          <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">计算公式 · 伪代码逻辑</label><textarea class="modal-form-textarea" id="newMetricFormulaLogic" placeholder="SUM(…) WHERE …" style="font-family:var(--mono);font-size:12px;"></textarea></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
           <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">主题域</label><select class="modal-form-select" id="newMetricDomain"><option value="sale">sale 交易</option><option value="mall">mall 商场</option><option value="cust">cust 消费者</option></select></div>
           <div class="modal-form-group"><label class="modal-form-label modal-form-label--biz">指标类型</label><select class="modal-form-select" id="newMetricType"><option value="atomic">原子指标</option><option value="derived">派生指标</option></select></div>
@@ -866,7 +870,7 @@
 
 <!-- Edit Metric Modal -->
 <div class="modal-overlay" id="metricEditModal">
-  <div class="modal-dialog" style="max-width:720px;">
+  <div class="modal-dialog" style="max-width:760px;">
     <div class="modal-header">
       <span class="modal-title">&#9998; 编辑指标</span>
       <button class="modal-close" onclick="closeModal('metricEditModal')">&#10005;</button>
