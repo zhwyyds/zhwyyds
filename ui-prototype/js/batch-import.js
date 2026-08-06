@@ -281,8 +281,6 @@
     });
 
     bindEvents();
-    // 默认开启网格视图（30 张密集扇形堆叠太乱，网格清爽）
-    if (!gridMode && frames.length > 8) setGrid(true);
 
 
     // 初始/评审后自动抽出指定卡（参考行为）；drawIdx < 0 不抽
@@ -319,7 +317,7 @@
     els.style.setProperty('--stack-x', stackX + 'px');
     els.style.setProperty('--stack-y', stackY + 'px');
     els.style.setProperty('--fan-deg', fanDeg + 'deg');
-    els.style.zIndex = n - i;  // 右侧(i=0)在上：stackX 大(z-index 高)，永远不被左侧卡盖住
+    els.style.zIndex = i + 1;  // 左侧在上（原版）
 
     els.innerHTML = cardHtml(m, i, n);
     pack.appendChild(els);
