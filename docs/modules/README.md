@@ -18,6 +18,6 @@
 | 口径核查 caliber-check | — | 📝 | — |
 | 血缘管理 lineage | — | 📝 | — |
 | 表血缘 table-lineage | — | 📝 | — |
-| 系统设置 settings | — | 📝 | — |
+| 系统设置 settings | [settings.md](./settings.md) | ✅ 通过 | 2026-08-06 |
 
 > 模块开发时：复制 `_template.md` → 新建 `<module>.md` → 填任务清单 → 开发 → 填测试结果 → 更新本索引。

@@ -82,6 +82,19 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
 
     @app.get("/api/meta")
     def meta() -> dict:
+        from data_governance import __version__
+        import subprocess
+
+        def _branch() -> str:
+            try:
+                r = subprocess.run(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                    capture_output=True, text=True, timeout=3,
+                )
+                return r.stdout.strip() if r.returncode == 0 else "unknown"
+            except Exception:
+                return "unknown"
+
         links = {
             "domains": "/api/domains",
             "roots": "/api/roots",
@@ -94,7 +107,7 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         if (ui_dir / "index.html").is_file():
             links["ui"] = "/ui/"
             links["metric_spec_template"] = "/ui/metric-spec-template.html"
-        return {"base_dir": str(base), "links": links}
+        return {"base_dir": str(base), "version": __version__, "branch": _branch(), "links": links}
 
     @app.get("/api/llm/status")
     def llm_status() -> dict:

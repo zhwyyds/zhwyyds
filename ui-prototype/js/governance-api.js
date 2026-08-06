@@ -535,7 +535,22 @@
     API_BASE: API_BASE
   };
 
+  function renderEnvBadge(meta) {
+    var el = document.getElementById('envBadge');
+    if (!el) return;
+    if (!meta) { el.textContent = 'API 未连接'; el.className = 'env-badge env-badge--off'; return; }
+    var branch = meta.branch || 'unknown';
+    var version = meta.version || '?';
+    el.textContent = branch + ' · v' + version;
+    // dev 分支显蓝，main 分支显绿，其他显灰
+    if (branch === 'dev') el.className = 'env-badge env-badge--dev';
+    else if (branch === 'main') el.className = 'env-badge env-badge--main';
+    else el.className = 'env-badge';
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    // 版本/分支徽标
+    fetchJson('/api/meta').then(function (m) { renderEnvBadge(m); }).catch(function () { renderEnvBadge(null); });
     loadAll(true).catch(function (e) {
       console.warn('DG API 未连接（请先 data-governance serve）:', e.message);
     });
