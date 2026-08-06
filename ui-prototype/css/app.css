@@ -1769,3 +1769,15 @@ tr.row-selected td { background: var(--primary-light) !important; }
   border-radius: 6px;
 }
 .ai-rules-hint b { color: var(--danger, #e5484d); }
+
+/* ── 字段必填错误抖动（H7：替换原生 alert） ── */
+.field-error {
+  border-color: var(--danger, #e5484d) !important;
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+  animation: field-shake 0.3s ease;
+}
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}

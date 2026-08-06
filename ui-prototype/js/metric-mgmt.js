@@ -826,8 +826,13 @@
 
   function suggestMetricDrawer() {
     var cn = document.getElementById('newMetricCn');
-    if (!cn || !cn.value.trim()) { alert('请先填写指标名称'); return; }
     var status = document.getElementById('newMetricAiStatus');
+    if (!cn || !cn.value.trim()) {
+      if (status) { status.style.display = ''; status.innerHTML = '<span style="color:var(--danger);">⚠️ 请先填写指标名称</span>'; }
+      if (cn) { cn.focus(); cn.classList.add('field-error'); setTimeout(function(){ cn.classList.remove('field-error'); }, 1800); }
+      return;
+    }
+    if (status) status.innerHTML = '';
     // 引导：中文名可能口语化，建议先填业务定义/计算公式（AI 以定义为准生成）
     var descEl = document.getElementById('newMetricDesc');
     var formulaEl = document.getElementById('newMetricFormulaLogic');
@@ -915,7 +920,12 @@
 
   function saveNewMetricDrawer() {
     var cn = document.getElementById('newMetricCn');
-    if (!cn || !cn.value.trim()) { alert('请填写指标名称'); return; }
+    var status = document.getElementById('newMetricAiStatus');
+    if (!cn || !cn.value.trim()) {
+      if (status) { status.style.display = ''; status.innerHTML = '<span style="color:var(--danger);">⚠️ 请填写指标名称</span>'; }
+      if (cn) { cn.focus(); cn.classList.add('field-error'); setTimeout(function(){ cn.classList.remove('field-error'); }, 1800); }
+      return;
+    }
     var dom = (document.getElementById('newMetricDomain') || {}).value || 'sale';
     var domUp = dom.toUpperCase();
     var get = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
