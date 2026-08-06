@@ -1835,16 +1835,9 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 /* 每张卡向下偏移 + 缩小 + 变淡，模拟透视层叠（远的卡小且暗） */
 .import-card-wrap { transform: translateY(0) scale(1); opacity: 1; }
-.import-card-wrap:nth-child(n+2) { transform: translateY(-18px) scale(0.97); opacity: 0.92; }
-.import-card-wrap:nth-child(n+3) { transform: translateY(-36px) scale(0.94); opacity: 0.85; }
-.import-card-wrap:nth-child(n+4) { transform: translateY(-54px) scale(0.91); opacity: 0.78; }
-.import-card-wrap:nth-child(n+5) { transform: translateY(-72px) scale(0.88); opacity: 0.72; }
-.import-card-wrap:nth-child(n+6) { transform: translateY(-90px) scale(0.85); opacity: 0.66; }
-/* 每张卡的 margin-top 让下层卡往上叠进来 */
-.import-card-wrap { margin-top: 70px; }
-.import-card-wrap:first-child { margin-top: 0; }
-/* hover：该卡浮起到最前，恢复正常大小 + 完整阴影 */
+/* 每张卡的偏移/缩放/透明度由 JS inline style 强制设置（避免 nth-child 失效） */
 .import-card-wrap:hover {
+
   transform: translateY(-10px) scale(1.02) translateZ(80px) !important;
   opacity: 1 !important;
   z-index: 100 !important;

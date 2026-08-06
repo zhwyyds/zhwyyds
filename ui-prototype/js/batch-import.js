@@ -136,6 +136,7 @@
       return;
     }
     host.classList.add('import-cards-stack');
+    host.setAttribute('style', 'perspective:1800px;perspective-origin:50% 0%;padding:24px 16px 80px;');
     host.innerHTML = rows.map(function (row, i) {
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
@@ -153,8 +154,18 @@
       var en = row.metric_en || '—';
       var cn = row.metric_cn || '—';
 
+      // 透视层叠偏移（inline 强制生效；激进参数让重叠明显可见）
+      var layerOffset = i * 40;           // 每张卡向上偏移 40px（够明显）
+      var layerScale = Math.max(0.82, 1 - i * 0.06); // 缩小更明显
+      var layerOpacity = Math.max(0.7, 1 - i * 0.12); // 透明度递减
+      var layerMarginTop = (i === 0) ? 0 : -150;       // 后面卡往上叠 150px 真正重叠
+
       return (
-        '<div class="import-card-wrap" style="--i:' + i + ';">' +
+        '<div class="import-card-wrap" ' +
+          'style="--i:' + i + ';margin-top:' + layerMarginTop + 'px;' +
+          'transform:translateY(-' + layerOffset + 'px) scale(' + layerScale.toFixed(3) + ');' +
+          'opacity:' + layerOpacity.toFixed(2) + ';z-index:' + (100 - i) + ';" ' +
+          'data-index="' + i + '">' +
           // 顶部状态条
           '<div class="import-card-status">' +
             '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
