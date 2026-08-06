@@ -500,7 +500,7 @@
 #importTaskCards .frame.hovered {
 
     z-index: 200;
-    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 120px)) rotate(var(--fan-deg, 0deg)) scale(1.04);
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 170px)) rotate(calc(var(--fan-deg, 0deg) * 0.3)) scale(1.05);
     filter: brightness(1.15) saturate(1.1);
     box-shadow:
       0 0 0 1.5px var(--frame-outer),
@@ -1137,7 +1137,7 @@
 #importTaskCards .pack.board-mode .frame.hovered {
 
     z-index: 200;
-    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 110px)) rotate(var(--fan-deg, 0deg)) scale(1.04);
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 160px)) rotate(calc(var(--fan-deg, 0deg) * 0.3)) scale(1.05);
   
 }
 /* 白板模式下抽出：恢复完整卡片 */
