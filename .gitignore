@@ -25,6 +25,8 @@ scores/
 releases/
 # 评分验收报告（生成物，保留目录占位）
 scoring/*.md
+# 批量导入任务文件（H31：CSV 上传切分后生成的待办任务 JSON，运行时产物）
+tasks/
 
 # ── 覆盖率报告 ──
 .coverage

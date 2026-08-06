@@ -43,9 +43,16 @@
       options.headers['Content-Type'] = 'application/json';
     }
     return resolveBase().then(function (base) {
-      return fetch(base + path, options).then(function (res) {
-        if (!res.ok) throw new Error(path + ' ' + res.status);
-        return res.json();
+      return fetch(base + path, options).then(async function (res) {
+        // 先取 text 再 parse，避免 200+HTML 时抛底层 SyntaxError
+        var text = await res.text();
+        var data = null;
+        try { data = JSON.parse(text); } catch (_) {
+          var head = String(text || '').slice(0, 80).replace(/\s+/g, ' ');
+          throw new Error(path + ' 返回非 JSON (status=' + res.status + ')：' + head);
+        }
+        if (!res.ok) throw new Error((data && data.detail) || (path + ' ' + res.status));
+        return data;
       });
     });
   }

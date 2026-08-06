@@ -24,9 +24,16 @@
       options.headers['Content-Type'] = 'application/json';
     }
     return resolveApiBase().then(function (base) {
-      return fetch(base + path, options).then(function (r) {
-        if (!r.ok) return r.json().then(function (e) { throw new Error((e && e.detail) || (path + ' ' + r.status)); });
-        return r.json();
+      return fetch(base + path, options).then(async function (r) {
+        // 先取 text 再 parse，避免 200/非2xx + HTML 时抛底层 SyntaxError
+        var text = await r.text();
+        var data = null;
+        try { data = JSON.parse(text); } catch (_) {
+          var head = String(text || '').slice(0, 80).replace(/\s+/g, ' ');
+          throw new Error(path + ' 返回非 JSON (status=' + r.status + ')：' + head);
+        }
+        if (!r.ok) throw new Error((data && data.detail) || (path + ' ' + r.status));
+        return data;
       });
     });
   }
