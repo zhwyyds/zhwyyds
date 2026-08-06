@@ -97,4 +97,5 @@ class MetricReviewDocument(BaseModel):
     review_type: Literal["metric_review"] = "metric_review"
     created_at: str
     models_used: list[str]
+    review_source: Literal["mock", "live"] = "live"
     items: list[MetricReviewItem]

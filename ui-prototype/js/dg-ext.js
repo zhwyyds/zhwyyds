@@ -84,10 +84,12 @@
       .map(function (mr) {
         var avg = Math.round(((mr.naming_score + mr.caliber_score) / 2) * 20);
         var pass = mr.naming_score >= 4 && mr.caliber_score >= 4;
+        var isMockDoc = doc.review_source === 'mock';
         return (
           '<div class="model-card">' +
           '<div class="model-card-header"><span class="model-name">' +
           esc(mr.model) +
+          (isMockDoc ? '<span class="badge badge-warn" style="margin-left:6px;font-size:11px;">演示数据</span>' : '') +
           '</span><span class="badge badge-' +
           (pass ? 'pass' : 'warn') +
           '">' +
@@ -125,11 +127,15 @@
       '<div class="grid-3 mb-4">' +
       cards +
       '</div>' +
-      '<div class="callout info">🤝 <div><strong>评审批次：</strong>' +
-      esc(doc.review_id) +
+      '<div class="callout ' +
+      (doc.review_source === 'mock' ? 'warning' : 'info') +
+      '">' +
+      (doc.review_source === 'mock' ? '⚠️ <div><strong>演示数据：</strong>未配置对应模型 API Key，本次评审由本地模拟生成，非真实模型输出</div>' : '🤝 <div><strong>评审批次：</strong>') +
+      (doc.review_source === 'mock' ? '' : esc(doc.review_id) +
       ' · 模型：' +
       esc((doc.models_used || []).join(', ')) +
-      '</div></div>';
+      '</div>') +
+      '</div>';
     var title = document.getElementById('reviewDetailTitle');
     if (title) title.textContent = '指标评审 · ' + item.metric_id;
   }

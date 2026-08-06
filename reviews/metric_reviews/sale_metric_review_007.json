@@ -69,5 +69,6 @@
         "review_status": "pending"
       }
     }
-  ]
+  ],
+  "review_source": "live"
 }

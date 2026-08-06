@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 from data_governance.compare.metrics import build_metric_comparison, decide_metric
 from data_governance.config_loader import load_models
@@ -59,12 +60,15 @@ class MetricReviewPipeline:
         prompt = build_metric_review_prompt(metrics, root_dictionary_text=root_text)
         use_mock = resolve_use_mock(self._use_mock)
 
+        review_source: Literal["mock", "live"]
         if use_mock:
             clients = metric_clients_from_fixture(model_names, self.fixture)
             raw_by_model = run_models_parallel_mock(clients, metrics)
+            review_source = "mock"
         else:
             live_clients = build_live_clients(models)
             raw_by_model = run_models_parallel_prompt(live_clients, prompt, cache_base_dir=self.base_dir)
+            review_source = "live"
 
         items: list[MetricReviewItem] = []
         for metric in metrics:
@@ -100,6 +104,7 @@ class MetricReviewPipeline:
             domain=request.domain,
             created_at=now_iso_cn(),
             models_used=model_names,
+            review_source=review_source,
             items=items,
         )
 
