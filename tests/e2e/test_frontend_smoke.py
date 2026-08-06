@@ -41,6 +41,19 @@ async def run(url: str) -> None:
         page.on("response", lambda r: failed_requests.append(f"{r.status} {r.url}") if r.status >= 400 else None)
 
         # mock /api/* 路由（e2e 同源端口无后端服务，模拟真实数据）
+        async def mock_suggest(_route):
+            await _route.fulfill(
+                status=200, content_type="application/json",
+                body='{"metric_en":"monthly_rent_revenue","metric_abbr":"mrr",'
+                     '"caliber_desc":"自然月内生效租赁合同的租金收入","formula_cn":"汇总当月租金",'
+                     '"formula":"SUM(amount)","unit":"元","frequency":"月","value_type":"金额",'
+                     '"dimensions":"租赁项目,客户,区域","scenario":"月度经营分析","owner":"财务部",'
+                     '"reports":"月度租赁收入报表","analysis_methods":"同比,环比","alert_rules":"",'
+                     '"precision":"2位小数","data_sources":"dwd_fact_rent","source_table":"dws_rent_monthly",'
+                     '"tech_caliber":"按月汇总","category_l1":"收入类","category_l2":"租赁收入",'
+                     '"suggestions":[],"suggested_roots":[],"source":"llm","metric_cn":"月度租赁收入"}',
+            )
+
         async def mock_metrics(_route):
             row = (
                 '{"metric_id":"M_SALE_001","metric_cn":"月销售额","metric_en":"monthly_sales_amt",'
@@ -55,6 +68,7 @@ async def run(url: str) -> None:
         async def mock_pass(_route):
             await _route.fulfill(status=200, content_type="application/json", body="[]")
 
+        await page.route("**/api/metrics/suggest*", lambda r: asyncio.create_task(mock_suggest(r)))
         await page.route("**/api/metrics*", lambda r: asyncio.create_task(mock_metrics(r)))
         await page.route("**/api/roots*", lambda r: asyncio.create_task(mock_pass(r)))
         await page.route("**/api/domains*", lambda r: asyncio.create_task(mock_pass(r)))
@@ -81,7 +95,7 @@ async def run(url: str) -> None:
         for e in page_errors:
             print(f"  - {e[:300]}")
 
-        # 3. 切到指标管理页 + 点击「+ 新增指标」按钮
+        # 3. 切到指标管理页 + 点击「+ 新增指标」按钮（应打开抽屉）
         await page.evaluate("if (typeof switchToPage === 'function') switchToPage('metric-mgmt')")
         await page.wait_for_timeout(800)
 
@@ -93,6 +107,29 @@ async def run(url: str) -> None:
         """)
         print("=" * 60)
         print(f"「+ 新增指标」按钮信息：{btn_info}")
+
+        await page.click(".new-metric-btn", timeout=5000)
+        await page.wait_for_timeout(500)
+        drawer_state = await page.evaluate("""
+            (() => {
+              var d = document.getElementById('metricNewDrawer');
+              return d ? (d.classList.contains('show') ? '抽屉已显示' : '抽屉未显示') : '抽屉不存在';
+            })()
+        """)
+        print(f"点击后抽屉状态：{drawer_state}")
+
+        # 填指标名称 → 点 AI 辅助 → 检查字段被填充
+        await page.fill("#metricNewDrawer #newMetricCn", "月度租赁收入")
+        await page.evaluate("suggestMetricDrawer()")
+        await page.wait_for_timeout(3000)
+        fill_state = await page.evaluate("""
+            (() => {
+              var g = function(id){ var e = document.getElementById(id); return e ? e.value : 'NO_FIELD'; };
+              return '英文名=' + g('newMetricEn').slice(0,30) + ' | 单位=' + g('newMetricUnit') +
+                     ' | 周期=' + g('newMetricFrequency') + ' | 负责人=' + g('newMetricOwner');
+            })()
+        """)
+        print(f"AI 填充后：{fill_state}")
 
         inline_visible = await page.evaluate("""
             (() => {

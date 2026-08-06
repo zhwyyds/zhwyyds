@@ -479,7 +479,7 @@
     <button type="button" class="btn btn-sm" onclick="importMetricsFile()">&#128229; 导入</button>
     <button type="button" class="btn btn-sm" onclick="switchToPage('settings')">&#9881; 设置</button>
     <button type="button" class="btn btn-sm" onclick="showBatchMetricModal()">&#128203; 批量新增</button>
-    <button type="button" class="new-metric-btn" onclick="showNewMetricInline()">+ 新增指标</button>
+    <button type="button" class="new-metric-btn" onclick="openNewMetricDrawer()">+ 新增指标</button>
   </div>
 
   <!-- Batch Toolbar (shows when items selected) -->
@@ -2298,6 +2298,86 @@
 
   </div><!-- /content -->
 </div><!-- /main -->
+
+<!-- 新增指标：与「指标详情抽屉」同款布局（H4：可编辑 + AI 填充） -->
+<div class="modal-overlay metric-view-overlay" id="metricNewDrawer" onclick="if(event.target===this)closeNewMetricDrawer()">
+  <div class="metric-view-dialog" role="dialog" aria-label="新增指标" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">&#10133; 新增指标</span>
+      <button type="button" class="modal-close" onclick="closeNewMetricDrawer()" aria-label="关闭">&#10005;</button>
+    </div>
+    <div class="metric-view-body" id="metricNewDrawerBody" style="max-height:70vh;overflow:auto;">
+      <div class="metric-spec-surface">
+        <div class="indicator-spec-card">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border-soft,#e5e8ef);display:flex;align-items:center;gap:8px;">
+            <span class="text-bold">基本信息</span>
+            <button type="button" class="btn btn-sm btn-primary" onclick="suggestMetricDrawer()">&#129302; AI 辅助（按中文名生成全部字段）</button>
+            <span class="text-xs text-muted" id="newMetricAiStatus" style="display:none;"></span>
+          </div>
+          <table class="indicator-spec-table" cellspacing="0" cellpadding="0">
+            <tr><th class="indicator-spec-th">指标名称 *</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricCn" placeholder="如：月度租赁收入" style="width:100%;"></td>
+              <th class="indicator-spec-th">指标编号</th>
+              <td class="indicator-spec-td"><span class="text-sm text-muted" id="newMetricIdPreview">自动生成</span></td></tr>
+            <tr><th class="indicator-spec-th">计量单位</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricUnit" placeholder="元" style="width:100%;"></td>
+              <th class="indicator-spec-th">值类型</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricValueType" placeholder="金额 / 数量 / 比率" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">时间周期</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricFrequency" placeholder="月" style="width:100%;"></td>
+              <th class="indicator-spec-th">统计维度</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricDimensions" placeholder="渠道, 区域, 品类" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">应用场景</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricScenario" style="width:100%;"></td>
+              <th class="indicator-spec-th">指标负责单位</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricOwner" placeholder="AI 自动判断" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">应用报表</th>
+              <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricReports" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">指标描述</th>
+              <td class="indicator-spec-td" colspan="3"><textarea class="modal-form-textarea" id="newMetricDesc" rows="3" placeholder="统计口径、包含/排除边界" style="width:100%;"></textarea></td></tr>
+            <tr><th class="indicator-spec-th">计算公式</th>
+              <td class="indicator-spec-td" colspan="3">
+                <input class="modal-form-input" id="newMetricFormulaCn" placeholder="中文口径" style="width:100%;margin-bottom:6px;">
+                <input class="modal-form-input" id="newMetricFormulaLogic" placeholder="伪代码 / SQL" style="width:100%;font-family:var(--mono);font-size:12px;">
+              </td></tr>
+            <tr><th class="indicator-spec-th">分析方法</th>
+              <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricAnalysis" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">预警标准</th>
+              <td class="indicator-spec-td" colspan="3"><input class="modal-form-input" id="newMetricAlert" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">精度</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricPrecision" placeholder="2位小数" style="width:100%;"></td>
+              <th class="indicator-spec-th">英文名 / 缩写</th>
+              <td class="indicator-spec-td">
+                <input class="modal-form-input" id="newMetricEn" placeholder="monthly_rent_revenue" style="width:100%;margin-bottom:6px;">
+                <input class="modal-form-input" id="newMetricAbbr" placeholder="mrr" style="width:100%;">
+              </td></tr>
+            <tr><th class="indicator-spec-th">数据来源</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricDataSources" style="width:100%;"></td>
+              <th class="indicator-spec-th">所属物理表</th>
+              <td class="indicator-spec-td"><input class="modal-form-input" id="newMetricSourceTable" placeholder="dwd_… / dws_…" style="width:100%;"></td></tr>
+            <tr><th class="indicator-spec-th">技术来源</th>
+              <td class="indicator-spec-td" colspan="3"><textarea class="modal-form-textarea" id="newMetricTechCaliber" rows="2" placeholder="可执行 SQL / 表达式" style="width:100%;font-family:var(--mono);font-size:12px;"></textarea></td></tr>
+            <tr><th class="indicator-spec-th">版本记录</th>
+              <td class="indicator-spec-td" colspan="3"><span class="text-sm text-muted">保存后自动生成 v0.1.0</span></td></tr>
+          </table>
+          <div style="padding:10px 14px;" id="newMetricAiRootsRow" style="display:none;">
+            <div class="text-sm text-bold" style="margin-bottom:6px;">自动新建词根（AI 建议缺失词根，勾选保存时自动创建）</div>
+            <div id="newMetricAiRoots"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 隐藏字段：AI 填充 / 保存用（主题域/类型/分类） -->
+      <input type="hidden" id="newMetricDomain" value="sale">
+      <input type="hidden" id="newMetricType" value="atomic">
+      <input type="hidden" id="newMetricCatL1">
+      <input type="hidden" id="newMetricCatL2">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeNewMetricDrawer()">取消</button>
+      <button class="btn btn-primary" onclick="saveNewMetricDrawer()">保存为草稿</button>
+    </div>
+  </div>
+</div>
 
 <!-- 指标详情：居中弹层（指标管理 / 指标库「查看」） -->
 <div class="modal-overlay metric-view-overlay" id="metricDetailDrawer" onclick="if(event.target===this)closeMetricDrawer()">

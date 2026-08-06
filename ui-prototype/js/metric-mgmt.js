@@ -777,10 +777,154 @@
   global.inlineSuggestMetric = inlineSuggestMetric;
   global.saveInlineNew = saveInlineNew;
   global.showBatchMetricModal = showBatchMetricModal;
+  global.openNewMetricDrawer = openNewMetricDrawer;
+  global.closeNewMetricDrawer = closeNewMetricDrawer;
+  global.suggestMetricDrawer = suggestMetricDrawer;
+  global.saveNewMetricDrawer = saveNewMetricDrawer;
 
   global.editMetric = function (id) {
     openEdit(id);
   };
 
   document.addEventListener('DOMContentLoaded', bindMgmtFilters);
+
+  /* ==================== 新增指标抽屉（H4：与「指标详情」同款布局 + AI） ==================== */
+
+  function openNewMetricDrawer() {
+    var modal = document.getElementById('metricNewDrawer');
+    if (!modal) return;
+    modal.querySelectorAll('input, textarea').forEach(function (el) {
+      var id = el.id;
+      if (id === 'newMetricDomain') el.value = 'sale';
+      else if (id === 'newMetricType') el.value = 'atomic';
+      else if (id === 'newMetricIdPreview') return;
+      else el.value = '';
+    });
+    var idEl = document.getElementById('newMetricIdPreview');
+    if (idEl) idEl.textContent = 'M_SALE_N' + String(Math.floor(Math.random() * 900 + 100));
+    var status = document.getElementById('newMetricAiStatus');
+    if (status) { status.style.display = 'none'; status.textContent = ''; }
+    var rootsRow = document.getElementById('newMetricAiRootsRow');
+    if (rootsRow) rootsRow.style.display = 'none';
+    var rootsEl = document.getElementById('newMetricAiRoots');
+    if (rootsEl) rootsEl.innerHTML = '';
+    global.__DG_AI_SUGGEST__ = null;
+    document.querySelectorAll('#metricNewDrawer .ai-diff-tip').forEach(function (t) { t.remove(); });
+    modal.classList.add('show');
+    var cn = document.getElementById('newMetricCn');
+    if (cn) cn.focus();
+  }
+
+  function closeNewMetricDrawer() {
+    var modal = document.getElementById('metricNewDrawer');
+    if (modal) modal.classList.remove('show');
+  }
+
+  function suggestMetricDrawer() {
+    var cn = document.getElementById('newMetricCn');
+    if (!cn || !cn.value.trim()) { alert('请先填写指标名称'); return; }
+    var status = document.getElementById('newMetricAiStatus');
+    if (status) { status.style.display = ''; status.textContent = '🤔 AI 生成中，请稍候…'; }
+    var domain = document.getElementById('newMetricDomain');
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    apiFetch('/api/metrics/suggest', {
+      method: 'POST',
+      body: JSON.stringify({
+        metric_cn: cn.value.trim(),
+        domain_code: domain ? domain.value : 'sale',
+        caliber_desc: val('newMetricDesc'),
+        formula: val('newMetricFormulaLogic'),
+        unit: val('newMetricUnit'),
+        frequency: val('newMetricFrequency')
+      })
+    }).then(function (r) {
+      global.__DG_AI_SUGGEST__ = r;
+      var src = { similar_metric: '复用同名指标', rule_hint: '词根组合提示(mock)', llm: 'AI 生成', llm_multi: 'AI 多模型生成' }[r.source] || '';
+      var fills = [
+        ['newMetricEn', r.metric_en, '英文名'], ['newMetricAbbr', r.metric_abbr, '缩写'],
+        ['newMetricDesc', r.caliber_desc, '指标描述'], ['newMetricFormulaCn', r.formula_cn, '公式中文说明'],
+        ['newMetricFormulaLogic', r.formula, '计算公式'], ['newMetricUnit', r.unit, '计量单位'],
+        ['newMetricFrequency', r.frequency, '时间周期'], ['newMetricValueType', r.value_type, '值类型'],
+        ['newMetricDimensions', r.dimensions, '统计维度'], ['newMetricScenario', r.scenario, '应用场景'],
+        ['newMetricOwner', r.owner, '指标负责单位'], ['newMetricReports', r.reports, '应用报表'],
+        ['newMetricAnalysis', r.analysis_methods, '分析方法'], ['newMetricAlert', r.alert_rules, '预警标准'],
+        ['newMetricPrecision', r.precision, '精度'], ['newMetricDataSources', r.data_sources, '数据来源'],
+        ['newMetricTechCaliber', r.tech_caliber, '技术来源'], ['newMetricSourceTable', r.source_table || r.data_sources, '所属物理表'],
+        ['newMetricCatL1', r.category_l1, '一级分类'], ['newMetricCatL2', r.category_l2, '二级分类']
+      ];
+      fills.forEach(function (f) { if (window.applyAiFill) applyAiFill(f[0], f[1], f[2]); });
+      if (window.renderAiRoots) renderAiRoots(r.suggested_roots || []);
+      if (status) {
+        var diffs = document.querySelectorAll('#metricNewDrawer .ai-diff-tip').length;
+        status.innerHTML = diffs > 0
+          ? '✅ 已生成（' + src + '）：' + diffs + ' 处差异待确认'
+          : '✅ 已生成（' + src + '），可直接保存';
+      }
+    }).catch(function (e) {
+      if (status) status.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + e.message + '</span>';
+    });
+  }
+
+  function saveNewMetricDrawer() {
+    var cn = document.getElementById('newMetricCn');
+    if (!cn || !cn.value.trim()) { alert('请填写指标名称'); return; }
+    var dom = (document.getElementById('newMetricDomain') || {}).value || 'sale';
+    var domUp = dom.toUpperCase();
+    var get = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    var it = global.__DG_AI_SUGGEST__ || {};
+    var row = {
+      metric_id: 'M_' + domUp + '_N' + String(Math.floor(Math.random() * 900 + 100)),
+      metric_cn: cn.value.trim(),
+      metric_en: get('newMetricEn') || it.metric_en || 'pending_naming',
+      metric_abbr: get('newMetricAbbr') || it.metric_abbr || '',
+      domain_code: dom,
+      metric_type: get('newMetricType') || 'atomic',
+      caliber_desc: get('newMetricDesc'),
+      formula_cn: get('newMetricFormulaCn'),
+      formula: get('newMetricFormulaLogic'),
+      tech_caliber: get('newMetricTechCaliber'),
+      source_table: get('newMetricSourceTable'),
+      owner: get('newMetricOwner'),
+      version: '0.1.0',
+      version_history: '0.1.0|' + new Date().toISOString().slice(0, 10) + '|—|新建草稿',
+      review_status: 'pending',
+      category_l1: get('newMetricCatL1'), category_l2: get('newMetricCatL2'),
+      value_type: get('newMetricValueType'), dimensions: get('newMetricDimensions'),
+      scenario: get('newMetricScenario'), reports: get('newMetricReports'),
+      analysis_methods: get('newMetricAnalysis'), alert_rules: get('newMetricAlert'),
+      precision: get('newMetricPrecision'), data_sources: get('newMetricDataSources'),
+      unit: get('newMetricUnit'), frequency: get('newMetricFrequency') || '月'
+    };
+    var chosenRoots = [];
+    var suggest = global.__DG_AI_SUGGEST__;
+    if (suggest && suggest.suggested_roots && suggest.suggested_roots.length) {
+      var boxes = document.querySelectorAll('#metricNewDrawer #newMetricAiRoots input[type="checkbox"]:checked');
+      for (var i = 0; i < boxes.length; i++) {
+        var rt = suggest.suggested_roots[parseInt(boxes[i].getAttribute('data-idx'), 10)];
+        if (rt) chosenRoots.push(rt);
+      }
+    }
+    var chain = Promise.resolve();
+    var rootIds = [];
+    chosenRoots.forEach(function (rt) {
+      chain = chain.then(function () {
+        return apiFetch('/api/roots', {
+          method: 'POST',
+          body: JSON.stringify({
+            root_cn: rt.root_cn, root_en: rt.root_en, root_abbr: rt.root_abbr || rt.root_en,
+            root_type: rt.root_type || 'noun', domain_code: dom, description: rt.description || '', synonyms: ''
+          })
+        });
+      }).then(function (r) { if (r && r.root_id) rootIds.push(r.root_id); }).catch(function () {});
+    });
+    chain.then(function () {
+      if (rootIds.length) row.root_ids = rootIds.join(';');
+      return apiFetch('/api/metrics', { method: 'POST', body: JSON.stringify(row) });
+    }).then(function () {
+      closeNewMetricDrawer();
+      global.__DG_AI_SUGGEST__ = null;
+      return reloadFromServer();
+    }).catch(function (e) { alert('创建失败: ' + e.message); });
+  }
+
 })(window);
