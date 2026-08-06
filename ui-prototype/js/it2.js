@@ -129,13 +129,13 @@
     }
     api('/api/metrics/batch-generate', { method: 'POST', body: JSON.stringify({ atomic_ids: sel.atomic_ids, modifier_ids: sel.modifier_ids, dry_run: true }) })
       .then(function (res) { renderBatchPreview(res.generated, '预览'); })
-      .catch(function (e) { alert('预览失败: ' + e.message); });
+      .catch(function (e) { if (window.toast) toast('预览失败: ' + e.message); });
   }
 
   function batchGenerate(ev) {
     var btn = ev && ev.currentTarget ? ev.currentTarget : null;
     var sel = batchSelection();
-    if (!sel.atomic_ids.length || !sel.modifier_ids.length) { alert('请先选择原子指标与修饰词'); return; }
+    if (!sel.atomic_ids.length || !sel.modifier_ids.length) { if (window.toast) toast('请先选择原子指标与修饰词'); return; }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ 正在生成...'; }
     api('/api/metrics/batch-generate', { method: 'POST', body: JSON.stringify(sel) })
       .then(function (res) {
@@ -143,10 +143,10 @@
         var msg = '生成 ' + res.generated.length + ' 个派生指标';
         if (res.existing.length) msg += '，跳过已存在 ' + res.existing.length + ' 个';
         if (res.invalid_atomics.length || res.invalid_modifiers.length) msg += '，无效 ' + (res.invalid_atomics.length + res.invalid_modifiers.length) + ' 个';
-        alert(msg);
+        if (window.toast) toast(msg, 'success');
         if (global.DG && DG.refresh) DG.refresh();
       })
-      .catch(function (e) { alert('生成失败: ' + e.message); })
+      .catch(function (e) { if (window.toast) toast('生成失败: ' + e.message); })
       .finally(function () {
         if (btn) { btn.disabled = false; btn.textContent = '⚡ 一键生成'; }
       });
@@ -193,10 +193,10 @@
       description: document.getElementById('rootFormDesc').value.trim(),
       synonyms: document.getElementById('rootFormSyn').value.trim()
     };
-    if (!payload.root_cn || !payload.root_en || !payload.domain_code) { alert('中文名 / 英文名 / 主题域 必填'); return; }
+    if (!payload.root_cn || !payload.root_en || !payload.domain_code) { if (window.toast) toast('中文名 / 英文名 / 主题域 必填'); return; }
     api('/api/roots', { method: 'POST', body: JSON.stringify(payload) })
       .then(function () {
-        alert('词根已创建');
+        if (window.toast) toast('词根已创建', 'success');
         closeModal('rootCreateModal');
         ['rootFormCn', 'rootFormEn', 'rootFormAbbr', 'rootFormDomain', 'rootFormDesc', 'rootFormSyn'].forEach(function (id) {
           var el = document.getElementById(id); if (el) el.value = '';
@@ -204,7 +204,7 @@
         loadRoots();
         if (global.DG && DG.refresh) DG.refresh();
       })
-      .catch(function (e) { alert('创建失败: ' + e.message); });
+      .catch(function (e) { if (window.toast) toast('创建失败: ' + e.message); });
   }
 
   function openRootEdit(id) {
@@ -235,15 +235,15 @@
       description: document.getElementById('rootEditDesc').value.trim(),
       synonyms: document.getElementById('rootEditSyn').value.trim()
     };
-    if (!payload.root_cn || !payload.root_en) { alert('中文名 / 英文名 必填'); return; }
+    if (!payload.root_cn || !payload.root_en) { if (window.toast) toast('中文名 / 英文名 必填'); return; }
     api('/api/roots/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(payload) })
       .then(function () {
-        alert('已保存');
+        toast('已保存');
         closeModal('rootEditModal');
         loadRoots();
         if (global.DG && DG.refresh) DG.refresh();
       })
-      .catch(function (e) { alert('保存失败: ' + e.message); });
+      .catch(function (e) { toast('保存失败: ' + e.message); });
   }
 
   /* ==================== 口径核查中心（IT2-5/IT2-6） ==================== */
@@ -289,23 +289,23 @@
   function caliberApprove(id) {
     if (!confirm('批准该指标的口径草稿？将触发重新评分。')) return;
     api('/api/metrics/' + encodeURIComponent(id) + '/caliber/approve', { method: 'POST', body: JSON.stringify({ checked_by: 'console' }) })
-      .then(function () { alert('已批准'); loadCaliberQueue(); if (global.DG && DG.refresh) DG.refresh(); })
-      .catch(function (e) { alert('失败: ' + e.message); });
+      .then(function () { toast('已批准'); loadCaliberQueue(); if (global.DG && DG.refresh) DG.refresh(); })
+      .catch(function (e) { toast('失败: ' + e.message); });
   }
 
   function caliberReject(id) {
     var reason = prompt('打回原因（必填）：');
     if (reason === null) return;
     api('/api/metrics/' + encodeURIComponent(id) + '/caliber/reject', { method: 'POST', body: JSON.stringify({ reason: reason, checked_by: 'console' }) })
-      .then(function () { alert('已打回'); loadCaliberQueue(); })
-      .catch(function (e) { alert('失败: ' + e.message); });
+      .then(function () { toast('已打回'); loadCaliberQueue(); })
+      .catch(function (e) { toast('失败: ' + e.message); });
   }
 
   function caliberBackfill() {
     if (!confirm('对未起草口径的存量指标批量起草（mock/live 取决于配置）？')) return;
     api('/api/caliber/backfill', { method: 'POST', body: JSON.stringify({}) })
-      .then(function (res) { alert('补全完成：起草 ' + res.drafted + ' 个'); loadCaliberQueue(); })
-      .catch(function (e) { alert('补全失败: ' + e.message); });
+      .then(function (res) { toast('补全完成：起草 ' + res.drafted + ' 个'); loadCaliberQueue(); })
+      .catch(function (e) { toast('补全失败: ' + e.message); });
   }
 
   /* ==================== AI 填充 + 差异提示（H2 通用机制） ==================== */
@@ -412,7 +412,7 @@
 
   function suggestMetricFields() {
     var cn = document.getElementById('newMetricCn');
-    if (!cn || !cn.value.trim()) { alert('请先填写指标名称'); return; }
+    if (!cn || !cn.value.trim()) { toast('请先填写指标名称'); return; }
     var status = document.getElementById('newMetricAiStatus');
     var rootsEl = document.getElementById('newMetricAiRoots');
     var rootsRow = document.getElementById('newMetricAiRootsRow');
@@ -515,7 +515,7 @@
   function suggestRootFields() {
     var editMode = !!(document.getElementById('rootEditModal') && document.getElementById('rootEditModal').classList.contains('show'));
     var cnEl = document.getElementById(editMode ? 'rootEditCn' : 'rootFormCn');
-    if (!cnEl || !cnEl.value.trim()) { alert('请先填写中文词根'); return; }
+    if (!cnEl || !cnEl.value.trim()) { toast('请先填写中文词根'); return; }
     var domainEl = document.getElementById(editMode ? 'rootEditDomain' : 'rootFormDomain');
     var descEl = document.getElementById(editMode ? 'rootEditDesc' : 'rootFormDesc');
     api('/api/roots/suggest', {
@@ -530,7 +530,7 @@
       if (r.reused_root_id) {
         applyAiFill(editMode ? 'rootEditEn' : 'rootFormEn', r.root_en, '英文词根');
         applyAiFill(editMode ? 'rootEditAbbr' : 'rootFormAbbr', r.root_abbr, '缩写');
-        alert('该词根与已有词根 ' + r.reused_root_id + '（' + r.root_cn + ' → ' + r.root_en + '）语义一致，已自动复用。建议直接使用已有词根，无需新建。');
+        toast('该词根与已有词根 ' + r.reused_root_id + '（' + r.root_cn + ' → ' + r.root_en + '）语义一致，已自动复用。建议直接使用已有词根，无需新建。');
         return;
       }
       applyAiFill(editMode ? 'rootEditEn' : 'rootFormEn', r.root_en, '英文词根');
@@ -545,8 +545,8 @@
         if (typeSel2 && r.root_type) { typeSel2.value = r.root_type; flashField(typeSel2); }
         applyAiFill('rootFormDesc', r.description, '说明');
       }
-      if (r.warning) alert(r.warning);
-    }).catch(function (e) { alert('AI 辅助失败: ' + e.message); });
+      if (r.warning) toast(r.warning);
+    }).catch(function (e) { toast('AI 辅助失败: ' + e.message); });
   }
 
   /* ==================== 域级治理看板（IT3-2） ==================== */
@@ -627,7 +627,7 @@
     input.style.display = 'none';
     input.onchange = function () {
       var f = input.files && input.files[0];
-      if (f) readFileAsText(f).then(onText).catch(function (e) { alert(e.message); });
+      if (f) readFileAsText(f).then(onText).catch(function (e) { toast(e.message); });
     };
     document.body.appendChild(input);
     input.click();
@@ -636,8 +636,8 @@
   function importMetricsFile() {
     pickFile('.csv', function (csv) {
       api('/api/metrics/import', { method: 'POST', body: JSON.stringify({ csv: csv }) })
-        .then(function (r) { alert('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个'); if (DG.refresh) DG.refresh(); })
-        .catch(function (e) { alert('导入失败: ' + e.message); });
+        .then(function (r) { if (window.toast) toast('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个', 'success'); if (DG.refresh) DG.refresh(); })
+        .catch(function (e) { if (window.toast) toast('导入失败: ' + e.message); });
     });
   }
 
@@ -649,8 +649,8 @@
   function importRootsFile() {
     pickFile('.csv', function (csv) {
       api('/api/roots/import', { method: 'POST', body: JSON.stringify({ csv: csv }) })
-        .then(function (r) { alert('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个' + (r.errors.length ? '，错误 ' + r.errors.length + ' 条' : '')); loadRoots(); if (DG.refresh) DG.refresh(); })
-        .catch(function (e) { alert('导入失败: ' + e.message); });
+        .then(function (r) { if (window.toast) toast('导入完成：新增 ' + r.created + ' 个，跳过 ' + r.skipped + ' 个' + ((r.errors||[]).length ? '，错误 ' + r.errors.length + ' 条' : ''), 'success'); loadRoots(); if (DG.refresh) DG.refresh(); })
+        .catch(function (e) { if (window.toast) toast('导入失败: ' + e.message); });
     });
   }
 
@@ -677,13 +677,13 @@
 
   function toggleModel(id, enabled) {
     api('/api/models/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ enabled: enabled }) })
-      .then(loadSettingsModels).catch(function (e) { alert('操作失败: ' + e.message); });
+      .then(loadSettingsModels).catch(function (e) { toast('操作失败: ' + e.message); });
   }
 
   function deleteModel(id) {
     if (!confirm('删除模型 ' + id + '？')) return;
     api('/api/models/' + encodeURIComponent(id), { method: 'DELETE' })
-      .then(loadSettingsModels).catch(function (e) { alert('删除失败: ' + e.message); });
+      .then(loadSettingsModels).catch(function (e) { toast('删除失败: ' + e.message); });
   }
 
   function openModelModal() {
@@ -707,7 +707,7 @@
       var uc = document.getElementById('modelEditUseCase'); if (uc) uc.value = m.use_case || 'metric_review';
       var en = document.getElementById('modelEditEnabled'); if (en) en.value = m.enabled === 'true' ? 'true' : 'false';
       document.getElementById('modelEditModal').classList.add('show');
-    }).catch(function (e) { alert('加载失败: ' + e.message); });
+    }).catch(function (e) { toast('加载失败: ' + e.message); });
   }
 
   function saveModelEdit() {
@@ -722,15 +722,15 @@
       api_key_env: document.getElementById('modelEditKeyEnv').value.trim(),
       remark: document.getElementById('modelEditRemark').value.trim()
     };
-    if (!payload.model_name || !payload.provider) { alert('模型名/厂商必填'); return; }
+    if (!payload.model_name || !payload.provider) { toast('模型名/厂商必填'); return; }
     var path = id ? '/api/models/' + encodeURIComponent(id) : '/api/models';
     api(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) })
       .then(function () {
-        alert(id ? '模型已更新' : '模型已新增');
+        toast(id ? '模型已更新' : '模型已新增');
         closeModal('modelEditModal');
         loadSettingsModels();
       })
-      .catch(function (e) { alert('保存失败: ' + e.message); });
+      .catch(function (e) { toast('保存失败: ' + e.message); });
   }
 
   /* ==================== 系统设置：修饰词管理（问题 11） ==================== */
@@ -755,7 +755,7 @@
   function deleteModifier(id) {
     if (!confirm('删除修饰词 ' + id + '？')) return;
     api('/api/modifier-rules/' + encodeURIComponent(id), { method: 'DELETE' })
-      .then(loadSettingsModifiers).catch(function (e) { alert('删除失败: ' + e.message); });
+      .then(loadSettingsModifiers).catch(function (e) { toast('删除失败: ' + e.message); });
   }
 
   function openModifierModal() {
@@ -777,7 +777,7 @@
       Object.keys(map).forEach(function (k) { var el = document.getElementById(k); if (el) el.value = map[k] || ''; });
       var t = document.getElementById('modifierEditType'); if (t) t.value = m.modifier_type || 'time';
       document.getElementById('modifierEditModal').classList.add('show');
-    }).catch(function (e) { alert('加载失败: ' + e.message); });
+    }).catch(function (e) { toast('加载失败: ' + e.message); });
   }
 
   function saveModifierEdit() {
@@ -791,16 +791,16 @@
       description: document.getElementById('modifierEditDesc').value.trim(),
       example_metric: document.getElementById('modifierEditExample').value.trim()
     };
-    if (!payload.modifier_cn || !payload.modifier_en) { alert('中文/英文必填'); return; }
+    if (!payload.modifier_cn || !payload.modifier_en) { toast('中文/英文必填'); return; }
     var path = id ? '/api/modifier-rules/' + encodeURIComponent(id) : '/api/modifier-rules';
     api(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) })
       .then(function () {
-        alert(id ? '修饰词已更新' : '修饰词已新增');
+        toast(id ? '修饰词已更新' : '修饰词已新增');
         closeModal('modifierEditModal');
         loadSettingsModifiers();
         if (DG.refresh) DG.refresh();
       })
-      .catch(function (e) { alert('保存失败: ' + e.message); });
+      .catch(function (e) { toast('保存失败: ' + e.message); });
   }
 
   /* ==================== 系统设置：评审记录查看（问题 12） ==================== */
@@ -931,7 +931,7 @@
     if (!domain) domain = 'sale';
     var raw = (document.getElementById('rootGenTerms') || {}).value || '';
     raw = raw.trim();
-    if (!raw) { alert('请输入中文词根（每行一个）'); return; }
+    if (!raw) { toast('请输入中文词根（每行一个）'); return; }
     var terms = raw.split('\n')
       .map(function (line) {
         line = line.trim();
@@ -940,7 +940,7 @@
         return { cn_term: p[0].trim(), context: ((p[1] || '').trim()) };
       })
       .filter(Boolean);
-    if (!terms.length) { alert('请输入中文词根（每行一个）'); return; }
+    if (!terms.length) { toast('请输入中文词根（每行一个）'); return; }
     var btn = document.getElementById('rootGenRunBtn');
     btn.disabled = true;
     btn.textContent = '生成中…';
@@ -987,11 +987,11 @@
 
   function commitRootGen() {
     var doc = global.__DG_ROOT_GEN_REVIEW__;
-    if (!doc) { alert('请先生成词根'); return; }
+    if (!doc) { toast('请先生成词根'); return; }
     var boxes = document.querySelectorAll('#rootGenResult .revision-item input[type="checkbox"]:checked');
     var cn = [];
     for (var i = 0; i < boxes.length; i++) cn.push(boxes[i].getAttribute('data-cn'));
-    if (!cn.length) { alert('请至少勾选一个词根'); return; }
+    if (!cn.length) { toast('请至少勾选一个词根'); return; }
     if (!confirm('确认将 ' + cn.length + ' 个词根写入词根库？')) return;
     api('/api/roots/generate/commit', {
       method: 'POST',

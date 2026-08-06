@@ -193,7 +193,7 @@
 
   function refreshCurrent() {
     var id = currentMetricId();
-    if (!id) { alert('请先选择指标'); return; }
+    if (!id) { toast('请先选择指标'); return; }
     var btn = document.getElementById('scoreRefreshBtn');
     if (btn) { btn.disabled = true; btn.textContent = '评分中…'; }
     fetchJson('/api/metrics/' + encodeURIComponent(id) + '/score/refresh', { method: 'POST' })
@@ -201,7 +201,7 @@
         renderScore(res);
         if (global.DG && global.DG.loadAll) global.DG.loadAll(false);
       })
-      .catch(function (e) { alert('评分失败: ' + e.message); })
+      .catch(function (e) { toast('评分失败: ' + e.message); })
       .then(function () {
         if (btn) { btn.disabled = false; btn.innerHTML = '&#10227; 重新评分'; }
       });
@@ -268,9 +268,9 @@
 
   function publishCurrentDomain() {
     var domain = currentDomain();
-    if (!domain) { alert('无法确定主题域'); return; }
+    if (!domain) { toast('无法确定主题域'); return; }
     var approved = countApprovedInDomain(domain);
-    if (approved === 0) { alert('本域没有已通过（approved）的指标，无法发布'); return; }
+    if (approved === 0) { toast('本域没有已通过（approved）的指标，无法发布'); return; }
     if (!confirm('确认发布主题域「' + domain + '」？\n将把 ' + approved + ' 个已通过指标统一升级到下一个版本并写入发布历史。')) return;
     var btn = document.getElementById('publishDomainBtn');
     if (btn) { btn.disabled = true; btn.textContent = '发布中…'; }
@@ -279,7 +279,7 @@
       body: JSON.stringify({ note: '前端一键发布' })
     })
       .then(function (res) {
-        alert('发布成功：' + (res.version_label || res.version || '') + '，共 ' + (res.metric_ids ? res.metric_ids.length : 0) + ' 个指标');
+        toast('发布成功：' + (res.version_label || res.version || '') + '，共 ' + (res.metric_ids ? res.metric_ids.length : 0) + ' 个指标');
         if (global.DG && global.DG.loadAll) return global.DG.loadAll(false).then(function () { return res; });
         return res;
       })
@@ -291,7 +291,7 @@
         }
         loadVersionForCurrentMetric();
       })
-      .catch(function (e) { alert('发布失败: ' + e.message); })
+      .catch(function (e) { toast('发布失败: ' + e.message); })
       .then(function () {
         if (btn) { btn.disabled = false; btn.innerHTML = '&#128640; 发布本域'; }
       });

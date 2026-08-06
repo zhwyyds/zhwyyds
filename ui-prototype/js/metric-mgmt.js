@@ -312,7 +312,7 @@
   function openEdit(id) {
     var m = getMetricById(id);
     if (!m) {
-      alert('未找到指标 ' + id);
+      toast('未找到指标 ' + id);
       return;
     }
     fillEditForm(m);
@@ -334,7 +334,7 @@
         return reloadFromServer();
       })
       .catch(function (e) {
-        alert('保存失败: ' + e.message);
+        toast('保存失败: ' + e.message);
       });
   }
 
@@ -365,7 +365,7 @@
   function saveNew() {
     var cn = getFormValue('newMetricCn');
     if (!cn) {
-      alert('请输入中文名称');
+      toast('请输入中文名称');
       return;
     }
     var dom = getFormValue('newMetricDomain') || 'sale';
@@ -438,7 +438,7 @@
           .catch(function (e) { firstErr = e; });
       });
       chain.then(function () {
-        if (firstErr) { alert('部分词根创建失败: ' + firstErr.message + '（指标未保存）'); return; }
+        if (firstErr) { toast('部分词根创建失败: ' + firstErr.message + '（指标未保存）'); return; }
         if (rootIds.length) row.root_ids = rootIds.join(';');
         createMetricRow(row);
       });
@@ -459,7 +459,7 @@
         return reloadFromServer();
       })
       .catch(function (e) {
-        alert('创建失败: ' + e.message);
+        toast('创建失败: ' + e.message);
       });
   }
 
@@ -470,7 +470,7 @@
     })
       .then(reloadFromServer)
       .catch(function (e) {
-        alert('发布失败: ' + e.message);
+        toast('发布失败: ' + e.message);
       });
   }
 
@@ -491,13 +491,13 @@
 
   function batchSuggestMetrics() {
     var raw = document.getElementById('batchMetricInput') ? document.getElementById('batchMetricInput').value.trim() : '';
-    if (!raw) { alert('请输入指标（每行一个）'); return; }
+    if (!raw) { toast('请输入指标（每行一个）'); return; }
     var domain = document.getElementById('batchMetricDomain') ? document.getElementById('batchMetricDomain').value : 'sale';
     var terms = raw.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
       var p = l.split('|');
       return { metric_cn: (p[0] || '').trim(), caliber_desc: ((p[1] || '').trim()), unit: ((p[2] || '').trim()), frequency: ((p[3] || '').trim()) };
     }).filter(function (t) { return t.metric_cn; });
-    if (!terms.length) { alert('请至少输入一个指标名称'); return; }
+    if (!terms.length) { toast('请至少输入一个指标名称'); return; }
     var status = document.getElementById('batchStatus');
     var preview = document.getElementById('batchMetricPreview');
     var createBtn = document.getElementById('batchCreateBtn');
@@ -555,7 +555,7 @@
       var it = items[parseInt(boxes[i].getAttribute('data-idx'), 10)];
       if (it && it.metric_en) chosen.push(it);
     }
-    if (!chosen.length) { alert('请勾选要创建的指标'); return; }
+    if (!chosen.length) { toast('请勾选要创建的指标'); return; }
     if (!confirm('确认批量创建 ' + chosen.length + ' 个指标？')) return;
     var status = document.getElementById('batchStatus');
     var created = 0;
@@ -908,7 +908,7 @@
       closeNewMetricDrawer();
       global.__DG_AI_SUGGEST__ = null;
       return reloadFromServer();
-    }).catch(function (e) { alert('创建失败: ' + e.message); });
+    }).catch(function (e) { toast('创建失败: ' + e.message); });
   }
 
 })(window);

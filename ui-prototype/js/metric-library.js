@@ -142,13 +142,13 @@
   }
 
   function applyMetricRevision(reviewId) {
-    if (!reviewId) { alert('缺少评审批次'); return; }
+    if (!reviewId) { toast('缺少评审批次'); return; }
     var checked = [];
     var boxes = document.querySelectorAll('.revision-item input[type="checkbox"]:checked');
     for (var i = 0; i < boxes.length; i++) checked.push(boxes[i].getAttribute('data-field'));
-    if (!checked.length) { alert('请至少勾选一项修订'); return; }
+    if (!checked.length) { toast('请至少勾选一项修订'); return; }
     var id = currentMetricId();
-    if (!id) { alert('请先选择指标'); return; }
+    if (!id) { toast('请先选择指标'); return; }
     if (!confirm('确认应用 AI 修订建议（' + checked.join(', ') + '）到指标 ' + id + '？')) return;
     fetchJson('/api/metrics/' + encodeURIComponent(id) + '/review/' + encodeURIComponent(reviewId) + '/apply-revision', {
       method: 'POST',
@@ -156,12 +156,12 @@
       body: JSON.stringify({ fields: checked, checked_by: 'admin' })
     })
       .then(function (res) {
-        alert('已应用修订：' + (res.applied_fields || []).join(', '));
+        toast('已应用修订：' + (res.applied_fields || []).join(', '));
         if (global.DG && global.DG.loadAll) global.DG.loadAll(false);
         if (global.MetricLibrary && global.MetricLibrary.loadCurrent) global.MetricLibrary.loadCurrent();
         return loadReviewForCurrentMetric();
       })
-      .catch(function (e) { alert('应用失败: ' + e.message); });
+      .catch(function (e) { toast('应用失败: ' + e.message); });
   }
 
   function renderReviewPanelHtml(doc) {
@@ -306,7 +306,7 @@
   function submitDispute() {
     var id = currentMetricId();
     if (!id) {
-      alert('请先选择指标');
+      toast('请先选择指标');
       return;
     }
     var select = document.getElementById('disputeFieldSelect');
@@ -314,7 +314,7 @@
     var field = select ? select.value : 'other';
     var note = ta ? ta.value.trim() : '';
     if (!note) {
-      alert('请填写异议说明');
+      toast('请填写异议说明');
       return;
     }
     var label = FIELD_LABEL[field] || field;
@@ -331,10 +331,10 @@
         if (global.DG && global.DG.loadAll) return global.DG.loadAll(false);
       })
       .then(function () {
-        alert('异议已提交并写入指标记录');
+        toast('异议已提交并写入指标记录');
       })
       .catch(function (e) {
-        alert('异议提交失败: ' + e.message);
+        toast('异议提交失败: ' + e.message);
       });
   }
 
@@ -349,7 +349,7 @@
         if (global.DG && global.DG.loadAll) return global.DG.loadAll(false);
       })
       .catch(function (e) {
-        alert('操作失败: ' + e.message);
+        toast('操作失败: ' + e.message);
       });
   }
 

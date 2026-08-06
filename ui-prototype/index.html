@@ -85,10 +85,10 @@
   <header class="header">
     <div class="header-title" id="pageTitle">治理总览 <span class="crumb">› 数据治理平台</span></div>
     <div class="header-actions">
-      <button class="btn btn-sm" type="button" onclick="DG.runAcceptanceAndReload().then(function(){alert('验收已重新计算');})">🔄 刷新验收</button>
-      <button class="btn btn-sm">📥 导入</button>
-      <button class="btn btn-sm">📤 导出</button>
-      <button class="btn btn-sm btn-primary">⚙️ 设置</button>
+      <button class="btn btn-sm" type="button" onclick="DG.runAcceptanceAndReload().then(function(){ if(window.toast) toast('验收已重新计算','success'); })">🔄 刷新验收</button>
+      <button class="btn btn-sm" onclick="importMetricsFile()">📥 导入</button>
+      <button class="btn btn-sm" onclick="exportMetricsCsv()">📤 导出</button>
+      <button class="btn btn-sm btn-primary" onclick="switchToPage('settings')">⚙️ 设置</button>
     </div>
   </header>
 

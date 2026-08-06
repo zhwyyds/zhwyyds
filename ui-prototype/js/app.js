@@ -138,14 +138,14 @@ function selectAllReviewed() {
 function batchPublish() {
   const selected = document.querySelectorAll('#batchTableBody .custom-checkbox.checked');
   if (selected.length === 0) return;
-  alert('批量发布 ' + selected.length + ' 个指标\n\n发布流程：\n1. 校验指标完整性\n2. 更新指标状态为已发布\n3. 记录发布日志\n4. 通知相关下游');
+  if (window.toast) toast('批量发布 ' + selected.length + ' 个指标（校验完整性→更新状态→记录日志→通知下游）', 'success');
 }
 
 function singlePublish(btn) {
   const row = btn.closest('.batch-row');
   const id = row.querySelector('td:nth-child(2)').textContent;
   const name = row.querySelector('td:nth-child(3)').textContent;
-  alert('发布指标 ' + id + ' ' + name + '\n\n状态: 待发布 → 已发布');
+  if (window.toast) toast('发布指标 ' + name + '（' + id + '）：待发布 → 已发布', 'success');
 }
 
 // Checkbox Toggle
@@ -390,7 +390,7 @@ function toggleDetailScore(element) {
 function submitReviewForCurrentMetric() {
   var m = metricCards[metricCardIndex];
   if (!m || !m.id) {
-    alert('请先选择指标');
+    if (window.toast) toast('请先选择指标');
     return;
   }
   submitReview(m.id);
@@ -545,7 +545,7 @@ function submitReview(id) {
     })
     .catch(function (e) {
       if (window.toast) toast('评审失败: ' + e.message);
-      else alert('评审失败: ' + e.message);
+      else if (window.toast) toast('评审失败: ' + e.message);
       if (window.DG && DG.loadAll) DG.loadAll(false);
     });
 }
@@ -583,7 +583,7 @@ function batchReplacePinyin() {
       }
     }
   });
-  alert('批量替换完成：' + count + ' 个指标已更新');
+  if (window.toast) toast('批量替换完成：' + count + ' 个指标已更新', 'success');
 }
 
 // ========== Batch Generation ==========
@@ -707,7 +707,7 @@ function reviewAction(id, action) {
     }
     clicked.style.background = action === 'reject' ? '#FEE2E2' : action === 'approve' ? '#D1FAE5' : '#FEF3C7';
   }
-  alert('评审操作完成: ' + id + '\n操作: ' + actions[action] + '\n\n已更新评审队列状态');
+  if (window.toast) toast('评审操作完成：' + actions[action] + '（' + id + '）', 'success');
 }
 
 function showNewMetricModal() {
@@ -728,7 +728,7 @@ function findMetricRow(id) {
 }
 function batchOffline() {
   var selected = document.querySelectorAll('.batch-row.selected');
-  if (selected.length === 0) { alert('请先选择需要下线的指标'); return; }
+  if (selected.length === 0) { if (window.toast) toast('请先选择需要下线的指标'); return; }
   if (!confirm('确认批量下线 ' + selected.length + ' 个指标？\n\n状态将写回 CSV（review_status=offline）。')) return;
   var ids = [];
   selected.forEach(function (row) {
@@ -740,7 +740,7 @@ function batchOffline() {
   var failed = 0;
   function next(i) {
     if (i >= ids.length) {
-      alert('批量下线完成\n\n成功: ' + done + ' 个\n失败: ' + failed + ' 个');
+      if (window.toast) toast('批量下线完成：成功 ' + done + ' 个，失败 ' + failed + ' 个', 'success');
       if (window.DG && DG.loadAll) DG.loadAll(false);
       return;
     }
@@ -783,7 +783,7 @@ function showOfflineModal(metricId) {
 }
 function confirmOffline() {
   var reason = document.getElementById('offlineReason').value;
-  if (!reason) { alert('请选择下线原因'); return; }
+  if (!reason) { if (window.toast) toast('请选择下线原因'); return; }
   var metricId = (document.getElementById('offlineMetricId').textContent || '').trim();
   var note = (document.getElementById('offlineDesc').value || '').trim();
   closeModal('offlineModal');
@@ -805,10 +805,10 @@ function confirmOffline() {
       if (window.DG && DG.loadAll) return DG.loadAll(false);
     })
     .then(function () {
-      alert('指标 ' + metricId + ' 已下线并写回 CSV');
+      if (window.toast) toast('指标 ' + metricId + ' 已下线并写回 CSV', 'success');
     })
     .catch(function (e) {
-      alert('下线失败: ' + e.message + '\n\n请确认已执行 data-governance serve 且指标 ID 存在于 CSV。');
+      if (window.toast) toast('下线失败: ' + e.message + '（请确认 serve 已启动且指标存在于 CSV）');
     });
 }
 
@@ -834,7 +834,7 @@ function saveRootEdit() {
   var cn = document.getElementById('rootEditCn').value.trim();
   var en = document.getElementById('rootEditEn').value.trim();
   var abbr = document.getElementById('rootEditAbbr').value.trim();
-  if (!cn || !en || !abbr) { alert('请填写中文、英文与缩写'); return; }
+  if (!cn || !en || !abbr) { if (window.toast) toast('请填写中文、英文与缩写'); return; }
   var cells = rootEditRow.querySelectorAll('td');
   cells[1].textContent = cn;
   cells[2].textContent = en;
@@ -848,7 +848,7 @@ function saveRootEdit() {
 // Root Offline Modal
 function showRootOfflineModal(rootId) {
   if (!confirm('词根下线后将标记为 deprecated，新指标不可再引用此词根。\n已被指标引用的词根下线后，存量引用不受影响。\n\n确认下线词根 ' + rootId + ' ？')) return;
-  alert('词根 ' + rootId + ' 已下线');
+  if (window.toast) toast('词根 ' + rootId + ' 已下线', 'success');
 }
 
 // Delete Modal (metric + root)
@@ -873,7 +873,7 @@ function showDeleteModal(itemId, type) {
 }
 function confirmDelete() {
   var reason = document.getElementById('deleteReason').value.trim();
-  if (!reason) { alert('请填写删除理由'); return; }
+  if (!reason) { if (window.toast) toast('请填写删除理由'); return; }
   if (!confirm('确认物理删除？此操作不可逆！')) return;
   var metricId = document.getElementById('deleteMetricId').textContent;
   var statusCell = document.getElementById('deleteMetricId').closest('.modal-body');
@@ -889,7 +889,7 @@ function confirmDelete() {
       if (row.parentNode) row.parentNode.removeChild(row);
     }, 300);
   }
-  alert('删除完成: ' + metricId + '\n理由: ' + reason + '\n操作日志已记录，不可恢复');
+  if (window.toast) toast('删除完成：' + metricId + '（操作日志已记录，不可恢复）', 'success');
 }
 
 // Page Size Change & Pagination
