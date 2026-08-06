@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import csv
 import re
-from collections.abc import Iterator
-from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
 from data_governance.io.catalog import MetricRecord, load_catalog
+from data_governance.io.file_lock import file_lock
 
 METRIC_CSV_FIELDS = [
     "metric_id",
@@ -64,21 +63,6 @@ METRIC_CSV_FIELDS = [
 _METRIC_ID = re.compile(r"^M_([A-Z]+)_")
 
 
-@contextmanager
-def _file_lock(path: Path) -> Iterator[None]:
-    """文件锁上下文管理器，防止多人并发写入丢失数据。"""
-    import fcntl
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path = path.with_suffix(path.suffix + ".lock")
-    with lock_path.open("w") as lock_fd:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
-
-
 def metrics_csv_path(metrics_dir: Path, domain: str) -> Path:
     return metrics_dir / f"{domain.lower()}_metrics.csv"
 
@@ -99,7 +83,7 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
 
 
 def _write_rows(path: Path, rows: list[dict[str, str]]) -> None:
-    with _file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
+    with file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=METRIC_CSV_FIELDS)
         writer.writeheader()
         for row in rows:

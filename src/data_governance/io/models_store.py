@@ -8,6 +8,8 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+from data_governance.io.file_lock import file_lock
+
 FIELDS = (
     "model_id",
     "model_name",
@@ -21,24 +23,6 @@ FIELDS = (
 )
 
 
-def _lock(path: Path):
-    import fcntl
-    from contextlib import contextmanager
-
-    @contextmanager
-    def _ctx():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        lock_path = path.with_suffix(path.suffix + ".lock")
-        with lock_path.open("w") as fd:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            try:
-                yield
-            finally:
-                fcntl.flock(fd, fcntl.LOCK_UN)
-
-    return _ctx
-
-
 def load_models_file(path: Path) -> list[dict]:
     if not path.is_file():
         return []
@@ -47,7 +31,7 @@ def load_models_file(path: Path) -> list[dict]:
 
 
 def _save(path: Path, rows: list[dict]) -> None:
-    with _lock(path)(), path.open("w", newline="", encoding="utf-8") as f:
+    with file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
         for r in rows:

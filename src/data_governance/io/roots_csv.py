@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import csv
 import re
-from collections.abc import Iterator
-from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
+from data_governance.io.file_lock import file_lock
 from data_governance.schemas.roots import RootCsvRow, SourceModel
 
 ROOT_CSV_HEADER = [
@@ -55,24 +54,9 @@ def read_existing_root_ids(path: Path) -> list[str]:
     return ids
 
 
-@contextmanager
-def _file_lock(path: Path) -> Iterator[None]:
-    """文件锁上下文管理器，防止并发写入丢数据。"""
-    import fcntl
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path = path.with_suffix(path.suffix + ".lock")
-    with lock_path.open("w") as lock_fd:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
-
-
 def update_root_row(path: Path, root_id: str, payload: dict) -> dict | None:
     """按 root_id 更新词根字段（payload 内键需属于表头），返回更新后的行；未找到返回 None。"""
-    with _file_lock(path), path.open(newline="", encoding="utf-8") as f:
+    with file_lock(path), path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = [dict(r) for r in reader]
         fieldnames = list(reader.fieldnames or ROOT_CSV_HEADER)
@@ -95,7 +79,7 @@ def update_root_row(path: Path, root_id: str, payload: dict) -> dict | None:
     if target is None:
         return None
 
-    with _file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
+    with file_lock(path), path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -104,7 +88,7 @@ def update_root_row(path: Path, root_id: str, payload: dict) -> dict | None:
 
 def append_root_row(path: Path, row: RootCsvRow) -> None:
     write_header = not path.is_file() or path.stat().st_size == 0
-    with _file_lock(path), path.open("a", newline="", encoding="utf-8") as f:
+    with file_lock(path), path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=ROOT_CSV_HEADER)
         if write_header:
             writer.writeheader()
