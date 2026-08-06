@@ -135,30 +135,77 @@
       host.innerHTML = '<div class="text-sm text-muted" style="padding:12px;">尚未处理，点击「去重 + AI 生成」开始。</div>';
       return;
     }
+    host.classList.add('import-cards-stack');
     host.innerHTML = rows.map(function (row, i) {
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
       var stBadge = st === 'draft' ? 'badge-pass' : (st === 'rejected' || st === 'error' ? 'badge-danger' : (st === 'skip' ? 'badge-neutral' : 'badge-warn'));
       var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
+      var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
+
+      // 字段值（"—" = 待入库/未生成）
+      var metricId = row.metric_id || '—';
+      var roots = ((row.root_ids && row.root_ids.length) ? row.root_ids : (row.suggested_roots && row.suggested_roots.length) ? row.suggested_roots : []).join(' / ') || '—';
+      var unit = row.unit || '—';
+      var freq = row.frequency || '—';
+      var domain = row.domain_code || '—';
+      var desc = row.caliber_desc || '—';
+      var en = row.metric_en || '—';
+      var cn = row.metric_cn || '—';
+
       return (
-        '<div class="card mb-3" style="box-shadow:none;border:1px solid var(--border);">' +
-        '<div class="card-body">' +
-        '<div class="flex align-center justify-between mb-2" style="gap:8px;">' +
-        '<div class="text-bold">' + esc(row.metric_cn || '—') +
-        ' <span class="badge badge-neutral" style="margin-left:6px;">' + dedupLabel + '</span>' +
-        ' <span class="badge ' + stBadge + '">' + stLabel + '</span>' +
-        '</div>' +
-        (row._reject_reason ? '<div class="text-sm text-muted">打回原因: ' + esc(row._reject_reason) + '</div>' : '') +
-        '</div>' +
-        '<div class="text-sm text-muted mb-1">英文名: <span class="text-mono">' + esc(row.metric_en || '—') + '</span></div>' +
-        '<div class="text-sm mb-2">定义: ' + esc(row.caliber_desc || '—') + '</div>' +
-        (row._error ? '<div class="text-sm" style="color:var(--danger);">' + esc(row._error) + '</div>' : '') +
-        '<div class="flex gap-2" style="gap:8px;margin-top:8px;">' +
-        ((st === 'pending' || st === 'rejected') ?
-          '<button class="btn btn-xs btn-primary" onclick="reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
-          '<button class="btn btn-xs" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' : '') +
-        '</div>' +
-        '</div></div>'
+        '<div class="import-card-wrap" style="--i:' + i + ';">' +
+          // 顶部状态条
+          '<div class="import-card-status">' +
+            '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
+            '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
+            (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
+            '<span class="text-sm text-muted" style="margin-left:auto;">卡片 ' + (i + 1) + ' / ' + rows.length + '</span>' +
+          '</div>' +
+          // 指标卡片（完全复用指标库的 indicator-spec-card 样式）
+          '<div class="metric-spec-surface">' +
+            '<div class="indicator-spec-header">' +
+              '<div class="indicator-spec-cat-tags">' +
+                '<div class="indicator-spec-cat-tag"><span class="label">主题域：</span><span class="value">' + esc(domain) + '</span></div>' +
+                '<div class="indicator-spec-cat-tag"><span class="label">词根：</span><span class="value">' + esc(roots) + '</span></div>' +
+              '</div>' +
+              '<div class="indicator-spec-card-badge">指标卡片</div>' +
+            '</div>' +
+            '<div class="indicator-spec-card">' +
+              '<table class="indicator-spec-table" cellspacing="0" cellpadding="0">' +
+                '<tr>' +
+                  '<th class="indicator-spec-th indicator-spec-th--biz">指标名称</th>' +
+                  '<td class="indicator-spec-td">' + esc(cn) + '</td>' +
+                  '<th class="indicator-spec-th indicator-spec-th--biz">指标编号</th>' +
+                  '<td class="indicator-spec-td">' + esc(metricId) + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                  '<th class="indicator-spec-th indicator-spec-th--tech">英文名</th>' +
+                  '<td class="indicator-spec-td" style="font-family:var(--font-mono);">' + esc(en) + '</td>' +
+                  '<th class="indicator-spec-th indicator-spec-th--biz">计量单位</th>' +
+                  '<td class="indicator-spec-td">' + esc(unit) + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                  '<th class="indicator-spec-th indicator-spec-th--tech">时间周期</th>' +
+                  '<td class="indicator-spec-td">' + esc(freq) + '</td>' +
+                  '<th class="indicator-spec-th indicator-spec-th--biz">值类型</th>' +
+                  '<td class="indicator-spec-td">—</td>' +
+                '</tr>' +
+                '<tr>' +
+                  '<th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">指标描述</th>' +
+                  '<td class="indicator-spec-td indicator-spec-td-block" colspan="3">' + esc(desc) + '</td>' +
+                '</tr>' +
+              '</table>' +
+              (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 16px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
+              // 评审按钮
+              ((st === 'pending' || st === 'rejected') ?
+                '<div class="import-card-actions">' +
+                  '<button class="btn" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
+                  '<button class="btn btn-primary" onclick="reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
+                '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>'
       );
     }).join('');
   }

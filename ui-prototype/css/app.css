@@ -1813,3 +1813,65 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 .dg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .dg-toast-success { background: var(--success, #2e8b57); }
+
+
+/* ── 批量导入：指标卡片层叠堆叠（H31 增强） ── */
+.import-cards-stack {
+  perspective: 1800px;
+  perspective-origin: 50% 8%;
+  padding: 24px 16px 80px;
+  position: relative;
+}
+.import-card-wrap {
+  position: relative;
+  margin: 0 auto 0;
+  max-width: 920px;
+  transform-origin: 50% 0%;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s ease,
+              opacity 0.4s ease,
+              z-index 0s;
+  z-index: 1;
+}
+/* 每张卡向下偏移 + 缩小 + 变淡，模拟透视层叠（远的卡小且暗） */
+.import-card-wrap { transform: translateY(0) scale(1); opacity: 1; }
+.import-card-wrap:nth-child(n+2) { transform: translateY(-18px) scale(0.97); opacity: 0.92; }
+.import-card-wrap:nth-child(n+3) { transform: translateY(-36px) scale(0.94); opacity: 0.85; }
+.import-card-wrap:nth-child(n+4) { transform: translateY(-54px) scale(0.91); opacity: 0.78; }
+.import-card-wrap:nth-child(n+5) { transform: translateY(-72px) scale(0.88); opacity: 0.72; }
+.import-card-wrap:nth-child(n+6) { transform: translateY(-90px) scale(0.85); opacity: 0.66; }
+/* 每张卡的 margin-top 让下层卡往上叠进来 */
+.import-card-wrap { margin-top: 70px; }
+.import-card-wrap:first-child { margin-top: 0; }
+/* hover：该卡浮起到最前，恢复正常大小 + 完整阴影 */
+.import-card-wrap:hover {
+  transform: translateY(-10px) scale(1.02) translateZ(80px) !important;
+  opacity: 1 !important;
+  z-index: 100 !important;
+  transition-delay: 0s;
+}
+.import-card-wrap .indicator-spec-card {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08),
+              0 8px 24px rgba(0,0,0,0.06);
+}
+.import-card-wrap:hover .indicator-spec-card {
+  box-shadow: 0 16px 40px rgba(91, 155, 213, 0.4),
+              0 32px 80px rgba(0, 0, 0, 0.15);
+}
+/* 顶部状态条 */
+.import-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 4px;
+  font-size: 12px;
+}
+/* 评审按钮区 */
+.import-card-actions {
+  padding: 14px 16px;
+  border-top: 1px solid #5b9bd5;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  background: #e8e8e8;
+}
