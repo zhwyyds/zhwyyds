@@ -203,6 +203,8 @@
           '<div class="warcraft-card" ' +
             'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
             '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
+            // 选中卡右上角关闭按钮
+            (isSelected ? '<button class="warcraft-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
             // 顶部状态条（选中完整卡时显示）
             '<div class="import-card-status">' +
               '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
@@ -242,7 +244,7 @@
         '<span class="dot" style="background:#2e8b57;"></span>已通过 ' + (cnt.draft || 0) +
         '<span class="dot" style="background:#e24b4a;"></span>已打回 ' + (cnt.rejected || 0) +
         '<span class="dot" style="background:#888;"></span>重复 ' + (cnt.skip || 0) +
-        '　·　点击卡片在中央放大查看' +
+        '　·　点击卡片放大 · ← → 切换 · Esc 关闭' +
       '</div>';
     host.innerHTML = cardsHtml + hint;
   }
@@ -255,6 +257,33 @@
     SELECTED_INDEX = (SELECTED_INDEX === i) ? -1 : i; // 再次点击取消选中
     renderTaskCards(CURRENT_TASK);
   }
+
+  /* 关闭选中（× 按钮 / Esc） */
+  function closeSelectedCard() {
+    SELECTED_INDEX = -1;
+    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
+  }
+
+  /* 键盘导航：← → 切换卡片，Esc 关闭（任务详情打开时生效） */
+  document.addEventListener('keydown', function (e) {
+    if (!CURRENT_TASK) return;
+    var rows = CURRENT_TASK.generated || [];
+    if (!rows.length || SELECTED_INDEX < 0) return;
+    var skip = { draft: 1, skip: 1, error: 1 };
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      var ni = SELECTED_INDEX + 1;
+      while (ni < rows.length && skip[rows[ni]._status]) ni++;
+      if (ni < rows.length) { SELECTED_INDEX = ni; renderTaskCards(CURRENT_TASK); }
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var pi = SELECTED_INDEX - 1;
+      while (pi >= 0 && skip[rows[pi]._status]) pi--;
+      if (pi >= 0) { SELECTED_INDEX = pi; renderTaskCards(CURRENT_TASK); }
+    } else if (e.key === 'Escape') {
+      closeSelectedCard();
+    }
+  });
 
   /* 复用指标库卡片的完整字段渲染（与指标库零差异：指标名称/编号、单位/值类型、
      时间周期/统计维度、应用场景/负责单位、报表、描述、公式、方法、预警、精度、
@@ -349,4 +378,5 @@
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
   global.selectImportCard = selectImportCard;
+  global.closeSelectedCard = closeSelectedCard;
 })(window);
