@@ -435,7 +435,7 @@
     el.style.zIndex = '999';
     // JS 强制切换：隐藏 .f-text、显示 .f-edit（inline style 必胜）
     el.querySelectorAll('.f-text').forEach(function (n) { n.style.display = 'none'; });
-    el.querySelectorAll('.f-edit').forEach(function (n) { n.style.removeProperty('display'); });
+    el.querySelectorAll('.f-edit').forEach(function (n) { n.style.display = 'inline-block'; });
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
     var actions = document.getElementById('mc8draw-actions');
