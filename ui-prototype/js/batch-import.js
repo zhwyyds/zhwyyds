@@ -144,16 +144,6 @@
       var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
       var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
 
-      // 字段值（"—" = 待入库/未生成）
-      var metricId = row.metric_id || '—';
-      var roots = ((row.root_ids && row.root_ids.length) ? row.root_ids : (row.suggested_roots && row.suggested_roots.length) ? row.suggested_roots : []).join(' / ') || '—';
-      var unit = row.unit || '—';
-      var freq = row.frequency || '—';
-      var domain = row.domain_code || '—';
-      var desc = row.caliber_desc || '—';
-      var en = row.metric_en || '—';
-      var cn = row.metric_cn || '—';
-
       // 透视层叠偏移（inline 强制生效；激进参数让重叠明显可见）
       var layerOffset = i * 40;           // 每张卡向上偏移 40px（够明显）
       var layerScale = Math.max(0.82, 1 - i * 0.06); // 缩小更明显
@@ -173,52 +163,58 @@
             (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
             '<span class="text-sm text-muted" style="margin-left:auto;">卡片 ' + (i + 1) + ' / ' + rows.length + '</span>' +
           '</div>' +
-          // 指标卡片（完全复用指标库的 indicator-spec-card 样式）
+          // 指标卡片（复用指标库的 indicator-spec-card 完整渲染：全部字段值）
           '<div class="metric-spec-surface">' +
-            '<div class="indicator-spec-header">' +
-              '<div class="indicator-spec-cat-tags">' +
-                '<div class="indicator-spec-cat-tag"><span class="label">主题域：</span><span class="value">' + esc(domain) + '</span></div>' +
-                '<div class="indicator-spec-cat-tag"><span class="label">词根：</span><span class="value">' + esc(roots) + '</span></div>' +
-              '</div>' +
-              '<div class="indicator-spec-card-badge">指标卡片</div>' +
-            '</div>' +
-            '<div class="indicator-spec-card">' +
-              '<table class="indicator-spec-table" cellspacing="0" cellpadding="0">' +
-                '<tr>' +
-                  '<th class="indicator-spec-th indicator-spec-th--biz">指标名称</th>' +
-                  '<td class="indicator-spec-td">' + esc(cn) + '</td>' +
-                  '<th class="indicator-spec-th indicator-spec-th--biz">指标编号</th>' +
-                  '<td class="indicator-spec-td">' + esc(metricId) + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                  '<th class="indicator-spec-th indicator-spec-th--tech">英文名</th>' +
-                  '<td class="indicator-spec-td" style="font-family:var(--font-mono);">' + esc(en) + '</td>' +
-                  '<th class="indicator-spec-th indicator-spec-th--biz">计量单位</th>' +
-                  '<td class="indicator-spec-td">' + esc(unit) + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                  '<th class="indicator-spec-th indicator-spec-th--tech">时间周期</th>' +
-                  '<td class="indicator-spec-td">' + esc(freq) + '</td>' +
-                  '<th class="indicator-spec-th indicator-spec-th--biz">值类型</th>' +
-                  '<td class="indicator-spec-td">—</td>' +
-                '</tr>' +
-                '<tr>' +
-                  '<th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">指标描述</th>' +
-                  '<td class="indicator-spec-td indicator-spec-td-block" colspan="3">' + esc(desc) + '</td>' +
-                '</tr>' +
-              '</table>' +
-              (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 16px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
-              // 评审按钮
-              ((st === 'pending' || st === 'rejected') ?
-                '<div class="import-card-actions">' +
-                  '<button class="btn" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
-                  '<button class="btn btn-primary" onclick="reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
-                '</div>' : '') +
-            '</div>' +
+            buildImportSpecHtml(row) +
+            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 16px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
+            // 评审按钮
+            ((st === 'pending' || st === 'rejected') ?
+              '<div class="import-card-actions">' +
+                '<button class="btn" onclick="reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
+                '<button class="btn btn-primary" onclick="reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
+              '</div>' : '') +
           '</div>' +
         '</div>'
       );
     }).join('');
+  }
+
+  /* 复用指标库卡片的完整字段渲染（与指标库零差异：指标名称/编号、单位/值类型、
+     时间周期/统计维度、应用场景/负责单位、报表、描述、公式、方法、预警、精度、
+     数据来源、技术口径、物理表、版本记录 + 顶部分类栏） */
+  function buildImportSpecHtml(row) {
+    var MS = global.MetricSpec;
+    if (MS && MS.apiRowToSpec && MS.buildSpecTableHtml) {
+      try {
+        var spec = MS.apiRowToSpec(row);
+        return MS.buildSpecTableHtml(spec, { showBadge: false });
+      } catch (_) { /* 降级走下方简版 */ }
+    }
+    // 降级简版（MetricSpec 未加载时兜底）
+    var en = row.metric_en || '—';
+    var cn = row.metric_cn || '—';
+    var unit = row.unit || '—';
+    var freq = row.frequency || '—';
+    var desc = row.caliber_desc || '—';
+    return (
+      '<div class="indicator-spec-header">' +
+        '<div class="indicator-spec-cat-tags">' +
+          '<div class="indicator-spec-cat-tag"><span class="label">主题域：</span><span class="value">' + esc(row.domain_code || '—') + '</span></div>' +
+        '</div>' +
+        '<div class="indicator-spec-card-badge">指标卡片</div>' +
+      '</div>' +
+      '<div class="indicator-spec-card">' +
+        '<table class="indicator-spec-table" cellspacing="0" cellpadding="0">' +
+          '<tr><th class="indicator-spec-th indicator-spec-th--biz">指标名称</th><td class="indicator-spec-td">' + esc(cn) + '</td>' +
+          '<th class="indicator-spec-th indicator-spec-th--biz">指标编号</th><td class="indicator-spec-td">' + esc(row.metric_id || '—') + '</td></tr>' +
+          '<tr><th class="indicator-spec-th indicator-spec-th--tech">英文名</th><td class="indicator-spec-td" style="font-family:var(--font-mono);">' + esc(en) + '</td>' +
+          '<th class="indicator-spec-th indicator-spec-th--biz">计量单位</th><td class="indicator-spec-td">' + esc(unit) + '</td></tr>' +
+          '<tr><th class="indicator-spec-th indicator-spec-th--tech">时间周期</th><td class="indicator-spec-td">' + esc(freq) + '</td>' +
+          '<th class="indicator-spec-th indicator-spec-th--biz">值类型</th><td class="indicator-spec-td">' + esc(row.value_type || '—') + '</td></tr>' +
+          '<tr><th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">指标描述</th><td class="indicator-spec-td indicator-spec-td-block" colspan="3">' + esc(desc) + '</td></tr>' +
+        '</table>' +
+      '</div>'
+    );
   }
 
   /* ---------- 处理任务：去重 + AI 生成 ---------- */

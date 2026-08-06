@@ -95,18 +95,14 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
                     }
                 )
                 merged = {**row}
-                for k in (
-                    "metric_en",
-                    "domain_code",
-                    "unit",
-                    "frequency",
-                    "caliber_desc",
-                    "category_l1",
-                    "category_l2",
-                ):
-                    v = sug.get(k)
-                    if v:
-                        merged[k] = v
+                # 合并 AI 生成的完整指标字段（与指标库卡片对齐，保留全部值）；
+                # 过滤空值/内部标记，避免覆盖 CSV 原始输入
+                for k, v in sug.items():
+                    if k == "source":
+                        continue
+                    if v in (None, "", [], {}):
+                        continue
+                    merged[k] = v
                 merged["_dedup"] = "new"
                 merged["_status"] = "pending"
                 return merged
