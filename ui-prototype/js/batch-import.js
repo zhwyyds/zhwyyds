@@ -169,13 +169,14 @@
     }
     host.classList.add('import-cards-stack');
 
-    // 扇形手牌：所有卡底部聚拢、顶部扇面展开（不分页，全部一扇）
+    // 扇形展开（打开的扇子）：卡片完整可见，弧形排列——中间正立抬升、两侧倾斜
     var n = rows.length;
-    var spreadDeg = Math.min(120, 4 * n + 40); // 总扇角（50 张时约 120°）
+    var spreadDeg = Math.min(50, 3 * n + 18); // 6 张约 36°、50 张约 50°（倾斜克制，信息可读）
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
+    var liftMax = Math.min(26, 3 * n); // 中间卡抬升峰值（弧线）
 
-    // 默认不自动选中（扇形堆叠完整可见）；仅当选中索引无效时清空
+    // 默认不自动选中（扇形完整可见）；仅当选中索引无效时清空
     // 评审流程中 reviewImportRow 会自动选中下一张
     if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
       SELECTED_INDEX = -1;
@@ -183,7 +184,9 @@
 
     var cardsHtml = rows.map(function (row, i) {
       var theta = step * (i - mid);
-      var z = 100 - Math.abs(i - mid); // 中间卡在上
+      var dist = Math.abs(i - mid);
+      var lift = -liftMax * (1 - dist / (mid || 1)); // 中间 -liftMax，两边 0
+      var z = 100 - dist; // 中间卡在上
       var isSelected = i === SELECTED_INDEX;
       var st = row._status || 'pending';
       var stLabel = { pending: '待评审', skip: '已跳过(重复)', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || st;
@@ -193,7 +196,7 @@
 
       return (
         '<div class="import-card-wrap' + (isSelected ? ' selected' : '') + (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + '" ' +
-          'style="--theta:' + theta.toFixed(2) + 'deg;--z:' + z + ';" ' +
+          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';" ' +
           'data-index="' + i + '" ' +
           'onclick="selectImportCard(' + i + ')">' +
           // 炉石卡（H32 魔兽卡包；扇形里显示迷你形态，选中显示完整形态）

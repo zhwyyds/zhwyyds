@@ -1813,51 +1813,65 @@ tr.row-selected td { background: var(--primary-light) !important; }
 .dg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .dg-toast-success { background: var(--success, #2e8b57); }
 
-/* ── 批量导入：扇形手牌（H32 v5 Impeccable 优化：字阶系统 + 金色卡牌质感 + 入场动效 + 键盘导航） ── */
+/* ── 批量导入：扇形展开（H32 v7：打开的扇子——卡片完整可见，弧形排列，选中浮层看全字段） ── */
 .import-cards-stack {
-  position: relative;
-  min-height: 680px;
-  margin: 8px 0 12px;
-  padding: 0 0 34px;
+  position: relative; /* 选中浮层 absolute 定位基准 */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 430px;
+  padding: 20px 12px 44px;
   overflow: visible;
 }
-/* 扇形中每张迷你卡：底部中心为原点，绕 --theta 旋转展开成扇形 */
+/* 每张卡：完整可见，绕底部中心旋转成弧形（中间正立、两侧倾斜），不重叠 */
 .import-card-wrap {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  width: 96px;
-  height: 148px;
+  position: relative;
+  width: 200px;
+  height: 290px;
+  flex: 0 0 auto;
+  transform: rotate(var(--theta, 0deg)) translateY(var(--lift, 0px));
   transform-origin: 50% 100%;
-  transform: rotate(var(--theta, 0deg));
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.4s ease,
-              filter 0.4s ease,
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s ease,
               z-index 0s;
   cursor: pointer;
   z-index: var(--z, 1);
   will-change: transform;
 }
-/* 迷你卡形态：只露 插画 + 卡名 + 水晶数字 */
+.import-card-wrap:hover {
+  transform: rotate(var(--theta, 0deg)) translateY(calc(var(--lift, 0px) - 14px)) scale(1.04);
+  z-index: 120;
+}
+/* 卡片本体：金属边框 + 椭圆顶底（保留炉石质感，但信息可读） */
 .import-card-wrap .warcraft-card {
-  width: 96px;
-  height: 148px;
-  border-radius: 12px 12px 8px 8px;
-  padding: 2px;
+  width: 200px;
+  height: 290px;
+  border-radius: 16px 16px 10px 10px;
+  padding: 3px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .import-card-wrap .warcraft-art {
-  height: 58px;
-  border-radius: 10px 10px 3px 3px / 10px 10px 40% 40%;
+  height: 54px;
+  border-radius: 13px 13px 3px 3px / 13px 13px 40% 40%;
+  flex-shrink: 0;
 }
-.import-card-wrap .warcraft-art-icon { font-size: 30px; }
+.import-card-wrap .warcraft-art-icon { font-size: 32px; }
 .import-card-wrap .warcraft-name {
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 2px 3px;
-  margin: 2px 3px;
+  padding: 3px 5px;
+  margin: 3px 4px 4px;
   border-radius: 10px;
   letter-spacing: 0.2px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .import-card-wrap .warcraft-cost {
   top: 4px;
@@ -1866,28 +1880,73 @@ tr.row-selected td { background: var(--primary-light) !important; }
   height: 22px;
   font-size: 12px;
 }
-.import-card-wrap .warcraft-stat,
-.import-card-wrap .warcraft-body,
+.import-card-wrap .warcraft-stat {
+  bottom: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  display: flex;
+  z-index: 5;
+}
+/* 迷你卡也要显示核心信息（不再是隐藏） */
+.import-card-wrap .warcraft-body {
+  display: block;
+  flex: 1;
+  overflow: hidden;
+  margin: 0 3px 3px;
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+.import-card-wrap .warcraft-body .indicator-spec-header,
+.import-card-wrap .warcraft-body .indicator-spec-cat-tags,
+.import-card-wrap .warcraft-body .indicator-spec-card-badge,
+.import-card-wrap .warcraft-body .indicator-spec-attr-legend,
+.import-card-wrap .warcraft-body .indicator-spec-card {
+  display: none;
+}
+.import-card-wrap .warcraft-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.import-card-wrap .warcraft-body .indicator-spec-table th {
+  font-size: 9px;
+  font-weight: 600;
+  color: #6b4a15;
+  padding: 1px 0;
+  white-space: nowrap;
+  width: 52px;
+  text-align: left;
+  vertical-align: top;
+}
+.import-card-wrap .warcraft-body .indicator-spec-table td {
+  font-size: 11px;
+  color: #241a08;
+  padding: 1px 2px 1px 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+/* 描述行截断为 3 行 */
+.import-card-wrap .warcraft-body .indicator-spec-td-block {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .import-card-wrap .import-card-status,
 .import-card-wrap .import-card-actions,
 .import-card-wrap .warcraft-close {
   display: none;
 }
-/* hover：抬起露出（迷你卡） */
-.import-card-wrap:hover {
-  transform: rotate(var(--theta, 0deg)) translateY(-18px) scale(1.12);
-  z-index: 120;
-  filter: brightness(1.08);
-}
-/* 选中卡：移到容器中央，放大为完整卡 */
+/* 选中浮层：470px 全字段（不受迷你卡样式影响） */
 .import-card-wrap.selected {
   width: 470px;
   height: auto;
-  left: 50%;
-  top: 41%;
-  bottom: auto;
-  transform-origin: 50% 50%;
+  flex: 0 0 auto;
   transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  top: 41%;
+  left: 50%;
+  position: absolute;
   z-index: 300;
   cursor: default;
   animation: card-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1906,6 +1965,8 @@ tr.row-selected td { background: var(--primary-light) !important; }
   border-radius: 22px 22px 14px 14px;
   padding: 4px;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 0 0 2px rgba(212, 169, 78, 0.55),
               0 24px 60px rgba(80, 60, 25, 0.4),
               0 6px 18px rgba(0, 0, 0, 0.28);
@@ -1913,6 +1974,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
 .import-card-wrap.selected .warcraft-art {
   height: 100px;
   border-radius: 18px 18px 4px 4px / 18px 18px 50% 50%;
+  flex-shrink: 0;
 }
 .import-card-wrap.selected .warcraft-art::after {
   content: "";
@@ -1938,6 +2000,9 @@ tr.row-selected td { background: var(--primary-light) !important; }
   border-radius: 18px;
   letter-spacing: 0.6px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+  white-space: normal;
+  overflow: visible;
 }
 .import-card-wrap.selected .warcraft-cost {
   top: 10px;
@@ -1947,17 +2012,51 @@ tr.row-selected td { background: var(--primary-light) !important; }
   font-size: 19px;
 }
 .import-card-wrap.selected .warcraft-stat {
-  display: flex;
   bottom: 10px;
   right: 10px;
   width: 34px;
   height: 34px;
   font-size: 15px;
+  display: flex;
 }
 .import-card-wrap.selected .warcraft-body {
   display: block;
   flex: 1;
   overflow: visible;
+  margin: 2px;
+  border-radius: 4px 4px 12px 12px;
+  padding: 10px 12px 12px;
+}
+.import-card-wrap.selected .warcraft-body .indicator-spec-header { display: none; }
+.import-card-wrap.selected .warcraft-body .indicator-spec-card {
+  display: block;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+.import-card-wrap.selected .warcraft-body table { width: 100%; }
+.import-card-wrap.selected .warcraft-body .indicator-spec-table th {
+  font-size: 11px;
+  padding: 5px 0 3px;
+  width: 88px;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.import-card-wrap.selected .warcraft-body .indicator-spec-table td {
+  font-size: 15px;
+  padding: 5px 10px 5px 0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.import-card-wrap.selected .warcraft-body .indicator-spec-td-block {
+  display: block;
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
+.import-card-wrap.selected .warcraft-body .indicator-spec-th-block {
+  font-size: 12px;
+  padding: 8px 0 3px;
 }
 .import-card-wrap.selected .import-card-status {
   display: flex;
@@ -1967,17 +2066,20 @@ tr.row-selected td { background: var(--primary-light) !important; }
   display: flex;
   flex-shrink: 0;
 }
-/* 选中时，扇形里未选中的卡变暗（焦点突出） */
+.import-card-wrap.selected .warcraft-close {
+  display: flex;
+}
+/* 选中时扇形其他卡变暗（但不至于看不清） */
 .import-card-wrap.dimmed {
-  opacity: 0.6;
-  filter: saturate(0.6) brightness(0.95);
+  opacity: 0.55;
+  filter: saturate(0.65) brightness(0.96);
 }
 /* 选中卡右上角关闭按钮 */
 .warcraft-close {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 210;
+  z-index: 310;
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -1987,7 +2089,6 @@ tr.row-selected td { background: var(--primary-light) !important; }
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease, transform 0.2s ease;
@@ -1996,79 +2097,31 @@ tr.row-selected td { background: var(--primary-light) !important; }
   background: rgba(200, 60, 50, 0.8);
   transform: rotate(90deg);
 }
-/* 内容区：羊皮纸质感 + 金线顶边（Impeccable 色彩精修） */
+/* 字段标签/值基础样式（浮层内精修在 selected 段） */
 .warcraft-body {
   background: linear-gradient(180deg, #f9efd2 0%, #f1e4bb 45%, #e8d9a8 100%);
   border-top: 1px solid rgba(212, 169, 78, 0.5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  margin: 2px;
-  border-radius: 4px 4px 12px 12px;
-  padding: 10px 12px 12px;
   position: relative;
 }
-/* 字段标签：小字号 + 加粗 + 字距（label 感），与值拉开层次 */
 .warcraft-body .indicator-spec-table th {
-  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.4px;
   color: #6b4a15;
   background: transparent;
   border: none;
-  padding: 3px 0 2px;
-  white-space: nowrap;
   text-transform: none;
 }
-/* 选中浮层内：字段标签更清晰、值更大且可换行（信息不拥挤） */
-.import-card-wrap.selected .warcraft-body .indicator-spec-table th {
-  font-size: 11px;
-  padding: 5px 0 3px;
-  white-space: nowrap;
-  width: 88px;
-  vertical-align: top;
-}
-/* 字段值：更大字号 + tabular 数字对齐 */
 .warcraft-body .indicator-spec-table td {
-  font-size: 14px;
   color: #241a08;
   border: none;
-  padding: 3px 6px 3px 0;
   background: transparent;
   font-variant-numeric: tabular-nums;
-  word-break: break-word;
-}
-/* 选中浮层内：值更大、行距更松、右列留足空间 */
-.import-card-wrap.selected .warcraft-body .indicator-spec-table td {
-  font-size: 15px;
-  padding: 5px 10px 5px 0;
-  line-height: 1.5;
-}
-.warcraft-body .indicator-spec-header,
-.warcraft-body .indicator-spec-cat-tags,
-.warcraft-body .indicator-spec-card-badge,
-.warcraft-body .indicator-spec-attr-legend {
-  display: none;
-}
-.warcraft-body .indicator-spec-card {
-  border: none;
-  box-shadow: none;
-  background: transparent;
-  padding: 0;
 }
 .warcraft-body .indicator-spec-th-block {
   text-align: left;
-  padding: 6px 0 2px;
   font-weight: 700;
   color: #4a2c00;
-  font-size: 11px;
-}
-.import-card-wrap.selected .warcraft-body .indicator-spec-th-block {
-  font-size: 12px;
-  padding: 8px 0 3px;
-}
-/* 水晶数字：tabular 对齐 */
-.warcraft-cost, .warcraft-stat {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono, monospace);
 }
 /* 扇形底部提示条 */
 .import-fan-hint {
@@ -2115,6 +2168,11 @@ tr.row-selected td { background: var(--primary-light) !important; }
   font-weight: 600;
   transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
+.import-card-actions .btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .import-card-actions .btn:active {
   transform: translateY(2px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
