@@ -824,6 +824,10 @@
     var cn = document.getElementById('newMetricCn');
     if (!cn || !cn.value.trim()) { alert('请先填写指标名称'); return; }
     var status = document.getElementById('newMetricAiStatus');
+    // 引导：中文名可能口语化，建议先填业务定义/计算公式（AI 以定义为准生成）
+    var descEl = document.getElementById('newMetricDesc');
+    var formulaEl = document.getElementById('newMetricFormulaLogic');
+    var hasDef = (descEl && descEl.value.trim()) || (formulaEl && formulaEl.value.trim());
     if (status) { status.style.display = ''; status.textContent = '🤔 AI 生成中，请稍候…'; }
     var domain = document.getElementById('newMetricDomain');
     var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
@@ -856,9 +860,12 @@
       if (window.renderAiRoots) renderAiRoots(r.suggested_roots || []);
       if (status) {
         var diffs = document.querySelectorAll('#metricNewDrawer .ai-diff-tip').length;
+        var baseTip = hasDef
+          ? '已结合业务定义/公式生成'
+          : '仅依据名称生成——建议填写「指标描述/计算公式」后重新生成，更准确';
         status.innerHTML = diffs > 0
-          ? '✅ 已生成（' + src + '）：' + diffs + ' 处差异待确认'
-          : '✅ 已生成（' + src + '），可直接保存';
+          ? '✅ ' + baseTip + '（' + src + '）：' + diffs + ' 处差异待确认'
+          : '✅ ' + baseTip + '（' + src + '），可直接保存';
       }
     }).catch(function (e) {
       if (status) status.innerHTML = '<span style="color:var(--danger);">AI 生成失败: ' + e.message + '</span>';
