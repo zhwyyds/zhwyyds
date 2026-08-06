@@ -1,630 +1,1414 @@
 /* ================================================================
-   指标卡视觉系统 v5（适配版）— 参考 ui-prototype/metric-card-ref.html
-   主题(一级分类) → 主色 | 二级分类 → 边框纹样 | 评分/状态 → 稀有度边框
-   卡包状态机：in-bag（扇形中缩小）→ popout（跃出）→ selected（放大悬浮）
-   ================================================================ */
+     指标卡包 v8 — 多卡片堆叠 + 卡包抽出交互
+     8 张指标卡层叠放入卡包，悬停/点击时从卡堆跳出放大
+     ================================================================ */
+#importTaskCards {
 
-/* ── 主题色（一级分类 ← domain_code） ── */
-.mc-theme-trade      { --accent: oklch(80% 0.12 82);   --accent-deep: oklch(58% 0.12 70);   --accent-soft: oklch(88% 0.1 90);   --glow: 0 0 14px oklch(80% 0.12 82 / 0.35); }
-.mc-theme-lease      { --accent: oklch(80% 0.11 155);  --accent-deep: oklch(56% 0.12 155);  --accent-soft: oklch(90% 0.09 155);  --glow: 0 0 14px oklch(80% 0.11 155 / 0.35); }
-.mc-theme-finance    { --accent: oklch(75% 0.1 265);   --accent-deep: oklch(55% 0.11 265);  --accent-soft: oklch(88% 0.08 265);  --glow: 0 0 14px oklch(75% 0.1 265 / 0.35); }
-.mc-theme-ops        { --accent: oklch(78% 0.09 215);  --accent-deep: oklch(58% 0.1 215);   --accent-soft: oklch(89% 0.07 215);  --glow: 0 0 14px oklch(78% 0.09 215 / 0.35); }
-.mc-theme-marketing  { --accent: oklch(78% 0.12 350);  --accent-deep: oklch(56% 0.13 350);  --accent-soft: oklch(89% 0.09 350);  --glow: 0 0 14px oklch(78% 0.12 350 / 0.35); }
-.mc-theme-service    { --accent: oklch(76% 0.1 300);   --accent-deep: oklch(56% 0.11 300);  --accent-soft: oklch(88% 0.08 300);  --glow: 0 0 14px oklch(76% 0.1 300 / 0.35); }
+    --card-bg:    oklch(23% 0.032 278);
+    --card-bg-2:  oklch(19% 0.03 275);
+    --panel:      oklch(29% 0.035 275);
+    --panel-2:    oklch(24% 0.03 272);
+    --paper:      oklch(91% 0.03 70);
+    --paper-ink:  oklch(30% 0.04 60);
+    --text:       oklch(94% 0.02 90);
+    --text-dim:   oklch(72% 0.04 90);
+    --text-faint: oklch(55% 0.03 90);
+    --blue:       oklch(70% 0.11 250);
+    --green:      oklch(72% 0.13 150);
+    --warn:       oklch(76% 0.12 80);
+    --red:        oklch(68% 0.17 25);
+    --frame-bg:   oklch(16% 0.03 275);
 
-/* ── 稀有度边框（状态映射） ── */
-.mc-rarity-legendary { --frame-1: oklch(86% 0.13 82);  --frame-2: oklch(60% 0.14 70);   --frame-outer: oklch(92% 0.1 90 / 0.55);  --rare-ico: oklch(92% 0.1 90);   --corner-hi: oklch(92% 0.12 90);  --corner-hi-2: oklch(70% 0.12 70);  --frame-fx: animated; }
-.mc-rarity-epic      { --frame-1: oklch(78% 0.11 300); --frame-2: oklch(52% 0.14 305);  --frame-outer: oklch(80% 0.1 300 / 0.5);   --rare-ico: oklch(85% 0.1 305);  --corner-hi: oklch(82% 0.11 305);  --corner-hi-2: oklch(60% 0.12 305); --frame-fx: none; }
-.mc-rarity-rare      { --frame-1: oklch(72% 0.11 250); --frame-2: oklch(48% 0.12 255);  --frame-outer: oklch(74% 0.1 250 / 0.45);  --rare-ico: oklch(80% 0.1 250);  --corner-hi: oklch(78% 0.11 250);  --corner-hi-2: oklch(56% 0.11 255); --frame-fx: none; }
-.mc-rarity-uncommon  { --frame-1: oklch(74% 0.12 150); --frame-2: oklch(48% 0.12 155);  --frame-outer: oklch(76% 0.11 150 / 0.45); --rare-ico: oklch(82% 0.11 150); --corner-hi: oklch(78% 0.12 150);  --corner-hi-2: oklch(56% 0.12 155); --frame-fx: none; }
-.mc-rarity-common    { --frame-1: oklch(74% 0.02 90);  --frame-2: oklch(50% 0.02 90);   --frame-outer: oklch(76% 0.02 90 / 0.4);   --rare-ico: oklch(80% 0.02 90);  --corner-hi: oklch(78% 0.02 90);  --corner-hi-2: oklch(56% 0.02 90); --frame-fx: none; }
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono",
+                 "SFMono-Regular", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-/* ── 纹样图案（二级分类） ── */
-.mc-cat-order     { --pat-ico: repeating-linear-gradient(45deg, var(--accent) 0 1.5px, transparent 1.5px 7px);
-                    --pat: repeating-linear-gradient(45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px),
-                           repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px); }
-.mc-cat-contract  { --pat-ico: repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 8px);
-                    --pat: repeating-linear-gradient(90deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px, transparent 2px 10px),
-                           repeating-linear-gradient(180deg, color-mix(in oklch, var(--accent) 50%, transparent) 0 2px, transparent 2px 10px); }
-.mc-cat-rent      { --pat-ico: radial-gradient(circle, var(--accent) 1.4px, transparent 1.6px);
-                    --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 80%, transparent) 2.2px, transparent 2.6px); }
-.mc-cat-member    { --pat-ico: conic-gradient(from 45deg at 50% 50%, var(--accent) 0 25%, transparent 25% 100%);
-                    --pat: conic-gradient(from 45deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 25%, transparent 25% 100%); }
+    --accent:      oklch(80% 0.12 82);
+    --accent-deep: oklch(58% 0.12 70);
+    --accent-soft: oklch(88% 0.1 90);
+    --glow: 0 0 14px oklch(80% 0.12 82 / 0.35);
+  
+}
+/* ============ 主题色（14 个一级分类） ============ */
+/* sale 交易 · 金铜橙 */
+#importTaskCards [data-theme="sale"] {
+ --accent: oklch(78% 0.14 55);  --accent-deep: oklch(54% 0.13 50);  --accent-soft: oklch(90% 0.09 60);  --glow: 0 0 14px oklch(78% 0.14 55 / 0.35); 
+}
+/* mall 商场 · 暖红 */
+#importTaskCards [data-theme="mall"] {
+ --accent: oklch(72% 0.16 25);  --accent-deep: oklch(50% 0.15 22);  --accent-soft: oklch(88% 0.1 28);  --glow: 0 0 14px oklch(72% 0.16 25 / 0.35); 
+}
+/* base 基础 · 钢灰蓝 */
+#importTaskCards [data-theme="base"] {
+ --accent: oklch(68% 0.05 235); --accent-deep: oklch(48% 0.05 235); --accent-soft: oklch(85% 0.04 235); --glow: 0 0 14px oklch(68% 0.05 235 / 0.35); 
+}
+/* cont 合同 · 靛青 */
+#importTaskCards [data-theme="cont"] {
+ --accent: oklch(70% 0.13 230); --accent-deep: oklch(50% 0.13 230); --accent-soft: oklch(86% 0.08 230); --glow: 0 0 14px oklch(70% 0.13 230 / 0.35); 
+}
+/* cust 消费者 · 玫粉 */
+#importTaskCards [data-theme="cust"] {
+ --accent: oklch(78% 0.13 350); --accent-deep: oklch(54% 0.13 350); --accent-soft: oklch(89% 0.09 350); --glow: 0 0 14px oklch(78% 0.13 350 / 0.35); 
+}
+/* fin  财务 · 墨绿 */
+#importTaskCards [data-theme="fin"] {
+ --accent: oklch(68% 0.1  165); --accent-deep: oklch(46% 0.1  165); --accent-soft: oklch(85% 0.06 165); --glow: 0 0 14px oklch(68% 0.1  165 / 0.35); 
+}
+/* fund 资金 · 金黄 */
+#importTaskCards [data-theme="fund"] {
+ --accent: oklch(82% 0.14 95);  --accent-deep: oklch(56% 0.13 90);  --accent-soft: oklch(92% 0.08 95);  --glow: 0 0 14px oklch(82% 0.14 95 / 0.35); 
+}
+/* hr   人资 · 薰衣草 */
+#importTaskCards [data-theme="hr"] {
+ --accent: oklch(76% 0.09 290); --accent-deep: oklch(52% 0.09 290); --accent-soft: oklch(89% 0.06 290); --glow: 0 0 14px oklch(76% 0.09 290 / 0.35); 
+}
+/* mkt  营销 · 橙红 */
+#importTaskCards [data-theme="mkt"] {
+ --accent: oklch(70% 0.17 28);  --accent-deep: oklch(48% 0.16 25);  --accent-soft: oklch(86% 0.1  30);  --glow: 0 0 14px oklch(70% 0.17 28 / 0.35); 
+}
+/* prod 商品 · 橄榄绿 */
+#importTaskCards [data-theme="prod"] {
+ --accent: oklch(72% 0.1  130); --accent-deep: oklch(50% 0.1  130); --accent-soft: oklch(86% 0.06 130); --glow: 0 0 14px oklch(72% 0.1  130 / 0.35); 
+}
+/* ptnr 商户 · 青绿 */
+#importTaskCards [data-theme="ptnr"] {
+ --accent: oklch(76% 0.12 175); --accent-deep: oklch(52% 0.12 175); --accent-soft: oklch(88% 0.08 175); --glow: 0 0 14px oklch(76% 0.12 175 / 0.35); 
+}
+/* shop 店铺 · 砖红 */
+#importTaskCards [data-theme="shop"] {
+ --accent: oklch(64% 0.14 35);  --accent-deep: oklch(44% 0.14 32);  --accent-soft: oklch(83% 0.1  38);  --glow: 0 0 14px oklch(64% 0.14 35 / 0.35); 
+}
+/* traf 流量 · 天青 */
+#importTaskCards [data-theme="traf"] {
+ --accent: oklch(80% 0.08 220); --accent-deep: oklch(56% 0.08 220); --accent-soft: oklch(90% 0.05 220); --glow: 0 0 14px oklch(80% 0.08 220 / 0.35); 
+}
+/* wk   流程 · 石青蓝 */
+#importTaskCards [data-theme="wk"] {
+ --accent: oklch(72% 0.07 245); --accent-deep: oklch(50% 0.07 245); --accent-soft: oklch(87% 0.04 245); --glow: 0 0 14px oklch(72% 0.07 245 / 0.35); 
+}
+/* ============ 稀有度边框（4 档评分映射） ============ */
+#importTaskCards [data-rarity="excellent"] {
 
-/* ============ 布局变量 ============ */
-.mc-root {
-  --card-bg: oklch(23% 0.032 278); --card-bg-2: oklch(19% 0.03 275);
-  --panel: oklch(29% 0.035 275); --panel-2: oklch(24% 0.03 272);
-  --paper: oklch(91% 0.03 70); --paper-ink: oklch(30% 0.04 60);
-  --text: oklch(94% 0.02 90); --text-dim: oklch(72% 0.04 90); --text-faint: oklch(55% 0.03 90);
-  --blue: oklch(70% 0.11 250); --green: oklch(72% 0.13 150); --warn: oklch(76% 0.12 80); --red: oklch(68% 0.17 25);
-  --frame-bg: oklch(16% 0.03 275);
-  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --frame-1: oklch(86% 0.13 82);
+    --frame-2: oklch(60% 0.14 70);
+    --frame-outer: oklch(92% 0.1 90 / 0.55);
+    --rare-ico: oklch(92% 0.1 90);
+    --corner-hi: oklch(92% 0.12 90);
+    --corner-hi-2: oklch(70% 0.12 70);
+  
 }
+#importTaskCards [data-rarity="good"] {
 
-/* ============ 扇形容器（卡包桌） ============ */
-.mc-table {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 18px;
-  min-height: 480px;
-  padding: 24px 16px 50px;
-  overflow: visible;
+    --frame-1: oklch(78% 0.11 300);
+    --frame-2: oklch(52% 0.14 305);
+    --frame-outer: oklch(80% 0.1 300 / 0.5);
+    --rare-ico: oklch(85% 0.1 305);
+    --corner-hi: oklch(82% 0.11 305);
+    --corner-hi-2: oklch(60% 0.12 305);
+  
 }
-.mc-card-slot {
-  position: relative;
-  flex: 0 0 auto;
-  width: 210px;
-  height: 300px;
-  transform: rotate(var(--theta, 0deg)) translateY(var(--lift, 0px));
-  transform-origin: 50% 100%;
-  transition: transform 0.45s var(--ease), filter 0.4s ease, opacity 0.4s ease;
-  z-index: var(--z, 1);
-  cursor: pointer;
-}
-/* 包中（扇形里）：缩小下沉 —— 参考 in-bag */
-.mc-card-slot.in-bag {
-  transform: rotate(var(--theta, 0deg)) translateY(var(--lift, 0px));
-  z-index: var(--z, 1);
-}
-.mc-card-slot.in-bag:hover {
-  z-index: 120;
-  transform: rotate(var(--theta, 0deg)) translateY(calc(var(--lift, 0px) - 10px)) scale(1.04);
-}
-/* 取出（选中）：放大上浮居中 —— 参考 selected + popout */
-.mc-card-slot.selected {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  width: 380px;
-  height: auto;
-  transform: translate(-50%, -50%) scale(1);
-  z-index: 300;
-  cursor: default;
-  filter: none;
-  animation: mc-popout 0.7s var(--ease);
-}
-@keyframes mc-popout {
-  0%   { transform: translate(-50%, -50%) scale(0.55); filter: brightness(0.9); opacity: 0.5; }
-  55%  { transform: translate(-50%, -50%) scale(1.08); filter: brightness(1.12); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1); filter: none; opacity: 1; }
-}
-.mc-card-slot.selected:hover { transform: translate(-50%, -50%) scale(1); }
-.mc-card-slot.selected .mc-frame { box-shadow: 0 0 0 1.5px var(--frame-outer), 0 0 0 5px var(--frame-2), 0 0 0 7.5px var(--frame-1), 0 34px 74px oklch(0% 0 0 / 0.6), 0 0 34px color-mix(in oklch, var(--frame-1) 70%, transparent); }
-/* 非选中变暗 */
-.mc-card-slot.dimmed { opacity: 0.4; filter: saturate(0.5) brightness(0.9); }
+#importTaskCards [data-rarity="pass"] {
 
-/* ============ 边框环（纹样承载 + 稀有度多层框） ============ */
-.mc-frame {
-  position: relative;
-  width: 404px;
-  border-radius: 16px;
-  padding: 12px;
-  background: var(--frame-bg);
-  box-shadow: 0 0 0 1px var(--frame-outer), 0 0 0 4px var(--frame-2), 0 0 0 6px var(--frame-1), 0 26px 54px oklch(0% 0 0 / 0.55), var(--glow);
-  transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease), filter 0.55s var(--ease);
+    --frame-1: oklch(72% 0.11 250);
+    --frame-2: oklch(48% 0.12 255);
+    --frame-outer: oklch(74% 0.1 250 / 0.45);
+    --rare-ico: oklch(80% 0.1 250);
+    --corner-hi: oklch(78% 0.11 250);
+    --corner-hi-2: oklch(56% 0.11 255);
+  
 }
-.mc-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  pointer-events: none;
-  background-image: var(--pat, none);
-  background-size: 12px 12px;
-  background-position: 0 0;
+#importTaskCards [data-rarity="poor"] {
+
+    --frame-1: oklch(74% 0.02 90);
+    --frame-2: oklch(50% 0.02 90);
+    --frame-outer: oklch(76% 0.02 90 / 0.4);
+    --rare-ico: oklch(80% 0.02 90);
+    --corner-hi: oklch(78% 0.02 90);
+    --corner-hi-2: oklch(56% 0.02 90);
+  
 }
-.mc-frame.mc-legendary::before { animation: mc-patroll 14s linear infinite; }
-@keyframes mc-patroll { from { background-position: 0 0; } to { background-position: 48px 0; } }
+/* ---------- 指标类型（3 种）边框样式 ---------- */
+/* atomic 原子：单层细实线，最简洁 */
+#importTaskCards .frame[data-type="atomic"] {
+
+    box-shadow:
+      0 0 0 1.5px var(--frame-1),
+      0 0 0 4px var(--frame-2),
+      0 18px 36px oklch(0% 0 0 / 0.5),
+      var(--accent-deep);
+  
+}
+/* derived 衍生：双层（一实线 + 一虚线点划），由原子计算而来 */
+#importTaskCards .frame[data-type="derived"] {
+
+    box-shadow:
+      0 0 0 1.5px var(--frame-1),
+      0 0 0 4px var(--frame-2),
+      0 0 0 5.5px color-mix(in oklch, var(--accent) 30%, transparent),
+      0 22px 44px oklch(0% 0 0 / 0.55),
+      var(--accent-deep);
+  
+}
+#importTaskCards .frame[data-type="derived"]::before {
+
+    /* 衍生：叠加虚线点划环 */
+    box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.18);
+    outline: 1px dashed color-mix(in oklch, var(--accent) 70%, transparent);
+    outline-offset: -6px;
+  
+}
+/* composite 复合：双实线 + 四角加强 + 厚重边框 */
+#importTaskCards .frame[data-type="composite"] {
+
+    box-shadow:
+      0 0 0 2px var(--frame-1),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7px color-mix(in oklch, var(--accent) 45%, transparent),
+      0 28px 60px oklch(0% 0 0 / 0.6),
+      0 0 40px color-mix(in oklch, var(--accent) 50%, transparent);
+  
+}
+#importTaskCards .frame[data-type="composite"] .corner {
+
+    width: 32px;
+    height: 32px;
+  
+}
+#importTaskCards .frame[data-type="composite"] .corner::before {
+
+    width: 32px; height: 32px;
+    border-top: 4px solid var(--corner-hi);
+    border-left: 4px solid var(--corner-hi);
+    border-top-left-radius: 14px;
+  
+}
+#importTaskCards .frame[data-type="composite"] .corner::after {
+
+    top: 6px; left: 6px;
+    width: 22px; height: 22px;
+    border-top: 2px solid var(--corner-hi-2);
+    border-left: 2px solid var(--corner-hi-2);
+    border-top-left-radius: 9px;
+  
+}
+/* 类型徽章：卡片右上角新增 type 标签 */
+#importTaskCards .type-badge {
+
+    position: absolute;
+    top: 30px; right: 10px;
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+    background: oklch(12% 0.02 275 / 0.85);
+    pointer-events: none;
+  
+}
+#importTaskCards .type-badge.atomic {
+ color: var(--accent-soft); border-style: solid; 
+}
+#importTaskCards .type-badge.derived {
+
+    color: var(--accent-soft);
+    border-style: dashed;
+  
+}
+#importTaskCards .type-badge.composite {
+
+    color: var(--accent);
+    border-style: double;
+    border-width: 3px;
+  
+}
+/* 抽出时类型徽章右上移避免重叠 */
+#importTaskCards .frame.active-lock .type-badge {
+ top: 30px; 
+}
+/* ---------- 纹样图案（二级分类） ---------- */
+#importTaskCards [data-cat="order"] {
+
+    --pat:
+      repeating-linear-gradient(45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px),
+      repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 85%, transparent) 0 2px, transparent 2px 9px);
+  
+}
+#importTaskCards [data-cat="contract"] {
+
+    --pat:
+      repeating-linear-gradient(90deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(180deg, color-mix(in oklch, var(--accent) 50%, transparent) 0 2px, transparent 2px 10px);
+  
+}
+#importTaskCards [data-cat="rent"] {
+
+    --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 80%, transparent) 2.2px, transparent 2.6px);
+  
+}
+#importTaskCards [data-cat="member"] {
+
+    --pat: conic-gradient(from 45deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 25%, transparent 25% 100%);
+  
+}
+/* 7 类二级分类（新增） */
+#importTaskCards [data-cat="overview"] {
+ --pat: repeating-linear-gradient(90deg,  color-mix(in oklch, var(--accent) 80%, transparent) 0 2px,   transparent 2px 8px); 
+}
+#importTaskCards [data-cat="report"] {
+ --pat: repeating-linear-gradient(0deg,    color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 7px); 
+}
+#importTaskCards [data-cat="detail"] {
+ --pat: radial-gradient(circle, color-mix(in oklch, var(--accent) 85%, transparent) 1.8px, transparent 2.2px); 
+}
+#importTaskCards [data-cat="trend"] {
+ --pat: repeating-linear-gradient(-45deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 6px); 
+}
+#importTaskCards [data-cat="alert"] {
+ --pat: repeating-linear-gradient(135deg, color-mix(in oklch, var(--accent) 80%, transparent) 0 2px,   transparent 2px 8px); 
+}
+#importTaskCards [data-cat="standard"] {
+ --pat: conic-gradient(from 0deg at 50% 50%, color-mix(in oklch, var(--accent) 80%, transparent) 0 12%, transparent 12% 100%); 
+}
+#importTaskCards [data-cat="dimension"] {
+ --pat: repeating-linear-gradient(45deg,  color-mix(in oklch, var(--accent) 80%, transparent) 0 1.5px, transparent 1.5px 9px); 
+}
+#importTaskCards * {
+ box-sizing: border-box; margin: 0; padding: 0; 
+}
+#importTaskCards .stage {
+
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  
+}
+/* ============ 控制面板 ============ */
+#importTaskCards .panel {
+
+    width: 300px;
+    flex-shrink: 0;
+    background: oklch(21% 0.03 278);
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    border-radius: 10px;
+    padding: 1.1rem 1.15rem;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 1.6rem;
+  
+}
+#importTaskCards .panel h2 {
+
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid oklch(55% 0.04 90 / 0.35);
+  
+}
+#importTaskCards .btn-row {
+ display: flex; flex-direction: column; gap: 0.5rem; 
+}
+#importTaskCards .btn {
+
+    appearance: none;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    border: none;
+    border-radius: 7px;
+    padding: 0.62rem 0.9rem;
+    cursor: pointer;
+    box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 4px 12px oklch(0% 0 0 / 0.3);
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  
+}
+#importTaskCards .btn:hover {
+ transform: translateY(-2px); filter: brightness(1.06); 
+}
+#importTaskCards .btn:active {
+ transform: translateY(1px); 
+}
+#importTaskCards .btn:focus-visible {
+ outline: 2px solid var(--accent); outline-offset: 2px; 
+}
+#importTaskCards .btn.ghost {
+
+    background: transparent;
+    color: var(--text);
+    border: 1px solid oklch(55% 0.04 90 / 0.5);
+    box-shadow: none;
+  
+}
+#importTaskCards .hint {
+
+    font-size: 10.5px;
+    color: var(--text-faint);
+    line-height: 1.6;
+    background: oklch(16% 0.025 278);
+    border: 1px solid oklch(50% 0.04 90 / 0.4);
+    border-radius: 6px;
+    padding: 0.5rem 0.6rem;
+  
+}
+#importTaskCards .hint b {
+ color: var(--accent); 
+}
+#importTaskCards .cardlist {
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    color: var(--text-dim);
+    max-height: 300px;
+    overflow-y: auto;
+  
+}
+#importTaskCards .cardlist .li {
+
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+  
+}
+#importTaskCards .cardlist .li:hover {
+ background: oklch(16% 0.025 278); 
+}
+#importTaskCards .cardlist .li.active {
+ border-color: color-mix(in oklch, var(--accent) 55%, transparent); background: oklch(16% 0.025 278); 
+}
+#importTaskCards .cardlist .li .dot {
+
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: color-mix(in oklch, var(--accent) 80%, transparent);
+  
+}
+#importTaskCards .cardlist .li .code {
+ font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); 
+}
+#importTaskCards .cardlist .li .nm {
+ font-weight: 600; color: var(--text); margin-left: auto; 
+}
+/* ============ 卡包区域 ============ */
+#importTaskCards .pack-zone {
+
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    pointer-events: none;
+  
+}
+#importTaskCards .pack-zone .pack, #importTaskCards .pack-zone .pack-base {
+ pointer-events: auto; 
+}
+/* 卡包视觉底座 */
+#importTaskCards .pack-base {
+
+    position: absolute;
+    left: 50%;
+    bottom: -34px;
+    transform: translateX(-50%);
+    width: 468px;
+    height: 74px;
+    border-radius: 26px 26px 18px 18px;
+    background: linear-gradient(180deg, oklch(30% 0.05 275), oklch(20% 0.04 275));
+    border: 1px solid oklch(55% 0.04 90 / 0.4);
+    box-shadow: inset 0 6px 14px oklch(0% 0 0 / 0.5), 0 18px 34px oklch(0% 0 0 / 0.5);
+    z-index: 0;
+  
+}
+#importTaskCards .pack-base::before {
+
+    content: "";
+    position: absolute;
+    left: 18px; right: 18px; top: 10px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg,
+      color-mix(in oklch, var(--accent) 55%, transparent) 0 8px,
+      transparent 8px 16px);
+    opacity: 0.5;
+  
+}
+#importTaskCards .pack {
+
+    position: relative;
+    width: 600px;               /* 加宽容纳扇形展开 */
+    height: 700px;
+    z-index: 1;
+  
+}
+/* ============ 卡片（边框环 + 卡面） ============ */
+#importTaskCards .frame {
+
+    position: absolute;
+    left: 0; top: 0;
+    width: 384px;
+    border-radius: 16px;
+    padding: 12px;
+    background: var(--frame-bg);
+    cursor: pointer;
+    transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease), filter 0.55s var(--ease);
+    will-change: transform;
+    /* 扇形堆叠：底部对齐 + 绕左下角旋转，所有卡统一向左倾倒 */
+    transform-origin: 0% 100%;
+    transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97);
+    filter: brightness(0.92) saturate(0.85);
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 3px var(--frame-2),
+      0 0 0 5px var(--frame-1),
+      0 12px 22px oklch(0% 0 0 / 0.4);
+  
+}
+/* 纹样层 */
+#importTaskCards .frame::before {
+
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    pointer-events: none;
+    background-image: var(--pat, none);
+    background-size: 12px 12px;
+  
+}
+/* 悬停：查阅——卡片脱离卡堆、保持原尺寸，不霸占空间让其他卡也能被 hover */
+#importTaskCards .frame.hovered {
+
+    z-index: 200;
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 240px)) rotate(0deg) scale(1.05);
+    filter: none;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7.5px var(--frame-1),
+      0 30px 60px oklch(0% 0 0 / 0.55),
+      0 0 28px color-mix(in oklch, var(--frame-1) 60%, transparent);
+  
+}
+/* 有卡片被查阅时，其余卡片压暗模糊但仍可被 hover */
+#importTaskCards .pack.dimmed .frame:not(.hovered):not(.active-lock) {
+
+    filter: brightness(0.7) saturate(0.7) blur(2px);
+  
+}
+/* 点击锁定：跃出到页面正中央（模态展示） */
+/* 点击锁定：抽出——蓄力→倾斜→爆抽→稳定在视口正中（scale 1.3） */
+#importTaskCards .frame.active-lock {
+
+    z-index: 999;
+    transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) scale(var(--fly-scale, 1.3));
+    filter: none;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 8px var(--frame-1),
+      0 50px 110px oklch(0% 0 0 / 0.7),
+      0 0 50px color-mix(in oklch, var(--frame-1) 85%, transparent);
+    animation: mc8lp 0.7s var(--ease);
+  
+}
+@keyframes mc8lp {
+
+    0%   { transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97); filter: brightness(0.92) saturate(0.85); }
+    15%  { transform: translate(calc(var(--stack-x, 0px) + 14px), calc(var(--stack-y, 0px) + 22px)) rotate(calc(var(--fan-deg, 0deg) + 8deg)) scale(0.94); filter: brightness(0.78) saturate(0.7); }
+    35%  { transform: translate(calc(var(--fly-x, 0px) * 0.3), calc(var(--fly-y, 0px) * 0.3 - 30px)) rotate(-12deg) scale(1.05); filter: brightness(1.05) saturate(1.05); }
+    55%  { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(6deg) scale(calc(var(--fly-scale, 1.3) + 0.12)); filter: brightness(1.3) saturate(1.15); }
+    75%  { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(-2deg) scale(calc(var(--fly-scale, 1.3) + 0.04)); filter: brightness(1.05); }
+    100% { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(0deg) scale(var(--fly-scale, 1.3)); filter: none; }
+  
+}
+/* 收回动画：从中央飞回卡包原位（带反向倾斜） */
+#importTaskCards .frame.active-lock.retracting {
+
+    animation: mc8lb 0.55s var(--ease);
+  
+}
+@keyframes mc8lb {
+
+    0%   { transform: translate(var(--fly-x, 0px), var(--fly-y, -560px)) rotate(0deg) scale(var(--fly-scale, 1.3)); filter: none; }
+    30%  { transform: translate(calc(var(--fly-x, 0px) * 0.6), calc(var(--fly-y, 0px) * 0.6)) rotate(-8deg) scale(1.15); filter: brightness(1.05); }
+    65%  { transform: translate(calc(var(--fly-x, 0px) * 0.25), calc(var(--fly-y, 0px) * 0.25)) rotate(6deg) scale(1.02); filter: brightness(0.95); }
+    100% { transform: translate(var(--stack-x, 0px), var(--stack-y, 0px)) rotate(var(--fan-deg, 0deg)) scale(0.97); filter: brightness(0.92) saturate(0.85); }
+  
+}
+/* 抽出速度光效（仅锁定抽卡时） */
+#importTaskCards .frame::after {
+
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -25%; right: -25%;
+    background: linear-gradient(105deg, transparent 32%,
+      color-mix(in oklch, var(--accent) 22%, transparent) 50%,
+      transparent 68%);
+    transform: translateX(-70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 6;
+  
+}
+#importTaskCards .frame.active-lock:not(.retracting)::after {
+ animation: mc8fl 0.6s var(--ease); 
+}
+/* 抽出展示态：遮罩 + 收回按钮（仅压暗，不做模糊，保证背景可读） */
+#importTaskCards .overlay {
+
+    position: fixed;
+    inset: 0;
+    background: oklch(10% 0.02 275 / 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease);
+    z-index: 990;
+  
+}
+#importTaskCards .overlay.show {
+ opacity: 1; pointer-events: auto; 
+}
+#importTaskCards .draw-actions {
+
+    position: fixed;
+    left: 50%;
+    bottom: 46px;
+    transform: translateX(-50%) translateY(14px);
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+    z-index: 1000;
+  
+}
+#importTaskCards .draw-actions.show {
+ opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); 
+}
+#importTaskCards .act-btn {
+
+    appearance: none;
+    border: none;
+    border-radius: 999px;
+    padding: 0.65rem 1.3rem;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  
+}
+#importTaskCards .act-btn.primary {
+
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 6px 18px oklch(0% 0 0 / 0.4);
+  
+}
+#importTaskCards .act-btn.ghost2 {
+
+    background: oklch(30% 0.04 275 / 0.9);
+    color: var(--text);
+    border: 1px solid oklch(60% 0.05 90 / 0.5);
+    box-shadow: 0 6px 18px oklch(0% 0 0 / 0.4);
+  
+}
+#importTaskCards .act-btn:hover {
+ transform: translateY(-2px); filter: brightness(1.08); 
+}
+#importTaskCards .act-btn:active {
+ transform: translateY(1px); 
+}
+#importTaskCards .act-btn:focus-visible {
+ outline: 2px solid var(--accent); outline-offset: 2px; 
+}
+@keyframes mc8fl {
+
+    0%   { opacity: 0; transform: translateX(-70%); }
+    28%  { opacity: 1; }
+    70%  { opacity: 0.55; }
+    100% { opacity: 0; transform: translateX(70%); }
+  
+}
+/* 传说纹样流动 */
+#importTaskCards .frame[data-rarity="excellent"]::before {
+ animation: mc8pr 14s linear infinite; 
+}
+@keyframes mc8pr {
+
+    from { background-position: 0 0; }
+    to   { background-position: 48px 0; }
+  
+}
 /* 四角饰 */
-.mc-corner {
-  position: absolute; width: 26px; height: 26px; z-index: 4; pointer-events: none;
+#importTaskCards .corner {
+ position: absolute; width: 26px; height: 26px; z-index: 4; pointer-events: none; 
 }
-.mc-corner.tl { top: 2px; left: 2px; }
-.mc-corner.tr { top: 2px; right: 2px; transform: scaleX(-1); }
-.mc-corner.bl { bottom: 2px; left: 2px; transform: scaleY(-1); }
-.mc-corner.br { bottom: 2px; right: 2px; transform: scale(-1); }
-.mc-corner::before {
-  content: ""; position: absolute; top: 0; left: 0; width: 26px; height: 26px;
-  border-top: 3px solid var(--corner-hi); border-left: 3px solid var(--corner-hi);
-  border-top-left-radius: 10px;
+#importTaskCards .corner.tl {
+ top: 2px; left: 2px; 
 }
-.mc-corner::after {
-  content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px;
-  border-top: 1.5px solid var(--corner-hi-2); border-left: 1.5px solid var(--corner-hi-2);
-  border-top-left-radius: 7px; opacity: 0.85;
+#importTaskCards .corner.tr {
+ top: 2px; right: 2px; transform: scaleX(-1); 
 }
+#importTaskCards .corner.bl {
+ bottom: 2px; left: 2px; transform: scaleY(-1); 
+}
+#importTaskCards .corner.br {
+ bottom: 2px; right: 2px; transform: scale(-1); 
+}
+#importTaskCards .corner::before {
 
-/* ============ 卡面 380×636 ============ */
-.mc-card {
-  width: 380px;
-  height: 636px;
-  position: relative;
-  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
-              linear-gradient(160deg, var(--card-bg), var(--card-bg-2));
-  border: 1px solid color-mix(in oklch, var(--frame-2) 55%, transparent);
-  border-radius: 10px;
-  padding: 17px 17px 13px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--frame-1) 12%, transparent);
+    content: ""; position: absolute; top: 0; left: 0;
+    width: 26px; height: 26px;
+    border-top: 3px solid var(--corner-hi);
+    border-left: 3px solid var(--corner-hi);
+    border-top-left-radius: 10px;
+  
 }
-.mc-card::after {
-  content: attr(data-id);
-  position: absolute; right: -14px; bottom: 30px;
-  font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.24em;
-  writing-mode: vertical-rl;
-  color: color-mix(in oklch, var(--accent) 7%, transparent);
-  white-space: nowrap; pointer-events: none;
+#importTaskCards .corner::after {
+
+    content: ""; position: absolute; top: 4px; left: 4px;
+    width: 18px; height: 18px;
+    border-top: 1.5px solid var(--corner-hi-2);
+    border-left: 1.5px solid var(--corner-hi-2);
+    border-top-left-radius: 7px;
+    opacity: 0.85;
+  
+}
+/* ============ 卡面 ============ */
+#importTaskCards .card {
+
+    width: 360px;
+    height: 540px;
+    position: relative;
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
+      linear-gradient(160deg, var(--card-bg), var(--card-bg-2));
+    border: 1px solid color-mix(in oklch, var(--frame-2) 55%, transparent);
+    border-radius: 10px;
+    padding: 15px 15px 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text);
+  
 }
 /* 稀有度角标 */
-.mc-rare-badge {
-  position: absolute; top: 10px; right: 10px; z-index: 3;
-  display: flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono); font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
-  color: var(--rare-ico);
-  background: oklch(12% 0.02 275 / 0.85);
-  border: 1px solid var(--frame-2); border-radius: 4px;
-  padding: 2px 7px;
-  box-shadow: 0 0 8px color-mix(in oklch, var(--frame-2) 60%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-.mc-rare-badge .star { color: var(--corner-hi); font-size: 10px; line-height: 1; }
-/* 顶部：阵营 + 品质 */
-.mc-topline {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-dim);
-  padding-bottom: 7px;
-  border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
-  padding-right: 52px;
-}
-.mc-faction { font-weight: 700; color: var(--accent-soft); }
-.mc-faction .sep { color: var(--text-faint); margin: 0 3px; font-weight: 400; }
-.mc-quality { display: flex; align-items: center; gap: 5px; color: var(--accent-soft); font-weight: 700; }
-.mc-quality .gem { width: 8px; height: 8px; transform: rotate(45deg); background: linear-gradient(135deg, var(--accent-soft), var(--accent-deep)); box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 80%, transparent); }
-/* 图标区 */
-.mc-icon-zone { height: 74px; display: flex; align-items: center; justify-content: center; position: relative; margin: 8px 0 4px; }
-.mc-icon-halo { position: absolute; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklch, var(--accent) 38%, transparent), transparent 70%); filter: blur(2px); animation: mc-pulse 3.2s ease-in-out infinite; }
-@keyframes mc-pulse { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
-.mc-icon-ring {
-  position: absolute; width: 54px; height: 54px; border-radius: 50%;
-  border: 2px solid color-mix(in oklch, var(--accent) 60%, transparent);
-  box-shadow: inset 0 0 12px oklch(0% 0 0 / 0.6), 0 0 10px color-mix(in oklch, var(--accent) 30%, transparent);
-  display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--accent) 26%, transparent), oklch(26% 0.05 60 / 0.9));
-  font-size: 26px;
-}
-/* 标题 */
-.mc-title-zone { text-align: center; }
-.mc-title { font-size: 23px; font-weight: 800; letter-spacing: 0.04em; color: var(--accent-soft); text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5); line-height: 1.15; }
-.mc-sub-id { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.3em; color: var(--accent); margin-top: 3px; }
-/* 属性网格 */
-.mc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 11px; }
-.mc-stat { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent); border-radius: 5px; padding: 6px 4px 5px; text-align: center; }
-.mc-stat .lbl { font-size: 8px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); }
-.mc-stat .val { font-size: 11px; font-weight: 700; color: var(--accent-soft); margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
-.mc-stat .val.mono { font-family: var(--font-mono); font-size: 8.5px; word-break: break-all; }
-/* 词条 */
-.mc-affix { margin-top: 9px; }
-.mc-affix-head { font-size: 9px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
-.mc-affix-head::before { content: ""; width: 16px; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); }
-.mc-affix-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-.mc-tag { font-size: 9.5px; font-weight: 700; color: var(--text); background: oklch(0% 0 0 / 0.3); border: 1px solid oklch(70% 0.05 90 / 0.4); border-radius: 3px; padding: 1px 6px; letter-spacing: 0.04em; }
-/* 描述框 */
-.mc-desc-box {
-  margin-top: 9px;
-  background: repeating-linear-gradient(0deg, oklch(91% 0.03 70 / 0.05) 0 1px, transparent 1px 4px),
-              linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
-  border: 1px solid color-mix(in oklch, var(--accent) 55%, transparent);
-  border-radius: 5px; padding: 7px 10px;
-  color: var(--paper-ink); font-size: 11px; line-height: 1.55;
-  box-shadow: inset 0 0 10px oklch(0% 0 0 / 0.18);
-  position: relative;
-}
-.mc-desc-box::before {
-  content: "◆ 指标描述 ◆";
-  position: absolute; top: -8px; left: 10px;
-  font-size: 8.5px; font-weight: 800; letter-spacing: 0.2em; color: var(--paper-ink);
-  background: linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
-  padding: 0 5px;
-}
-/* 公式框 */
-.mc-skill-box { margin-top: 10px; background: oklch(15% 0.02 275); border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent); border-left: 3px solid var(--accent); border-radius: 5px; padding: 7px 10px; }
-.mc-skill-box .sl { font-size: 8px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
-.mc-skill-box .sd { font-size: 10px; color: var(--text-dim); margin-top: 3px; line-height: 1.5; }
-.mc-skill-box .sc { font-family: var(--font-mono); font-size: 10px; line-height: 1.6; color: var(--text); margin-top: 3px; background: oklch(10% 0.02 275); border: 1px solid oklch(35% 0.03 275); border-radius: 3px; padding: 5px 7px; overflow-x: auto; white-space: nowrap; }
-/* 预警条 */
-.mc-bars { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-.mc-bar-row { display: flex; align-items: center; gap: 7px; }
-.mc-bar-row .bname { width: 34px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-dim); }
-.mc-bar-track { flex: 1; height: 9px; border-radius: 2px; background: oklch(10% 0.02 275); border: 1px solid oklch(40% 0.03 275); overflow: hidden; }
-.mc-bar-fill { height: 100%; border-radius: 1px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
-.mc-bar-fill .tick { font-size: 7.5px; font-weight: 800; color: oklch(12% 0.02 90); letter-spacing: 0.06em; }
-.mc-bar-green { width: 100%; background: linear-gradient(90deg, oklch(45% 0.12 150), var(--green)); }
-.mc-bar-yellow { width: 82%; background: linear-gradient(90deg, oklch(50% 0.12 80), var(--warn)); }
-.mc-bar-red { width: 60%; background: linear-gradient(90deg, oklch(48% 0.16 25), var(--red)); }
-/* 底部元信息 */
-.mc-meta { margin-top: auto; padding-top: 9px; border-top: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); display: flex; flex-direction: column; gap: 4px; font-size: 9.5px; color: var(--text-faint); }
-.mc-meta .row { display: flex; gap: 7px; align-items: baseline; }
-.mc-meta .k { font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; min-width: 3.4em; }
-.mc-meta .v { font-family: var(--font-mono); color: var(--text); font-size: 9.5px; line-height: 1.5; word-break: break-all; }
-.mc-meta .v.sans { font-family: var(--font-sans, system-ui, sans-serif); }
-/* 版本栏 */
-.mc-foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; letter-spacing: 0.08em; }
-.mc-foot .lv { display: flex; align-items: center; gap: 6px; color: var(--accent-soft); font-weight: 800; }
-.mc-foot .lv .lvnum { font-family: var(--font-mono); background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep)); color: oklch(15% 0.02 60); padding: 2px 7px; border-radius: 3px; font-weight: 800; font-size: 10px; }
-.mc-foot .ver { color: var(--text-faint); text-align: right; line-height: 1.4; }
+#importTaskCards .rare-badge {
 
-/* ============ 评审操作区（卡面底部，非参考新增） ============ */
-.mc-actions {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+    position: absolute;
+    top: 9px; right: 9px;
+    z-index: 3;
+    display: flex; align-items: center; gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px; font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--rare-ico);
+    background: oklch(12% 0.02 275 / 0.85);
+    border: 1px solid var(--frame-2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    box-shadow: 0 0 8px color-mix(in oklch, var(--frame-2) 60%, transparent);
+  
 }
-.mc-actions .btn {
-  flex: 1;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  padding: 8px 0;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.15s var(--ease), filter 0.2s var(--ease);
+#importTaskCards .rare-badge .star {
+ color: var(--corner-hi); font-size: 10px; line-height: 1; 
 }
-.mc-actions .btn-reject { background: linear-gradient(180deg, oklch(78% 0.15 25), oklch(58% 0.17 25)); color: #fff; }
-.mc-actions .btn-approve { background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep)); color: oklch(15% 0.02 60); }
-.mc-actions .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
-.mc-actions .btn:active { transform: translateY(1px); }
-.mc-done {
-  flex: 1; text-align: center;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
-  color: var(--green);
-  padding: 8px 0;
-  border: 1px solid color-mix(in oklch, var(--green) 45%, transparent);
-  border-radius: 6px;
+/* 背景编号水印 */
+#importTaskCards .card::after {
+
+    content: attr(data-id);
+    position: absolute;
+    right: -14px; bottom: 26px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.24em;
+    writing-mode: vertical-rl;
+    color: color-mix(in oklch, var(--accent) 7%, transparent);
+    white-space: nowrap;
+    pointer-events: none;
+  
 }
-/* 状态徽章条（卡面顶部，评审状态） */
-.mc-status-row {
-  position: absolute; top: 10px; left: 10px; z-index: 5;
-  display: flex; gap: 5px;
+#importTaskCards .topline {
+
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim);
+    padding-bottom: 6px;
+    border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
+    padding-right: 52px;
+  
 }
-.mc-status-row .b {
-  font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
-  padding: 2px 6px; border-radius: 3px;
-  border: 1px solid;
-  background: oklch(12% 0.02 275 / 0.85);
-  font-variant-numeric: tabular-nums;
+#importTaskCards .faction {
+ font-weight: 700; color: var(--accent-soft); 
 }
-.mc-status-row .b-pending { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 55%, transparent); }
-.mc-status-row .b-draft   { color: var(--green); border-color: color-mix(in oklch, var(--green) 55%, transparent); }
-.mc-status-row .b-rejected{ color: var(--red);   border-color: color-mix(in oklch, var(--red) 55%, transparent); }
-.mc-status-row .b-skip    { color: var(--text-faint); border-color: color-mix(in oklch, var(--text-faint) 55%, transparent); }
-.mc-status-row .b-new     { color: var(--blue);  border-color: color-mix(in oklch, var(--blue) 55%, transparent); }
-.mc-status-row .b-dup     { color: var(--text-faint); border-color: color-mix(in oklch, var(--text-faint) 55%, transparent); }
-/* 关闭按钮 */
-.mc-close {
-  position: absolute; top: -14px; right: -14px; z-index: 310;
-  width: 30px; height: 30px; border-radius: 50%;
-  border: none; cursor: pointer;
-  background: rgba(30, 20, 8, 0.6); color: #ffd9a0;
-  font-size: 15px; display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, transform 0.2s;
+#importTaskCards .faction .sep {
+ color: var(--text-faint); margin: 0 3px; font-weight: 400; 
 }
-.mc-close:hover { background: rgba(200, 60, 50, 0.85); transform: rotate(90deg); }
-/* 底部提示条 */
-.mc-hint {
-  position: absolute; bottom: 2px; left: 0; right: 0;
-  text-align: center; font-size: 12px;
-  color: var(--text-secondary, #777);
-  padding: 2px; pointer-events: none; z-index: 500;
+#importTaskCards .quality {
+ display: flex; align-items: center; gap: 5px; color: var(--accent-soft); font-weight: 700; 
 }
+#importTaskCards .quality .gem {
+
+    width: 8px; height: 8px; transform: rotate(45deg);
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent-deep));
+    box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 80%, transparent);
+  
+}
+#importTaskCards .icon-zone {
+
+    height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; margin: 7px 0 3px;
+  
+}
+#importTaskCards .icon-halo {
+
+    position: absolute; width: 56px; height: 56px; border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in oklch, var(--accent) 38%, transparent), transparent 70%);
+    filter: blur(2px);
+  
+}
+#importTaskCards .icon-ring {
+
+    position: absolute; width: 46px; height: 46px; border-radius: 50%;
+    border: 2px solid color-mix(in oklch, var(--accent) 60%, transparent);
+    box-shadow: inset 0 0 12px oklch(0% 0 0 / 0.6), 0 0 10px color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--accent) 26%, transparent), oklch(26% 0.05 60 / 0.9));
+  
+}
+#importTaskCards .icon-ring svg {
+ width: 24px; height: 24px; stroke: var(--accent-soft); 
+}
+#importTaskCards .title-zone {
+ text-align: center; 
+}
+#importTaskCards h1 {
+
+    font-size: 22px; font-weight: 800; letter-spacing: 0.04em;
+    color: var(--accent-soft);
+    text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5);
+    line-height: 1.15;
+  
+}
+#importTaskCards .sub-id {
+
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 10.5px; letter-spacing: 0.3em;
+    color: var(--accent); margin-top: 2px;
+  
+}
+#importTaskCards .badge-row {
+ display: flex; justify-content: center; gap: 5px; margin-top: 6px; 
+}
+#importTaskCards .badge {
+
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 2px 6px;
+    border: 1px solid currentColor; background: oklch(0% 0 0 / 0.25);
+  
+}
+#importTaskCards .badge.biz {
+ color: var(--accent-soft); 
+}
+#importTaskCards .badge.tech {
+ color: var(--blue); 
+}
+#importTaskCards .badge.dm {
+ color: oklch(75% 0.1 140); 
+}
+#importTaskCards .stats {
+
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 5px; margin-top: 10px;
+  
+}
+#importTaskCards .stat {
+
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent);
+    border-radius: 5px; padding: 5px 3px 4px; text-align: center;
+  
+}
+#importTaskCards .stat .lbl {
+
+    font-size: 7.5px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--text-faint);
+  
+}
+#importTaskCards .stat .val {
+
+    font-size: 10.5px; font-weight: 700; color: var(--accent-soft);
+    margin-top: 1px; font-variant-numeric: tabular-nums; line-height: 1.2;
+  
+}
+#importTaskCards .stat .val.mono {
+ font-family: var(--font-mono); font-size: 8px; word-break: break-all; 
+}
+#importTaskCards .affix {
+ margin-top: 8px; 
+}
+#importTaskCards .affix-head {
+
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  
+}
+#importTaskCards .affix-head::before {
+
+    content: ""; width: 16px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  
+}
+#importTaskCards .affix-tags {
+ display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; 
+}
+#importTaskCards .tag {
+
+    font-size: 9px; font-weight: 700; color: var(--text);
+    background: oklch(0% 0 0 / 0.3);
+    border: 1px solid oklch(70% 0.05 90 / 0.4);
+    border-radius: 3px; padding: 1px 6px;
+  
+}
+#importTaskCards .desc-box {
+
+    margin-top: 8px;
+    background:
+      repeating-linear-gradient(0deg, oklch(91% 0.03 70 / 0.05) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    border: 1px solid color-mix(in oklch, var(--accent) 55%, transparent);
+    border-radius: 5px; padding: 6px 9px;
+    color: var(--paper-ink); font-size: 10.5px; line-height: 1.5;
+    box-shadow: inset 0 0 10px oklch(0% 0 0 / 0.18);
+    position: relative;
+  
+}
+#importTaskCards .desc-box::before {
+
+    content: "◆ 指标描述 ◆";
+    position: absolute; top: -7px; left: 10px;
+    font-size: 8px; font-weight: 800; letter-spacing: 0.2em;
+    color: var(--paper-ink);
+    background: linear-gradient(180deg, oklch(93% 0.035 72), oklch(88% 0.03 68));
+    padding: 0 5px;
+  
+}
+#importTaskCards .skill-box {
+
+    margin-top: 9px;
+    background: oklch(15% 0.02 275);
+    border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 5px; padding: 6px 9px;
+  
+}
+#importTaskCards .skill-box .sl {
+
+    font-size: 7.5px; font-weight: 800; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--accent);
+  
+}
+#importTaskCards .skill-box .sd {
+ font-size: 9.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.45; 
+}
+#importTaskCards .skill-box .sc {
+
+    font-family: var(--font-mono); font-size: 9.5px; line-height: 1.55;
+    color: var(--text); margin-top: 2px;
+    background: oklch(10% 0.02 275); border: 1px solid oklch(35% 0.03 275);
+    border-radius: 3px; padding: 4px 6px;
+    overflow-x: auto; white-space: nowrap;
+    font-variant-ligatures: none;
+  
+}
+#importTaskCards .sc .kw {
+ color: var(--accent-soft); 
+}
+#importTaskCards .sc .fn {
+ color: oklch(70% 0.11 250); 
+}
+#importTaskCards .sc .str {
+ color: oklch(72% 0.13 150); 
+}
+#importTaskCards .bars {
+ margin-top: 9px; display: flex; flex-direction: column; gap: 4px; 
+}
+#importTaskCards .bar-row {
+ display: flex; align-items: center; gap: 7px; 
+}
+#importTaskCards .bar-row .bname {
+
+    width: 34px; font-size: 8.5px; font-weight: 800;
+    letter-spacing: 0.12em; color: var(--text-dim);
+  
+}
+#importTaskCards .bar-track {
+
+    flex: 1; height: 9px; border-radius: 2px;
+    background: oklch(10% 0.02 275); border: 1px solid oklch(40% 0.03 275);
+    overflow: hidden;
+  
+}
+#importTaskCards .bar-fill {
+ height: 100%; border-radius: 1px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; 
+}
+#importTaskCards .bar-fill .tick {
+ font-size: 7px; font-weight: 800; color: oklch(12% 0.02 90); letter-spacing: 0.06em; 
+}
+#importTaskCards .bar-green {
+ width: 100%; background: linear-gradient(90deg, oklch(45% 0.12 150), var(--green)); 
+}
+#importTaskCards .bar-yellow {
+ width: 82%; background: linear-gradient(90deg, oklch(50% 0.12 80), var(--warn)); 
+}
+#importTaskCards .bar-red {
+ width: 60%; background: linear-gradient(90deg, oklch(48% 0.16 25), var(--red)); 
+}
+#importTaskCards .meta {
+
+    margin-top: auto; padding-top: 8px;
+    border-top: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 9px; color: var(--text-faint);
+  
+}
+#importTaskCards .meta .row {
+ display: flex; gap: 7px; align-items: baseline; 
+}
+#importTaskCards .meta .k {
+
+    font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); flex-shrink: 0; min-width: 3.4em;
+  
+}
+#importTaskCards .meta .v {
+
+    font-family: var(--font-mono); color: var(--text);
+    font-size: 9px; line-height: 1.45; word-break: break-all;
+  
+}
+#importTaskCards .meta .v.sans {
+ font-family: var(--font-sans); 
+}
+#importTaskCards .foot {
+
+    margin-top: 7px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; letter-spacing: 0.08em;
+  
+}
+#importTaskCards .foot .lv {
+ display: flex; align-items: center; gap: 6px; color: var(--accent-soft); font-weight: 800; 
+}
+#importTaskCards .foot .lv .lvnum {
+
+    font-family: var(--font-mono);
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+    color: oklch(15% 0.02 60);
+    padding: 2px 7px; border-radius: 3px; font-weight: 800; font-size: 9.5px;
+    box-shadow: inset 0 -1px 0 oklch(0% 0 0 / 0.35);
+  
+}
+#importTaskCards .foot .ver {
+ color: var(--text-faint); text-align: right; line-height: 1.4; 
+}
+/* ============ 白板模式（仅名称窄条） ============ */
+#importTaskCards .pack.board-mode .frame {
+
+    width: 300px;                 /* 窄条更细 */
+    border-radius: 12px;
+    padding: 6px;
+  
+}
+#importTaskCards .pack.board-mode .frame::before {
+ border-radius: 10px; background-size: 10px 10px; 
+}
+#importTaskCards .pack.board-mode .card {
+
+    width: 288px;
+    height: 64px;
+    border-radius: 8px;
+    padding: 0 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+  
+}
+/* 隐藏除名称外的所有内容 */
+#importTaskCards .pack.board-mode .card > *:not(.title-zone):not(.rare-badge):not(.card-accent):not(.type-badge) {
+ display: none; 
+}
+#importTaskCards .pack.board-mode .type-badge {
+
+    position: static;
+    font-size: 8px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+    border-width: 1.5px;
+  
+}
+#importTaskCards .pack.board-mode .frame.active-lock .type-badge {
+ position: absolute; top: 30px; right: 10px; font-size: 9px; padding: 2px 7px; border-width: 3px; 
+}
+/* 左侧主题色竖条 */
+#importTaskCards .card-accent {
+
+    display: none;
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+  
+}
+#importTaskCards .pack.board-mode .card-accent {
+ display: block; 
+}
+#importTaskCards .pack.board-mode .title-zone {
+
+    flex: 1;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  
+}
+#importTaskCards .pack.board-mode h1 {
+
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    text-shadow: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  
+}
+#importTaskCards .pack.board-mode .sub-id {
+
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    margin: 0;
+    flex-shrink: 0;
+  
+}
+#importTaskCards .pack.board-mode .rare-badge {
+
+    position: static;
+    font-size: 8px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+  
+}
+/* 白板模式堆叠更收敛：窄条角度小、错位小 */
+#importTaskCards .pack.board-mode .frame {
+
+    transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease), filter 0.45s var(--ease);
+  
+}
+#importTaskCards .pack.board-mode .frame.hovered {
+
+    z-index: 200;
+    transform: translate(var(--stack-x, 0px), calc(var(--stack-y, 0px) - 160px)) rotate(0deg) scale(1.06);
+  
+}
+/* 白板模式下抽出：恢复完整卡片 */
+#importTaskCards .pack.board-mode .frame.active-lock .card {
+
+    height: 540px;
+    width: 360px;
+    flex-direction: column;
+    padding: 15px 15px 12px;
+    align-items: stretch;
+    gap: 0;
+  
+}
+#importTaskCards .pack.board-mode .frame.active-lock .card > * {
+ display: flex; 
+}
+#importTaskCards .pack.board-mode .frame.active-lock .card-accent {
+ display: none; 
+}
+#importTaskCards .pack.board-mode .frame.active-lock .title-zone {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    text-align: center;
+  
+}
+#importTaskCards .pack.board-mode .frame.active-lock h1 {
+ font-size: 22px; text-shadow: 0 0 10px color-mix(in oklch, var(--accent) 40%, transparent), 0 2px 0 oklch(35% 0.06 60), 0 3px 3px oklch(0% 0 0 / 0.5); 
+}
+#importTaskCards .pack.board-mode .frame.active-lock .sub-id {
+ font-size: 10.5px; margin-top: 2px; letter-spacing: 0.3em; 
+}
+#importTaskCards .pack.board-mode .frame.active-lock .rare-badge {
+ position: absolute; top: 9px; right: 9px; font-size: 9px; padding: 2px 7px; 
+}
+/* ============ 网格视图（全部取出：卡库网格排布） ============ */
+#importTaskCards .pack.grid-view {
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    width: 960px;
+    min-height: 420px;
+    align-content: start;
+    justify-items: center;
+  
+}
+#importTaskCards .pack.grid-view .frame {
+
+    position: static;
+    width: 222px;
+    padding: 8px;
+    transform: none !important;
+    border-radius: 14px;
+    z-index: auto;
+    box-shadow:
+      0 0 0 1px var(--frame-outer),
+      0 0 0 3px var(--frame-2),
+      0 0 0 5px var(--frame-1),
+      0 12px 24px oklch(0% 0 0 / 0.45);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    filter: none;
+  
+}
+#importTaskCards .pack.grid-view .frame::before {
+ background-size: 8px 8px; border-radius: 10px; 
+}
+#importTaskCards .pack.grid-view .frame.hovered {
+
+    transform: translateY(-8px) scale(1.04) !important;
+    z-index: 5;
+    box-shadow:
+      0 0 0 1.5px var(--frame-outer),
+      0 0 0 5px var(--frame-2),
+      0 0 0 7px var(--frame-1),
+      0 18px 36px oklch(0% 0 0 / 0.55),
+      0 0 24px color-mix(in oklch, var(--frame-1) 60%, transparent);
+  
+}
+#importTaskCards .pack.grid-view .card {
+
+    width: 206px;
+    height: 148px;
+    border-radius: 8px;
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+  
+}
+#importTaskCards .pack.grid-view .card > *:not(.title-zone):not(.rare-badge):not(.type-badge):not(.card-accent) {
+ display: none; 
+}
+#importTaskCards .pack.grid-view .card-accent {
+ display: block; width: 5px; border-radius: 3px; 
+}
+#importTaskCards .pack.grid-view .title-zone {
+
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+    padding-left: 6px;
+  
+}
+#importTaskCards .pack.grid-view h1 {
+
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    text-shadow: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  
+}
+#importTaskCards .pack.grid-view .sub-id {
+ font-size: 10px; letter-spacing: 0.18em; margin: 0; 
+}
+#importTaskCards .pack.grid-view .rare-badge {
+ position: static; font-size: 8.5px; padding: 1px 6px; 
+}
+#importTaskCards .pack.grid-view .type-badge {
+ position: static; font-size: 8.5px; padding: 1px 6px; 
+}
+#importTaskCards .pack.grid-view .frame.active-lock {
+ animation: none !important; 
+}
+/* 网格模式下卡包区居中展示 */
+#importTaskCards .pack-zone.grid-active {
+
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    width: auto;
+    background: oklch(16% 0.02 275 / 0.92);
+    border: 1px solid oklch(55% 0.04 90 / 0.4);
+    border-radius: 20px;
+    padding: 34px 30px 40px;
+    box-shadow: 0 30px 90px oklch(0% 0 0 / 0.6);
+    backdrop-filter: blur(4px);
+  
+}
+#importTaskCards .pack-zone.grid-active .pack-base {
+ display: none; 
+}
+#importTaskCards .pack-zone.grid-active .pack {
+ width: 960px; height: auto; 
+}
+/* 响应式 */
+@media (max-width: 780px) {
+#importTaskCards .panel {
+ position: static; width: 100%; max-width: 384px; 
+}
+#importTaskCards .stage {
+ flex-direction: column-reverse; align-items: center; 
+}
+#importTaskCards .pack-base {
+ width: 440px; 
+}
+}
+@media (prefers-reduced-motion: reduce) {
+#importTaskCards .frame {
+ transition: none !important; 
+}
+#importTaskCards .frame::before, #importTaskCards .frame::after {
+ animation: none !important; 
+}
+}
+
 
 /* ================================================================
-   摘要卡（扇形浏览态）— 明亮工具型卡片：清晰可读 + 主题色强烈标识
+   嵌入适配（任务详情卡内）：卡包区跟随文档流、panel 顶部工具条
    ================================================================ */
-.mc-mini {
-  position: relative;
-  width: 220px;
-  height: 300px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-top: 4px solid var(--accent, #6b7280);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  overflow: hidden;
-  display: flex;
+#importTaskCards { display: block; }
+#importTaskCards .stage {
   flex-direction: column;
+  align-items: stretch;
+  max-width: 1180px;
+  gap: 0.75rem;
 }
-/* 主题色顶边延伸阴影（强化标识） */
-.mc-mini::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--accent, #6b7280), color-mix(in srgb, var(--accent, #6b7280) 50%, transparent));
-  pointer-events: none;
-}
-/* 稀有度边框色（替代多层 box-shadow，简单直接） */
-.mc-rarity-common .mc-mini    { border-color: #e5e7eb; border-top-color: #9ca3af; }
-.mc-rarity-uncommon .mc-mini  { border-color: #10b981; border-top-color: #10b981; }
-.mc-rarity-rare .mc-mini      { border-color: #3b82f6; border-top-color: #3b82f6; }
-.mc-rarity-epic .mc-mini      { border-color: #8b5cf6; border-top-color: #8b5cf6; }
-.mc-rarity-legendary .mc-mini { border-color: #f59e0b; border-top-color: #f59e0b; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25), 0 1px 3px rgba(245, 158, 11, 0.15); }
-
-.mc-mini-body {
-  position: relative;
-  flex: 1;
-  padding: 12px 14px 12px;
+#importTaskCards .panel {
+  position: static;
+  width: 100%;
+  max-width: 100%;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-/* 状态徽章（彩色大标签） + 稀有度 */
-.mc-mini-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.mc-mini-status .st {
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
-}
-.mc-mini-status .st-pending { background: #fef3c7; color: #92400e; }
-.mc-mini-status .st-draft   { background: #d1fae5; color: #065f46; }
-.mc-mini-status .st-rejected{ background: #fee2e2; color: #991b1b; }
-.mc-mini-status .st-skip    { background: #f3f4f6; color: #6b7280; }
-.mc-mini-status .rare {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #6b7280;
-  font-variant-numeric: tabular-nums;
-}
-/* 主题域 + 编号 */
-.mc-mini-topic {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent, #6b7280);
-}
-.mc-mini-topic .dom-code {
-  font-family: var(--font-mono, monospace);
-  font-size: 9px;
-  padding: 1px 5px;
-  background: color-mix(in srgb, var(--accent, #6b7280) 12%, transparent);
-  border-radius: 3px;
-  color: var(--accent, #6b7280);
-  text-transform: lowercase;
-}
-/* 标题（大字、可读） */
-.mc-mini-title {
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: #111827;
-  margin: 2px 0 0;
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.mc-mini-sub {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  color: #6b7280;
-  word-break: break-all;
-}
-/* 属性行 */
-.mc-mini-tags {
-  display: flex;
-  gap: 4px;
+  flex-direction: row;
   flex-wrap: wrap;
-  margin-top: 2px;
+  align-items: center;
+  gap: 0.6rem 1.2rem;
+  padding: 0.7rem 1rem;
 }
-.mc-mini-tags .t {
-  font-size: 11px;
-  font-weight: 600;
-  color: #374151;
-  background: #f3f4f6;
-  border-radius: 4px;
-  padding: 2px 7px;
-  border: 1px solid #e5e7eb;
+#importTaskCards .panel h2 { padding: 0; border: none; flex-shrink: 0; }
+#importTaskCards .btn-row { flex-direction: row; gap: 0.45rem; }
+#importTaskCards .panel .hint { flex: 1 1 260px; min-width: 260px; }
+#importTaskCards .panel .cardlist {
+  flex-direction: row;
+  flex-wrap: wrap;
+  max-height: none;
+  gap: 4px 8px;
+  width: 100%;
+  order: 9;
 }
-/* 描述（一行） */
-.mc-mini-desc {
-  font-size: 11px;
-  line-height: 1.5;
-  color: #4b5563;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-top: 2px;
-}
-/* 评审按钮（醒目对比） */
-.mc-mini-actions {
-  margin-top: auto;
-  display: flex;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px solid #f3f4f6;
-}
-.mc-mini-actions .btn {
-  flex: 1;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 8px 0;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.15s var(--ease), filter 0.2s var(--ease);
-}
-.mc-mini-actions .btn-reject { background: #f3f4f6; color: #b91c1c; border: 1px solid #fecaca; }
-.mc-mini-actions .btn-reject:hover { background: #fee2e2; }
-.mc-mini-actions .btn-approve { background: var(--accent, #10b981); color: #ffffff; }
-.mc-mini-actions .btn-approve:hover { filter: brightness(1.1); }
-.mc-mini-actions .btn:hover { transform: translateY(-1px); }
-.mc-mini-actions .btn:active { transform: translateY(1px); }
-.mc-mini-done {
-  margin-top: auto;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #065f46;
-  background: #d1fae5;
-  padding: 8px 0;
-  border-radius: 6px;
-}
-
-
-  text-align: center;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--green);
-  padding: 7px 0;
-  border: 1px solid color-mix(in oklch, var(--green) 40%, transparent);
-  border-radius: 5px;
-}
-
-/* ================================================================
-   v11：卡包 = 正常大小卡堆叠（不缩小），抽出 = 完整大卡轻微放大
-   删除所有数量/统计/上下张导航；筛选通过抽出卡顶部主题域色点（鼠标点选）
-   ================================================================ */
-.mc-pack-zone {
+#importTaskCards .cardlist .li { padding: 0.25rem 0.5rem; }
+/* 卡包区：静态布局 + hover 抬起空间 */
+#importTaskCards .pack-zone {
   position: relative;
+  bottom: auto;
+  right: auto;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 620px;
+  align-items: flex-start;
+  padding-top: 300px;
+  padding-bottom: 60px;
+  min-height: 820px;
+  pointer-events: auto;
 }
-/* 卡包容器（容纳一张完整卡 + 底下层叠卡露出边缘） */
-.mc-pack {
-  position: relative;
-  width: 380px;
-  height: 600px;
-  cursor: pointer;
+#importTaskCards .pack-zone .pack,
+#importTaskCards .pack-zone .pack-base { pointer-events: auto; }
+#importTaskCards .pack {
+  width: var(--fan-w, 1000px);
+  height: 720px;
 }
-.mc-pack > .deck-bg {
-  position: absolute;
-  width: 360px;
-  height: 560px;
-  border-radius: 12px;
-  background: linear-gradient(160deg, #2d2a45, #1d1b30);
-  border: 1px solid #4a4468;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
-  transition: transform 0.5s var(--ease);
+#importTaskCards .pack-base { bottom: -30px; }
+/* 网格视图：嵌在容器内居中 */
+#importTaskCards .pack-zone.grid-active {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 15;
+  padding: 34px 30px 40px;
+  min-height: 0;
+  width: auto;
+  pointer-events: auto;
 }
-.mc-pack > .d2 { left: 6px;  top: 6px;  transform: rotate(3deg) translateY(4px); }
-.mc-pack > .d3 { left: 14px; top: 12px; transform: rotate(-2deg) translateY(10px); }
-.mc-pack.pop > .d2 { transform: rotate(7deg) translateY(18px) translateX(8px); }
-.mc-pack.pop > .d3 { transform: rotate(-4deg) translateY(14px) translateX(12px); }
-/* 顶层卡（卡包里看到的那张，正常大小） */
-/* 顶层卡（卡包里看到的那张，正常大小） */
-.mc-pack-top {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+/* 评审操作：抽出卡下方左右两边（打回 / 进入草稿） */
+#importTaskCards .draw-actions {
+  left: 50%;
+  bottom: 34px;
+  gap: 470px;
 }
-/* 抽出完整大卡区（popout 轻微放大 1.05） */
-.mc-draw {
+#importTaskCards .draw-actions .act-btn.reject {
+  background: oklch(30% 0.04 275 / 0.9);
+  color: oklch(78% 0.15 25);
+  border: 1px solid oklch(60% 0.12 25 / 0.55);
+  box-shadow: 0 6px 18px oklch(0% 0 0 / 0.4);
+}
+#importTaskCards .draw-actions .act-btn.approve {
+  background: linear-gradient(180deg, var(--accent-soft), var(--accent-deep));
+  color: oklch(15% 0.02 60);
+  box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.25), 0 6px 18px oklch(0% 0 0 / 0.4);
+}
+#importTaskCards .draw-actions .act-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+#importTaskCards .draw-actions .draw-state {
   position: absolute;
   left: 50%;
-  top: 46%;
-  transform: translate(-50%, -50%) scale(1.05);
-  z-index: 300;
-  display: none;
+  bottom: -30px;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
-.mc-draw.open { display: block; animation: mc-popout 0.7s var(--ease); }
-@keyframes mc-popout {
-  0%   { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
-  55%  { transform: translate(-50%, -50%) scale(1.1); filter: brightness(1.12); }
-  100% { transform: translate(-50%, -50%) scale(1.05); filter: none; }
-}
-/* 抽出卡主题域切换器（顶部色点 + 关闭按钮） */
-.mc-draw-controls {
-  position: absolute;
-  top: -52px;
-  left: 0; right: 0;
-  z-index: 320;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-.mc-draw-dots {
-  display: flex;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-}
-.mc-draw-dots .dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.15s, border-color 0.15s;
-  font-size: 0;
-}
-.mc-draw-dots .dot:hover { transform: scale(1.18); }
-.mc-draw-dots .dot.active {
-  border-color: #111827;
-  transform: scale(1.18);
-}
-.mc-draw-dots .dot.trade     { background: oklch(80% 0.12 82); }
-.mc-draw-dots .dot.lease     { background: oklch(80% 0.11 155); }
-.mc-draw-dots .dot.finance   { background: oklch(75% 0.1 265); }
-.mc-draw-dots .dot.ops       { background: oklch(78% 0.09 215); }
-.mc-draw-dots .dot.marketing { background: oklch(78% 0.12 350); }
-.mc-draw-dots .dot.service   { background: oklch(76% 0.1 300); }
-.mc-draw-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: #1f2937;
-  color: #ffffff;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s, background 0.2s;
-}
-.mc-draw-close:hover { background: #dc2626; transform: rotate(90deg); }
-.mc-draw .mc-frame { width: 404px; }
-.mc-draw .mc-card { width: 380px; height: 636px; }
-
-/* 空包状态（筛选无结果） */
-.mc-pack-empty {
-  font-size: 13px;
-  color: #9ca3af;
-  background: #ffffff;
-  border: 1px dashed #d1d5db;
-  border-radius: 12px;
-  padding: 32px 40px;
-  text-align: center;
-}
+/* 已入草稿状态：替换按钮 */
+#importTaskCards .draw-actions .act-btn.ghost2:disabled { display: none; }

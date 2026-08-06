@@ -18,8 +18,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-# 每组合并条数（用户确认 50 条/组）
-GROUP_SIZE = 50
+# 每组合并条数（用户确认 30 条/组）
+GROUP_SIZE = 30
 
 TASK_STATUS = ("pending", "processing", "reviewing", "done")
 

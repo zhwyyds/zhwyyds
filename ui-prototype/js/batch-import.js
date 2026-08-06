@@ -1,60 +1,129 @@
 /**
  * 批量导入（H31 P1）：CSV 上传 → 待办任务 → 去重 + AI 生成 → 逐卡人工评审 → 草稿。
+ * 卡包区完全参考《指标卡包系统 v1.0.0》设计规格（metric-card.html v8）：
+ *   14 主题 × 3 类型 × 4 稀有度 × 7 分类 · 扇形堆叠 → 悬停查阅 → 点击抽出 → 评审 → 收回
+ *   三种视图：扇形 / 白板模式 / 网格视图（全部取出）
  * 依赖 governance-api.js 的 resolveBase/fetchJson（全局）。
  */
 (function (global) {
   var CURRENT_TASK = null;
-  // 卡包桌：主题域筛选 + 抽出的卡在过滤结果中的索引（-1 = 未抽出）
-  var CUR_DOMAIN = 'all';   // all / domain_code
-  var DRAWN_IDX = -1;
+  var frames = [];          // 当前渲染的卡片元素
+  var activeIdx = -1;       // 当前抽出的卡（-1 = 无）
+  var hoverIdx = -1;        // 当前查阅的卡（-1 = 无）
+  var drawing = false;      // 动画进行中锁
+  var gridMode = false;
+  var boardMode = false;
 
-  // 主题域 → 炉石卡插画配色 + emoji 图标（H32 魔兽卡风格）
-  var DOMAIN_THEMES = {
-    sale: { icon: '💰', c1: '#8b6914', c2: '#3a2a08' },
-    cust: { icon: '👥', c1: '#1e4a8a', c2: '#0a1f3a' },
-    prod: { icon: '📦', c1: '#8a4513', c2: '#3a1f08' },
-    mall: { icon: '🏛️', c1: '#5a3a8a', c2: '#2a1a4a' },
-    mkt: { icon: '📢', c1: '#8a3a6a', c2: '#3a1a2a' },
-    cont: { icon: '📜', c1: '#5a5a3a', c2: '#2a2a1a' },
-    fin: { icon: '💎', c1: '#2a8a5a', c2: '#0a3a2a' },
-    _default: { icon: '📊', c1: '#4a4a4a', c2: '#1a1a1a' }
+  /* ============ 设计规格映射（metric-card-doc v1.0.0） ============ */
+  // 14 主题
+  var THEME_NAMES = {
+    sale: '交易', mall: '商场', base: '基础', cont: '合同', cust: '消费者',
+    fin: '财务', fund: '资金', hr: '人资', mkt: '营销', prod: '商品',
+    ptnr: '商户', shop: '店铺', traf: '流量', wk: '流程'
   };
-  // 主题域中文名（迷你卡属性标签用）
-  var DOMAIN_CN = {
-    sale: '交易', cust: '消费者', prod: '商品', mall: '运营',
-    mkt: '营销', cont: '招商租赁', fin: '财务'
+  // 7 二级分类
+  var CAT_NAMES = {
+    overview: '概览', report: '报表', detail: '明细', trend: '趋势',
+    alert: '预警', standard: '口径', dimension: '维度'
   };
-  // 指标卡视觉系统 v5 映射：主题域 → 主题色 | 类型 → 纹样 | 状态 → 稀有度
-  var MC_THEMES = { sale: 'trade', cont: 'lease', fin: 'finance', mall: 'ops', mkt: 'marketing', cust: 'service', prod: 'service' };
-  var MC_RARITY_NAME = { legendary: '传说', epic: '史诗', rare: '稀有', uncommon: '精良', common: '普通' };
-  function mcTheme(domain) { return MC_THEMES[String(domain || '').toLowerCase()] || 'ops'; }
-  function mcCat(type) { return type === 'atomic' ? 'order' : 'contract'; }
-  function mcRarity(st) {
-    return ({ pending: 'uncommon', rejected: 'common', draft: 'epic', skip: 'common', error: 'common' }[st]) || 'uncommon';
+  var CAT_ALIAS = {
+    '概览': 'overview', '报表': 'report', '明细': 'detail', '趋势': 'trend',
+    '预警': 'alert', '口径': 'standard', '维度': 'dimension'
+  };
+  // 3 指标类型
+  var TYPE_NAMES = { atomic: '原子', derived: '衍生', composite: '复合' };
+  // 4 档评分稀有度
+  var RARITIES = [
+    { min: 90, key: 'excellent', name: '优秀' },
+    { min: 75, key: 'good', name: '良好' },
+    { min: 60, key: 'pass', name: '合格' },
+    { min: 0, key: 'poor', name: '待改进' }
+  ];
+  function rarityOf(score) {
+    for (var i = 0; i < RARITIES.length; i++) if (score >= RARITIES[i].min) return RARITIES[i];
+    return RARITIES[3];
   }
+  // 7 分类 SVG 图标（照参考）
+  var ICONS = {
+    overview: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity="0.9"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3" opacity="0.85"/><circle cx="12" cy="12" r="2.5"/></svg>',
+    report: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5" opacity="0.9"/><path d="M7 8h10M7 12h10M7 16h6" opacity="0.85"/></svg>',
+    detail: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6" opacity="0.9"/><path d="M16 16l4 4" opacity="0.85"/><path d="M9 11h4M11 9v4" opacity="0.6"/></svg>',
+    trend: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l5-5 4 4 6-8" opacity="0.9"/><path d="M14 9h4v4" opacity="0.85"/><path d="M3 21h18" opacity="0.5"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 17H2z" opacity="0.9"/><path d="M12 10v5M12 17v0.5" opacity="0.85"/></svg>',
+    standard: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5 5.6.7-4 4 1 5.5L12 16l-5 2.2 1-5.5-4-4 5.6-.7z" opacity="0.9"/></svg>',
+    dimension: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1.5" opacity="0.9"/><path d="M3 9h18M9 3v18" opacity="0.85"/></svg>'
+  };
+
+  /* ============ 字段兜底映射（有真实字段用真实值，无则默认一般） ============ */
+  function themeOf(row) {
+    var d = String(row.domain_code || '').toLowerCase();
+    return THEME_NAMES[d] ? d : 'base';
+  }
+  function catOf(row) {
+    var cand = [row.category_l2, row.category_l1, row.cat, row.metric_cat, row.category];
+    for (var i = 0; i < cand.length; i++) {
+      var v = String(cand[i] || '').toLowerCase().trim();
+      if (!v) continue;
+      if (CAT_NAMES[v]) return v;
+      if (CAT_ALIAS[v]) return CAT_ALIAS[v];
+      // 模糊包含（如 "经营概览" → overview）
+      for (var k in CAT_NAMES) {
+        if (v.indexOf(k) >= 0 || v.indexOf(CAT_NAMES[k]) >= 0) return k;
+      }
+    }
+    return 'overview';
+  }
+  function typeOf(row) {
+    var t = String(row.metric_type || '').toLowerCase().trim();
+    if (t === 'derived' || t === '衍生' || t === '派生') return 'derived';
+    if (t === 'composite' || t === '复合') return 'composite';
+    return 'atomic';
+  }
+  function scoreOf(row) {
+    // 评分字段优先；无 → 默认一般（合格 70）；评审状态联动稀有度
+    var raw = (row.score !== undefined && row.score !== null && row.score !== '') ? row.score
+      : (row.governance_score !== undefined && row.governance_score !== null) ? row.governance_score
+      : null;
+    var s = raw === null ? NaN : parseFloat(raw);
+    if (!isFinite(s)) {
+      var st = row._status;
+      if (st === 'draft') s = 95;
+      else if (st === 'rejected' || st === 'error') s = 40;
+      else if (st === 'skip') s = 55;
+      else s = 70; // 默认一般 → 合格
+    }
+    return s;
+  }
+  function mapRow(row, i) {
+    var st = row._status || 'pending';
+    return {
+      code: row.metric_id || row.metric_en || '—',
+      name: row.metric_cn || '—',
+      theme: themeOf(row),
+      cat: catOf(row),
+      type: typeOf(row),
+      score: scoreOf(row),
+      unit: row.unit || '—',
+      cycle: row.frequency || '—',
+      precision: row.precision || '—',
+      table: row.physical_table || '—',
+      dims: escTags(row.dimensions),
+      desc: row.caliber_desc || '—',
+      formula: row.formula_cn || row.formula || '—',
+      tech: row.formula || row.tech_caliber || '—',
+      source: row.data_sources || row.data_source || '—',
+      owner: row.owner || '—',
+      ver: row.version || 'v1.0.0',
+      verNote: row.version_note || '',
+      status: st
+    };
+  }
+
   function escTags(s) {
-    // 逗号/顿号分隔 → 标签数组
-    return String(s || '').split(/[,，、]/).map(function (t) { return t.trim(); }).filter(Boolean);
+    return String(s || '').split(/[,，、;；]/).map(function (t) { return t.trim(); }).filter(Boolean);
   }
 
-  function themeFor(domain) {
-    return DOMAIN_THEMES[(domain || '').toLowerCase()] || DOMAIN_THEMES._default;
-  }
-
-  function cardCost(row) {
-    // 从 metric_id 末段取数字（如 M_SALE_001 → 1）；失败回退 5
-    var parts = String(row.metric_id || '').split('_');
-    var tail = parts[parts.length - 1] || '5';
-    var n = parseInt(tail, 10);
-    if (!isFinite(n) || n <= 0) n = (row.metric_cn || '').length % 9 + 1;
-    return String(Math.max(1, Math.min(9, n)));
-  }
-
-  function cardStat(row) {
-    return String(((row.metric_cn || '').length % 7) + 1);
-  }
-
-  // 复用全局 API 探测：DG_API_BASE 未设置时先探测（与 governance-api 同逻辑）
+  /* ============ API 工具（复用全局） ============ */
   function resolveApiBase() {
     var cached = global.DG_API_BASE;
     if (cached) return Promise.resolve(cached);
@@ -65,7 +134,6 @@
         return global.DG_API_BASE;
       });
   }
-
   function api(path, options) {
     options = options || {};
     options.headers = options.headers || {};
@@ -74,7 +142,6 @@
     }
     return resolveApiBase().then(function (base) {
       return fetch(base + path, options).then(async function (r) {
-        // 先取 text 再 parse，避免 200/非2xx + HTML 时抛底层 SyntaxError
         var text = await r.text();
         var data = null;
         try { data = JSON.parse(text); } catch (_) {
@@ -86,7 +153,6 @@
       });
     });
   }
-
   function esc(s) {
     if (s == null) return '';
     return String(s)
@@ -161,7 +227,6 @@
   function openImportTask(taskId) {
     api('/api/import-tasks/' + encodeURIComponent(taskId)).then(function (task) {
       CURRENT_TASK = task;
-      DRAWN_IDX = -1; // 打开新任务未抽卡
       var card = document.getElementById('importTaskDetailCard');
       var title = document.getElementById('importTaskDetailTitle');
       var meta = document.getElementById('importTaskDetailMeta');
@@ -171,258 +236,388 @@
         meta.textContent = '共 ' + task.total_rows + ' 条 | 状态: ' + stLabel;
       }
       if (card) card.style.display = '';
-      renderTaskCards(task);
+      renderTaskCards(task, 0); // 参考行为：打开任务自动抽出第一张
     }).catch(function (e) {
       if (window.toast) toast('加载任务失败: ' + e.message);
     });
   }
 
-  function renderTaskCards(task) {
+  /* ============ 渲染：卡包（参考 v8 状态机） ============ */
+  function renderTaskCards(task, drawIdx) {
     var host = document.getElementById('importTaskCards');
     if (!host) return;
     var rows = task.generated || [];
     if (!rows.length) {
-      host.innerHTML = '<div class="text-sm text-muted" style="padding:12px;">尚未处理，点击「去重 + AI 生成」开始。</div>';
+      host.innerHTML = '<div class="text-sm text-muted" style="padding:12px;">尚未处理，点击右上「去重 + AI 生成」开始。</div>';
       return;
     }
-    host.classList.add('mc-table');
+    activeIdx = -1; hoverIdx = -1; frames = [];
 
-    var filtered = filterRows(rows);
-    if (DRAWN_IDX < 0 || DRAWN_IDX >= filtered.length) DRAWN_IDX = -1;
-
-    var packHtml = buildPackHtml(filtered);
-    var drawHtml = buildDrawHtml(filtered);
-    host.innerHTML = '<div class="mc-pack-zone">' + packHtml + drawHtml + '</div>';
-  }
-
-  /* ── 筛选：仅按主题域过滤（状态由卡片稀有度颜色识别） ── */
-  function filterRows(rows) {
-    return (rows || []).filter(function (r) {
-      if (CUR_DOMAIN !== 'all' && String(r.domain_code || '').toLowerCase() !== CUR_DOMAIN) return false;
-      return true;
-    });
-  }
-
-  /* ── 卡包：3 张层叠 + 顶层完整卡（正常大小，露边缘暗示"包"） ── */
-  function buildPackHtml(filtered) {
-    if (!filtered.length) {
-      return '<div class="mc-pack-empty">该主题域暂无指标卡<br/><span style="font-size:11px;">点击上方色点切换主题域</span></div>';
-    }
-    var r0 = filtered[0];
-    var theme = mcTheme(r0.domain_code);
-    return (
-      '<div class="mc-pack ' + theme + '" onclick="drawCard()" title="点击抽出">' +
-        '<div class="deck-bg d3"></div>' +
-        '<div class="deck-bg d2"></div>' +
-        '<div class="mc-pack-top">' + buildMcCard(r0, 0, 1, r0._status || 'pending') + '</div>' +
-      '</div>'
-    );
-  }
-
-  /* ── 抽出：完整大卡轻微放大（scale 1.05）+ 顶部主题域色点切换 ── */
-  function buildDrawHtml(filtered) {
-    if (DRAWN_IDX < 0 || !filtered[DRAWN_IDX]) return '';
-    var dr = filtered[DRAWN_IDX];
-    return (
-      '<div class="mc-draw open">' +
-        '<div class="mc-draw-controls">' +
-          '<div class="mc-draw-dots">' + buildDotsHtml() + '</div>' +
-          '<button class="mc-draw-close" onclick="closeDraw()" title="收回（Esc）">✕</button>' +
+    // 结构：stage > (panel 控制面板 + pack-zone 卡包区)
+    host.innerHTML =
+      '<div class="stage">' +
+        panelHtml(task, rows) +
+        '<div class="pack-zone">' +
+          '<div class="pack-base" aria-hidden="true"></div>' +
+          '<div class="pack" id="mc8pack" aria-label="指标卡包，悬停查阅，点击抽出"></div>' +
         '</div>' +
-        buildMcCard(dr, DRAWN_IDX, filtered.length, dr._status || 'pending') +
-      '</div>'
-    );
-  }
+      '</div>' +
+      '<div class="overlay" id="mc8overlay"></div>' +
+      '<div class="draw-actions" id="mc8draw-actions">' +
+        '<button class="act-btn reject" id="mc8btn-reject" type="button">✕ 打回</button>' +
+        '<button class="act-btn ghost2" id="mc8btn-back" type="button">📥 收回卡包</button>' +
+        '<button class="act-btn approve" id="mc8btn-approve" type="button">✓ 进入草稿</button>' +
+        '<span class="draw-state" id="mc8draw-state"></span>' +
+      '</div>';
 
-  /* 主题域色点（鼠标点选切换主题域） */
-  function buildDotsHtml() {
-    if (!CURRENT_TASK) return '';
-    var rows = CURRENT_TASK.generated || [];
-    var doms = [];
-    rows.forEach(function (r) {
-      var d = String(r.domain_code || '').toLowerCase();
-      if (d && doms.indexOf(d) < 0) doms.push(d);
+    var pack = document.getElementById('mc8pack');
+    // 30 张适配：错位 20px / 14 张以内 34px（参考值）
+    var step = rows.length > 14 ? 20 : 34;
+    pack.style.setProperty('--fan-w', ((rows.length - 1) * step + 384) + 'px');
+
+    rows.forEach(function (row, i) {
+      buildFrame(pack, row, i, rows.length, step);
     });
-    var themeMap = { sale: 'trade', cont: 'lease', fin: 'finance', mall: 'ops', mkt: 'marketing', cust: 'service', prod: 'service' };
-    var activeAll = CUR_DOMAIN === 'all' ? ' active' : '';
-    var html = '<span class="dot' + activeAll + '" style="background:linear-gradient(135deg,#9ca3af,#4b5563)" onclick="setDomain(\'all\')" title="全部"></span>';
-    doms.forEach(function (d) {
-      var th = themeMap[d] || 'ops';
-      var active = (CUR_DOMAIN === d) ? ' active' : '';
-      var label = (DOMAIN_CN[d] || d) + '域';
-      html += '<span class="dot ' + th + active + '" onclick="setDomain(\'' + d + '\')" title="' + label + '"></span>';
-    });
-    return html;
+
+    bindEvents();
+    syncList();
+
+    // 初始/评审后自动抽出指定卡（参考行为）；drawIdx < 0 不抽
+    if (drawIdx >= 0 && frames[drawIdx]) {
+      var target = frames[drawIdx];
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { draw(target); });
+      });
+    }
   }
 
-  /* ── 抽卡 / 切换 / 收回 ── */
-  function drawCard() {
-    if (!CURRENT_TASK) return;
-    var filtered = filterRows(CURRENT_TASK.generated || []);
-    if (!filtered.length) return;
-    var pack = document.querySelector('.mc-pack');
-    if (pack) pack.classList.add('pop');
-    DRAWN_IDX = 0;
-    renderTaskCards(CURRENT_TASK);
-  }
-
-  function closeDraw() {
-    DRAWN_IDX = -1;
-    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
-  }
-
-  function switchDraw(delta) {
-    if (!CURRENT_TASK) return;
-    var filtered = filterRows(CURRENT_TASK.generated || []);
-    if (!filtered.length) return;
-    var ni = DRAWN_IDX + delta;
-    if (ni < 0 || ni >= filtered.length) return;
-    DRAWN_IDX = ni;
-    renderTaskCards(CURRENT_TASK);
-  }
-
-  function setDomain(d) {
-    CUR_DOMAIN = d;
-    DRAWN_IDX = -1;
-    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
-  }
-
-  /* 指标卡视觉系统 v5 卡面渲染（参考 ui-prototype/metric-card-ref.html） */
-  function buildMcCard(row, i, n, st) {
-    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '失败' }[st] || st;
-    var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似' : '新增');
-    var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
-    var typeCn = row.metric_type === 'derived' ? '派生指标' : '原子指标';
-    var unit = row.unit || '—';
-    var freq = row.frequency || '—';
-    var vtype = row.value_type || '—';
-    var prec = row.precision || '—';
-    var dims = escTags(row.dimensions);
-    var formula = row.formula || '';
-    var formulaCn = row.formula_cn || '';
-    var dataSources = row.data_sources || '—';
-    var tech = row.tech_caliber || '—';
-    var owner = row.owner || '—';
-    var version = row.version || 'v1.0.0';
-    var statusClass = { pending: 'b-pending', draft: 'b-draft', rejected: 'b-rejected', skip: 'b-skip' }[st] || 'b-pending';
-
+  /* 控制面板（参考：全部取出 / 全部收回 / 白板模式 + 清单） */
+  function panelHtml(task, rows) {
+    var list = rows.map(function (row, i) {
+      var m = mapRow(row, i);
+      return (
+        '<div class="li" data-idx="' + i + '">' +
+          '<span class="dot"></span>' +
+          '<span class="code">' + esc(m.code) + '</span>' +
+          '<span class="nm">' + esc(m.name) + '</span>' +
+        '</div>'
+      );
+    }).join('');
     return (
-      '<div class="mc-frame">' +
-        '<span class="mc-corner tl"></span><span class="mc-corner tr"></span>' +
-        '<span class="mc-corner bl"></span><span class="mc-corner br"></span>' +
-        '<article class="mc-card" data-id="' + esc(row.metric_id || '') + '">' +
-          '<div class="mc-status-row">' +
-            '<span class="b ' + statusClass + '">' + stLabel + '</span>' +
-            '<span class="b b-new">' + dedupLabel + '</span>' +
-          '</div>' +
-          '<span class="mc-rare-badge"><span class="star">★</span>' + (MC_RARITY_NAME[mcRarity(st)] || '') + '</span>' +
-          '<div class="mc-topline">' +
-            '<span class="mc-faction">' + esc(domCn) + '<span class="sep">/</span>' + typeCn + '</span>' +
-            '<span class="mc-quality"><span class="gem"></span>' + esc(freq) + '</span>' +
-          '</div>' +
-          '<div class="mc-icon-zone">' +
-            '<span class="mc-icon-halo"></span>' +
-            '<span class="mc-icon-ring">' + themeFor(row.domain_code).icon + '</span>' +
-          '</div>' +
-          '<div class="mc-title-zone">' +
-            '<h3 class="mc-title">' + esc(row.metric_cn || '—') + '</h3>' +
-            '<div class="mc-sub-id">' + esc(row.metric_id || '—') + '</div>' +
-          '</div>' +
-          '<section class="mc-stats">' +
-            '<div class="mc-stat"><div class="lbl">计量</div><div class="val">' + esc(unit) + '</div></div>' +
-            '<div class="mc-stat"><div class="lbl">周期</div><div class="val">' + esc(freq) + '</div></div>' +
-            '<div class="mc-stat"><div class="lbl">值类型</div><div class="val">' + esc(vtype) + '</div></div>' +
-            '<div class="mc-stat"><div class="lbl">精度</div><div class="val">' + esc(prec) + '</div></div>' +
-          '</section>' +
-          (dims.length ?
-            '<section class="mc-affix"><div class="mc-affix-head">统计维度</div><div class="mc-affix-tags">' +
-              dims.map(function (d) { return '<span class="mc-tag">' + esc(d) + '</span>'; }).join('') +
-            '</div></section>' : '') +
-          '<section class="mc-desc-box">' + esc(row.caliber_desc || '—') + '</section>' +
-          ((formula || formulaCn) ?
-            '<section class="mc-skill-box">' +
-              '<div class="sl">✦ 计算公式</div>' +
-              (formulaCn ? '<div class="sd">' + esc(formulaCn) + '</div>' : '') +
-              (formula ? '<div class="sc">' + esc(formula) + '</div>' : '') +
-            '</section>' : '') +
-          '<section class="mc-bars">' +
-            '<div class="mc-bar-row"><span class="bname">绿灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-green"><span class="tick">≥ 目标</span></div></div></div>' +
-            '<div class="mc-bar-row"><span class="bname">黄灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-yellow"><span class="tick">-10%</span></div></div></div>' +
-            '<div class="mc-bar-row"><span class="bname">红灯</span><div class="mc-bar-track"><div class="mc-bar-fill mc-bar-red"><span class="tick">-20%</span></div></div></div>' +
-          '</section>' +
-          '<section class="mc-meta">' +
-            '<div class="row"><span class="k">来源</span><span class="v sans">' + esc(dataSources) + '</span></div>' +
-            '<div class="row"><span class="k">技术来源</span><span class="v">' + esc(tech) + '</span></div>' +
-            '<div class="row"><span class="k">负责单位</span><span class="v sans">' + esc(owner) + '</span></div>' +
-          '</section>' +
-          '<footer class="mc-foot">' +
-            '<span class="lv"><span class="lvnum">' + esc(version) + '</span>AI 生成</span>' +
-            '<span class="ver">' + (i + 1) + '/' + n + '</span>' +
-          '</footer>' +
-          ((st === 'pending' || st === 'rejected') ?
-            '<div class="mc-actions">' +
-              '<button class="btn btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
-              '<button class="btn btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
-            '</div>' :
-            (st === 'draft' ? '<div class="mc-done">已入草稿 · 可撤回</div>' : '')) +
-        '</article>' +
-      '</div>'
+      '<aside class="panel" aria-label="卡包控制">' +
+        '<h2>🎒 指标卡包</h2>' +
+        '<div class="btn-row">' +
+          '<button class="btn" id="mc8btn-all" type="button">📤 全部取出</button>' +
+          '<button class="btn ghost" id="mc8btn-back-all" type="button">📥 全部收回</button>' +
+          '<button class="btn ghost" id="mc8btn-mode" type="button">📄 白板模式</button>' +
+        '</div>' +
+        '<div class="hint">悬停卡片<b>在卡包处查阅</b>（抬起放大、其余压暗）；<b>点击</b>抽出到页面中央展示，评审按钮出现在卡片下方两侧；再点卡片、遮罩或按钮<b>收回卡包</b>。</div>' +
+        '<div style="font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-faint);padding-top:.2rem;">卡包清单 · ' + rows.length + ' 张</div>' +
+        '<div class="cardlist" id="mc8cardlist">' + list + '</div>' +
+      '</aside>'
     );
   }
 
-  /* 键盘导航：← → 切换抽出的卡，Esc 收回（任务详情打开时生效） */
+  /* 单卡构建：扇形堆叠几何（参考 ch10） */
+  function buildFrame(pack, row, i, n, step) {
+    var m = mapRow(row, i);
+    var r = rarityOf(m.score);
+
+    var baseAngle = -18 * i / (n - 1);
+    var jitterA = ((i * 37) % 9) - 4;
+    var jitterX = ((i * 53) % 13) - 6;
+    var jitterY = ((i * 29) % 7) - 3;
+    var fanDeg = baseAngle + jitterA;
+    var stackX = (n - 1 - i) * step + jitterX;
+    var stackY = jitterY;
+
+    var els = document.createElement('div');
+    els.className = 'frame';
+    els.dataset.theme = m.theme;
+    els.dataset.rarity = r.key;
+    els.dataset.cat = m.cat;
+    els.dataset.type = m.type;
+    els.dataset.idx = i;
+    els.style.setProperty('--stack-x', stackX + 'px');
+    els.style.setProperty('--stack-y', stackY + 'px');
+    els.style.setProperty('--fan-deg', fanDeg + 'deg');
+    els.style.zIndex = i + 1;
+
+    els.innerHTML = cardHtml(m, i, n);
+    pack.appendChild(els);
+    frames.push(els);
+  }
+
+  /* 卡面（参考 ch7：18 字段 10 区块；静态元素照抄，动态字段接入） */
+  function cardHtml(m, i, n) {
+    var st = m.status;
+    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || '待评审';
+    var r = rarityOf(m.score);
+    var dims = m.dims.map(function (d) { return '<span class="tag">' + esc(d) + '</span>'; }).join('');
+    return (
+      '<span class="corner tl"></span><span class="corner tr"></span>' +
+      '<span class="corner bl"></span><span class="corner br"></span>' +
+      '<article class="card" data-id="' + esc(m.code) + '" data-theme="' + m.theme + '">' +
+        '<span class="card-accent"></span>' +
+        '<span class="type-badge ' + m.type + '">' + TYPE_NAMES[m.type] + '</span>' +
+        '<span class="rare-badge"><span class="star">★</span>' + r.name + '</span>' +
+        '<div class="topline">' +
+          '<span class="faction">' + (THEME_NAMES[m.theme] || m.theme) + '<span class="sep">/</span>' + (CAT_NAMES[m.cat] || m.cat) + '</span>' +
+          '<span class="quality"><span class="gem"></span>周期总量</span>' +
+        '</div>' +
+        '<div class="icon-zone">' +
+          '<span class="icon-halo"></span>' +
+          '<span class="icon-ring" aria-hidden="true">' + (ICONS[m.cat] || ICONS.overview) + '</span>' +
+        '</div>' +
+        '<div class="title-zone">' +
+          '<h1>' + esc(m.name) + '</h1>' +
+          '<div class="sub-id">' + esc(m.code) + '</div>' +
+          '<div class="badge-row">' +
+            '<span class="badge biz">业务</span>' +
+            '<span class="badge tech">技术</span>' +
+            '<span class="badge dm">数据管理</span>' +
+          '</div>' +
+        '</div>' +
+        '<section class="stats">' +
+          '<div class="stat"><div class="lbl">计量</div><div class="val">' + esc(m.unit) + '</div></div>' +
+          '<div class="stat"><div class="lbl">周期</div><div class="val">' + esc(m.cycle) + '</div></div>' +
+          '<div class="stat"><div class="lbl">精度</div><div class="val">' + esc(m.precision) + '</div></div>' +
+          '<div class="stat"><div class="lbl">物理表</div><div class="val mono">' + esc(m.table) + '</div></div>' +
+        '</section>' +
+        (dims ? '<section class="affix"><div class="affix-head">统计维度</div><div class="affix-tags">' + dims + '</div></section>' : '') +
+        '<section class="desc-box">' + esc(m.desc) + '</section>' +
+        '<section class="skill-box">' +
+          '<div class="sl">✦ 计算公式</div>' +
+          '<div class="sd">' + esc(m.formula) + '</div>' +
+          '<div class="sc">' + esc(m.tech) + '</div>' +
+        '</section>' +
+        '<section class="bars">' +
+          '<div class="bar-row"><span class="bname">绿灯</span><div class="bar-track"><div class="bar-fill bar-green"><span class="tick">≥ 目标</span></div></div></div>' +
+          '<div class="bar-row"><span class="bname">黄灯</span><div class="bar-track"><div class="bar-fill bar-yellow"><span class="tick">-10%</span></div></div></div>' +
+          '<div class="bar-row"><span class="bname">红灯</span><div class="bar-track"><div class="bar-fill bar-red"><span class="tick">-20%</span></div></div></div>' +
+        '</section>' +
+        '<section class="meta">' +
+          '<div class="row"><span class="k">来源</span><span class="v sans">' + esc(m.source) + '</span></div>' +
+          '<div class="row"><span class="k">负责</span><span class="v sans">' + esc(m.owner) + '</span></div>' +
+        '</section>' +
+        '<footer class="foot">' +
+          '<span class="lv"><span class="lvnum">' + esc(m.ver) + '</span>强化等级</span>' +
+          '<span class="ver">' + esc(m.verNote || stLabel) + '</span>' +
+        '</footer>' +
+      '</article>'
+    );
+  }
+
+  /* ============ 交互状态机（参考 ch8） ============ */
+  function peek(el) {
+    var idx = +el.dataset.idx;
+    if (activeIdx >= 0) return;
+    if (hoverIdx === idx) return;
+    frames.forEach(function (f) { f.classList.remove('hovered'); });
+    hoverIdx = idx;
+    el.classList.add('hovered');
+    var pack = document.getElementById('mc8pack');
+    if (pack) pack.classList.add('dimmed');
+    syncList();
+  }
+  function peekOut() {
+    frames.forEach(function (f) { f.classList.remove('hovered'); });
+    var pack = document.getElementById('mc8pack');
+    if (pack) pack.classList.remove('dimmed');
+    hoverIdx = -1;
+    syncList();
+  }
+  function centerOffset(el, dy, scale) {
+    var r = el.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+    var cx = vw / 2 - (r.left + r.width / 2);
+    var cy = vh / 2 - (r.top + r.height / 2) + dy;
+    el.style.setProperty('--fly-x', cx + 'px');
+    el.style.setProperty('--fly-y', cy + 'px');
+    el.style.setProperty('--fly-scale', scale);
+  }
+  function clearFly(el) {
+    el.style.removeProperty('--fly-x');
+    el.style.removeProperty('--fly-y');
+    el.style.removeProperty('--fly-scale');
+  }
+  function draw(el) {
+    if (drawing) return;
+    var idx = +el.dataset.idx;
+    if (activeIdx === idx) return;
+    drawing = true;
+    peekOut();
+    frames.forEach(function (f) {
+      f.classList.remove('active-lock', 'retracting');
+      clearFly(f);
+    });
+    centerOffset(el, -60, 1.3);
+    el.classList.add('active-lock');
+    activeIdx = idx;
+    var overlay = document.getElementById('mc8overlay');
+    var actions = document.getElementById('mc8draw-actions');
+    if (overlay) overlay.classList.add('show');
+    if (actions) actions.classList.add('show');
+    updateReviewButtons();
+    setTimeout(function () { drawing = false; }, 580);
+    syncList();
+  }
+  function putBack() {
+    if (drawing || activeIdx < 0) return;
+    drawing = true;
+    var el = frames[activeIdx];
+    el.classList.add('retracting');
+    setTimeout(function () {
+      el.classList.remove('active-lock', 'retracting');
+      clearFly(el);
+      activeIdx = -1;
+      var overlay = document.getElementById('mc8overlay');
+      var actions = document.getElementById('mc8draw-actions');
+      var pack = document.getElementById('mc8pack');
+      if (overlay) overlay.classList.remove('show');
+      if (actions) actions.classList.remove('show');
+      if (pack) pack.classList.remove('dimmed');
+      drawing = false;
+      syncList();
+    }, 520);
+  }
+  /* 评审按钮状态：抽出卡下方左右（打回 / 进入草稿） */
+  function updateReviewButtons() {
+    var actions = document.getElementById('mc8draw-actions');
+    if (!actions || !CURRENT_TASK) return;
+    var btnReject = document.getElementById('mc8btn-reject');
+    var btnApprove = document.getElementById('mc8btn-approve');
+    var btnBack = document.getElementById('mc8btn-back');
+    var state = document.getElementById('mc8draw-state');
+    var rows = CURRENT_TASK.generated || [];
+    if (activeIdx < 0 || !rows[activeIdx]) return;
+    var st = rows[activeIdx]._status || 'pending';
+    var done = st === 'draft' || st === 'skip' || st === 'error';
+    if (done) {
+      btnReject.style.display = 'none';
+      btnApprove.style.display = 'none';
+      btnBack.style.display = 'none';
+      state.style.display = '';
+      state.textContent = st === 'draft' ? '✓ 已入草稿' : (st === 'skip' ? '重复 · 已跳过' : '生成失败');
+    } else {
+      btnReject.style.display = '';
+      btnApprove.style.display = '';
+      btnBack.style.display = '';
+      state.style.display = 'none';
+      btnReject.onclick = function () { reviewImportRow(activeIdx, 'reject'); };
+      btnApprove.onclick = function () { reviewImportRow(activeIdx, 'approve'); };
+    }
+  }
+  function syncList() {
+    var list = document.getElementById('mc8cardlist');
+    if (!list) return;
+    Array.prototype.forEach.call(list.children, function (li, i) {
+      li.classList.toggle('active', i === activeIdx || i === hoverIdx);
+    });
+  }
+
+  /* ============ 视图模式（参考 ch9） ============ */
+  function setGrid(on) {
+    gridMode = on;
+    var pack = document.getElementById('mc8pack');
+    var zone = document.querySelector('#importTaskCards .pack-zone');
+    var btn = document.getElementById('mc8btn-all');
+    if (pack) pack.classList.toggle('grid-view', on);
+    if (zone) zone.classList.toggle('grid-active', on);
+    if (btn) btn.textContent = on ? '📊 网格视图' : '📤 全部取出';
+    if (!on) {
+      frames.forEach(function (f) {
+        f.classList.remove('active-lock', 'retracting', 'hovered');
+        clearFly(f);
+      });
+      var overlay = document.getElementById('mc8overlay');
+      var actions = document.getElementById('mc8draw-actions');
+      if (pack) pack.classList.remove('dimmed');
+      if (overlay) overlay.classList.remove('show');
+      if (actions) actions.classList.remove('show');
+      activeIdx = -1;
+    }
+  }
+
+  /* ============ 事件绑定 ============ */
+  function bindEvents() {
+    frames.forEach(function (f) {
+      f.addEventListener('mouseenter', function () {
+        if (!gridMode) peek(f);
+      });
+      f.addEventListener('mouseleave', function () {
+        if (!gridMode) peekOut();
+      });
+      f.addEventListener('click', function () {
+        if (gridMode) {
+          setGrid(false);
+          requestAnimationFrame(function () { draw(f); });
+          return;
+        }
+        if (activeIdx === +f.dataset.idx) { putBack(); return; }
+        draw(f);
+      });
+    });
+    var overlay = document.getElementById('mc8overlay');
+    if (overlay) overlay.addEventListener('click', putBack);
+    var btnBack = document.getElementById('mc8btn-back');
+    if (btnBack) btnBack.addEventListener('click', putBack);
+
+    var btnAll = document.getElementById('mc8btn-all');
+    if (btnAll) btnAll.addEventListener('click', function () {
+      if (drawing) return;
+      peekOut();
+      if (gridMode) { setGrid(false); return; }
+      setGrid(true);
+      activeIdx = -1;
+      syncList();
+    });
+    var btnBackAll = document.getElementById('mc8btn-back-all');
+    if (btnBackAll) btnBackAll.addEventListener('click', function () {
+      setGrid(false);
+      putBack();
+    });
+    var btnMode = document.getElementById('mc8btn-mode');
+    if (btnMode) btnMode.addEventListener('click', function () {
+      if (gridMode) setGrid(false);
+      boardMode = !boardMode;
+      var pack = document.getElementById('mc8pack');
+      if (pack) pack.classList.toggle('board-mode', boardMode);
+      btnMode.textContent = boardMode ? '🎴 完整模式' : '📄 白板模式';
+      putBack();
+    });
+    var list = document.getElementById('mc8cardlist');
+    if (list) {
+      Array.prototype.forEach.call(list.children, function (li, i) {
+        li.addEventListener('click', function () { draw(frames[i]); });
+      });
+    }
+  }
+
+  /* 键盘：← → 切换抽出的卡（参考无，评审流程增益），Esc 收回 */
   document.addEventListener('keydown', function (e) {
     if (!CURRENT_TASK) return;
-    var filtered = filterRows(CURRENT_TASK.generated || []);
-    if (!filtered.length || DRAWN_IDX < 0) return;
+    var rows = CURRENT_TASK.generated || [];
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (activeIdx < 0) return;
       e.preventDefault();
-      switchDraw(1);
+      var ni = activeIdx + 1;
+      while (ni < rows.length && ['draft', 'skip', 'error'].indexOf(rows[ni]._status) >= 0) ni++;
+      if (ni < rows.length && frames[ni]) draw(frames[ni]);
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (activeIdx < 0) return;
       e.preventDefault();
-      switchDraw(-1);
+      var pi = activeIdx - 1;
+      while (pi >= 0 && ['draft', 'skip', 'error'].indexOf(rows[pi]._status) >= 0) pi--;
+      if (pi >= 0 && frames[pi]) draw(frames[pi]);
     } else if (e.key === 'Escape') {
-      closeDraw();
+      if (activeIdx >= 0) putBack();
     }
   });
-
-  /* 复用指标库卡片的完整字段渲染（与指标库零差异：指标名称/编号、单位/值类型、
-     时间周期/统计维度、应用场景/负责单位、报表、描述、公式、方法、预警、精度、
-     数据来源、技术口径、物理表、版本记录 + 顶部分类栏） */
-  function buildImportSpecHtml(row) {
-    var MS = global.MetricSpec;
-    if (MS && MS.apiRowToSpec && MS.buildSpecTableHtml) {
-      try {
-        var spec = MS.apiRowToSpec(row);
-        return MS.buildSpecTableHtml(spec, { showBadge: false });
-      } catch (_) { /* 降级走下方简版 */ }
-    }
-    // 降级简版（MetricSpec 未加载时兜底）
-    var en = row.metric_en || '—';
-    var cn = row.metric_cn || '—';
-    var unit = row.unit || '—';
-    var freq = row.frequency || '—';
-    var desc = row.caliber_desc || '—';
-    return (
-      '<div class="indicator-spec-header">' +
-        '<div class="indicator-spec-cat-tags">' +
-          '<div class="indicator-spec-cat-tag"><span class="label">主题域：</span><span class="value">' + esc(row.domain_code || '—') + '</span></div>' +
-        '</div>' +
-        '<div class="indicator-spec-card-badge">指标卡片</div>' +
-      '</div>' +
-      '<div class="indicator-spec-card">' +
-        '<table class="indicator-spec-table" cellspacing="0" cellpadding="0">' +
-          '<tr><th class="indicator-spec-th indicator-spec-th--biz">指标名称</th><td class="indicator-spec-td">' + esc(cn) + '</td>' +
-          '<th class="indicator-spec-th indicator-spec-th--biz">指标编号</th><td class="indicator-spec-td">' + esc(row.metric_id || '—') + '</td></tr>' +
-          '<tr><th class="indicator-spec-th indicator-spec-th--tech">英文名</th><td class="indicator-spec-td" style="font-family:var(--font-mono);">' + esc(en) + '</td>' +
-          '<th class="indicator-spec-th indicator-spec-th--biz">计量单位</th><td class="indicator-spec-td">' + esc(unit) + '</td></tr>' +
-          '<tr><th class="indicator-spec-th indicator-spec-th--tech">时间周期</th><td class="indicator-spec-td">' + esc(freq) + '</td>' +
-          '<th class="indicator-spec-th indicator-spec-th--biz">值类型</th><td class="indicator-spec-td">' + esc(row.value_type || '—') + '</td></tr>' +
-          '<tr><th class="indicator-spec-th indicator-spec-th--biz indicator-spec-th-block">指标描述</th><td class="indicator-spec-td indicator-spec-td-block" colspan="3">' + esc(desc) + '</td></tr>' +
-        '</table>' +
-      '</div>'
-    );
-  }
+  window.addEventListener('resize', function () {
+    if (activeIdx >= 0 && frames[activeIdx]) centerOffset(frames[activeIdx], -60, 1.3);
+  });
 
   /* ---------- 处理任务：去重 + AI 生成 ---------- */
   function processImportTask() {
@@ -432,7 +627,7 @@
       .then(function (task) {
         CURRENT_TASK = task;
         if (window.toast) toast('✅ 处理完成：新增 ' + (task.dedup_result.new_count || 0) + '，重复 ' + (task.dedup_result.dup_count || 0) + '，疑似 ' + (task.dedup_result.suspect_count || 0), 'success');
-        renderTaskCards(task);
+        renderTaskCards(task, 0);
         loadImportTasks();
       })
       .catch(function (e) {
@@ -449,15 +644,14 @@
     }).then(function (task) {
       CURRENT_TASK = task;
       if (window.toast) toast(action === 'approve' ? '✓ 已通过，指标进入草稿' : '已打回', action === 'approve' ? 'success' : '');
-      // 当前卡评审完后，自动抽下一张待评审卡（连续评审不卡壳）
-      var filtered = filterRows(task.generated || []);
+      // 自动抽出下一张待评审卡（连续评审不卡壳）；审完则不抽
+      var rows = task.generated || [];
       var nextIdx = -1;
-      for (var i = 0; i < filtered.length; i++) {
-        var s = filtered[i]._status;
+      for (var i = 0; i < rows.length; i++) {
+        var s = rows[i]._status;
         if (s === 'pending' || s === 'rejected') { nextIdx = i; break; }
       }
-      DRAWN_IDX = nextIdx;
-      renderTaskCards(task);
+      renderTaskCards(task, nextIdx);
       loadImportTasks();
     }).catch(function (e) {
       if (window.toast) toast('评审失败: ' + e.message);
@@ -468,7 +662,7 @@
     var card = document.getElementById('importTaskDetailCard');
     if (card) card.style.display = 'none';
     CURRENT_TASK = null;
-    DRAWN_IDX = -1;
+    activeIdx = -1; hoverIdx = -1; frames = [];
   }
 
   /* ---------- 导出 ---------- */
@@ -478,8 +672,5 @@
   global.processImportTask = processImportTask;
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
-  global.drawCard = drawCard;
-  global.closeDraw = closeDraw;
-  global.switchDraw = switchDraw;
-  global.setDomain = setDomain;
+  global.renderTaskCards = renderTaskCards;
 })(window);

@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>指标卡包系统 · 设计规格文档</title>
+<style>
+  :root {
+    --bg: oklch(14% 0.02 275);
+    --surface: oklch(21% 0.03 278);
+    --surface-2: oklch(24% 0.03 272);
+    --border: oklch(45% 0.04 275 / 0.5);
+    --text: oklch(94% 0.02 90);
+    --text-dim: oklch(72% 0.04 90);
+    --text-faint: oklch(55% 0.03 90);
+    --accent: oklch(80% 0.12 82);
+    --accent-deep: oklch(58% 0.12 70);
+    --blue: oklch(70% 0.11 250);
+    --green: oklch(72% 0.13 150);
+    --warn: oklch(76% 0.12 80);
+    --red: oklch(68% 0.17 25);
+    --purple: oklch(72% 0.13 300);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.7;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 封面 */
+  .cover {
+    background: linear-gradient(135deg, oklch(18% 0.04 275), oklch(22% 0.03 285));
+    border-bottom: 1px solid var(--border);
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+  }
+  .cover .badge-row {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 1.2rem;
+  }
+  .cover .cv-badge {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 800;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 4px;
+    border: 1px solid currentColor;
+  }
+  .cover .cv-badge.b1 { color: var(--accent); }
+  .cover .cv-badge.b2 { color: var(--blue); }
+  .cover .cv-badge.b3 { color: var(--green); }
+  .cover h1 {
+    font-size: 38px; font-weight: 800; letter-spacing: 0.02em;
+    background: linear-gradient(135deg, var(--accent), oklch(80% 0.1 60));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  .cover .subtitle {
+    font-size: 15px; color: var(--text-dim); letter-spacing: 0.06em;
+  }
+  .cover .meta-line {
+    margin-top: 1.5rem; font-family: var(--font-mono); font-size: 12px;
+    color: var(--text-faint); letter-spacing: 0.1em;
+  }
+  /* 主容器 */
+  .container {
+    max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+  }
+  /* 目录 */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 1.8rem;
+    margin-bottom: 2.5rem;
+  }
+  .toc h3 {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--text-dim);
+    margin-bottom: 0.8rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc ol {
+    list-style: none; counter-reset: toc;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px 2rem;
+  }
+  .toc li {
+    counter-increment: toc;
+    font-size: 13px; color: var(--text-dim);
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 3px 0;
+  }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--accent); font-weight: 700;
+    min-width: 1.8em;
+  }
+  .toc a {
+    color: var(--text-dim); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .toc a:hover { color: var(--accent); }
+  /* 章节 */
+  section.chapter {
+    margin-bottom: 3rem;
+    scroll-margin-top: 1rem;
+  }
+  section.chapter > h2 {
+    font-size: 22px; font-weight: 800; letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section.chapter > h2 .num {
+    font-family: var(--font-mono); font-size: 14px;
+    color: var(--accent); font-weight: 700;
+    background: oklch(30% 0.05 275);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+  section.chapter > .lead {
+    font-size: 13.5px; color: var(--text-dim);
+    margin-bottom: 1.2rem;
+    padding-left: calc(28px + 10px);
+  }
+  h3.sub {
+    font-size: 15px; font-weight: 700; color: var(--accent);
+    margin-top: 1.5rem; margin-bottom: 0.6rem;
+    padding-left: 6px;
+    border-left: 3px solid var(--accent);
+  }
+  p { font-size: 13.5px; color: var(--text); margin-bottom: 0.6rem; }
+  p.dim { color: var(--text-dim); }
+  ul, ol { margin: 0.4rem 0 0.8rem 1.5rem; }
+  li { font-size: 13px; color: var(--text); margin-bottom: 3px; }
+  li.dim { color: var(--text-dim); }
+  code.inline {
+    font-family: var(--font-mono); font-size: 12px;
+    background: oklch(16% 0.02 275);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--accent);
+  }
+  /* 代码块 */
+  pre {
+    background: oklch(12% 0.02 275);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    margin: 0.6rem 0 1rem;
+  }
+  pre code {
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  pre .kw { color: var(--accent); }
+  pre .fn { color: var(--blue); }
+  pre .str { color: var(--green); }
+  pre .cmt { color: var(--text-faint); }
+  pre .num { color: var(--warn); }
+  /* 表格 */
+  .tbl-wrap { overflow-x: auto; margin: 0.6rem 0 1rem; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  th, td {
+    text-align: left; padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  td { color: var(--text); }
+  td.mono { font-family: var(--font-mono); font-size: 11.5px; }
+  td .swatch {
+    display: inline-block; width: 14px; height: 14px;
+    border-radius: 3px; margin-right: 6px;
+    vertical-align: middle;
+    border: 1px solid oklch(0% 0 0 / 0.3);
+  }
+  /* 信息卡片 */
+  .info-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px; margin: 0.6rem 0 1rem;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+  }
+  .info-card .ic-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--text-faint);
+    margin-bottom: 4px;
+  }
+  .info-card .ic-value {
+    font-size: 14px; font-weight: 700; color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .info-card .ic-desc {
+    font-size: 11.5px; color: var(--text-dim); margin-top: 3px;
+  }
+  /* 色板预览 */
+  .palette-row {
+    display: flex; gap: 6px; flex-wrap: wrap; margin: 0.5rem 0 1rem;
+  }
+  .palette-chip {
+    width: 64px; text-align: center;
+  }
+  .palette-chip .chip {
+    width: 64px; height: 40px; border-radius: 6px;
+    border: 1px solid oklch(0% 0 0 / 0.3);
+    margin-bottom: 4px;
+  }
+  .palette-chip .lbl {
+    font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);
+  }
+  /* 状态机图 */
+  .state-diagram {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; flex-wrap: wrap;
+    margin: 1rem 0;
+    font-size: 12px;
+  }
+  .state-node {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .state-node.default { border-color: var(--text-faint); }
+  .state-node.peek { border-color: var(--blue); }
+  .state-node.draw { border-color: var(--accent); }
+  .state-node .sn-name {
+    font-weight: 800; font-size: 13px;
+  }
+  .state-node.default .sn-name { color: var(--text-dim); }
+  .state-node.peek .sn-name { color: var(--blue); }
+  .state-node.draw .sn-name { color: var(--accent); }
+  .state-node .sn-desc {
+    font-size: 10px; color: var(--text-faint); margin-top: 3px;
+  }
+  .state-arrow {
+    color: var(--text-faint); font-size: 18px; font-weight: 700;
+  }
+  .state-arrow .sa-label {
+    display: block; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  /* 标注框 */
+  .callout {
+    background: oklch(20% 0.03 250 / 0.3);
+    border: 1px solid oklch(50% 0.08 250 / 0.4);
+    border-left: 3px solid var(--blue);
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin: 0.6rem 0 1rem;
+    font-size: 12.5px; color: var(--text-dim);
+  }
+  .callout.warn {
+    background: oklch(20% 0.04 60 / 0.2);
+    border-color: oklch(50% 0.08 60 / 0.4);
+    border-left-color: var(--warn);
+  }
+  .callout b { color: var(--text); }
+  /* 分隔线 */
+  hr {
+    border: none; border-top: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+  /* 页脚 */
+  .doc-footer {
+    text-align: center; padding: 2rem;
+    font-size: 11px; color: var(--text-faint);
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+  @media (max-width: 720px) {
+    .toc ol { grid-template-columns: 1fr; }
+    .cover h1 { font-size: 28px; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 封面 ============ -->
+<div class="cover">
+  <div class="badge-row">
+    <span class="cv-badge b1">数据治理</span>
+    <span class="cv-badge b2">指标管理</span>
+    <span class="cv-badge b3">RPG 卡牌</span>
+  </div>
+  <h1>指标卡包系统 · 设计规格文档</h1>
+  <div class="subtitle">家居卖场租赁指标可视化平台 — 14 主题 × 3 类型 × 4 等级 × 7 分类</div>
+  <div class="meta-line">v1.0.0 · 2026-08-06 · metric-card.html</div>
+</div>
+
+<div class="container">
+
+<!-- ============ 目录 ============ -->
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#ch1">系统概述</a></li>
+    <li><a href="#ch2">设计体系总览</a></li>
+    <li><a href="#ch3">主题色系统（14 主题）</a></li>
+    <li><a href="#ch4">指标类型边框（3 类型）</a></li>
+    <li><a href="#ch5">稀有度评级（4 等级）</a></li>
+    <li><a href="#ch6">二级分类纹样（7 分类）</a></li>
+    <li><a href="#ch7">卡面结构（18 字段）</a></li>
+    <li><a href="#ch8">交互状态机</a></li>
+    <li><a href="#ch9">视图模式</a></li>
+    <li><a href="#ch10">卡包堆叠几何</a></li>
+    <li><a href="#ch11">动画系统</a></li>
+    <li><a href="#ch12">数据模型</a></li>
+    <li><a href="#ch13">技术架构</a></li>
+    <li><a href="#ch14">使用指南</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 1. 系统概述 ============ -->
+<section class="chapter" id="ch1">
+  <h2><span class="num">01</span> 系统概述</h2>
+  <p class="lead">指标卡包系统是家居卖场租赁数据治理项目的可视化前端，将治理后的指标以 RPG 装备卡牌的形式呈现，通过卡包堆叠 + 抽卡交互的方式浏览和管理指标。</p>
+
+  <h3 class="sub">设计目标</h3>
+  <ul>
+    <li>将指标从冰冷的表格行转化为直观、可交互的视觉实体</li>
+    <li>通过颜色、边框、纹样三个维度同时编码指标的分类信息</li>
+    <li>以卡包隐喻管理大量指标：堆叠存放 → 查阅预览 → 抽出细览 → 收回归位</li>
+    <li>支持白板模式（快速浏览）和网格视图（全局总览）两种辅助视图</li>
+  </ul>
+
+  <h3 class="sub">核心能力</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="ic-label">主题覆盖</div>
+      <div class="ic-value">14</div>
+      <div class="ic-desc">一级分类（交易/商场/基础/合同/消费者/财务/资金/人资/营销/商品/商户/店铺/流量/流程）</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">指标类型</div>
+      <div class="ic-value">3</div>
+      <div class="ic-desc">原子（原始采集）/ 衍生（计算得出）/ 复合（多源聚合）</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">评分等级</div>
+      <div class="ic-value">4</div>
+      <div class="ic-desc">优秀 ≥90 / 良好 ≥75 / 合格 ≥60 / 待改进 <60</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">二级分类</div>
+      <div class="ic-value">7</div>
+      <div class="ic-desc">概览/报表/明细/趋势/预警/口径/维度</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 设计体系总览 ============ -->
+<section class="chapter" id="ch2">
+  <h2><span class="num">02</span> 设计体系总览</h2>
+  <p class="lead">系统采用三维编码策略：主题→主色、类型→边框样式、评分→稀有度边框，再加上二级分类→纹样图案，形成四维视觉差异化。</p>
+
+  <div class="callout">
+    <b>四维编码模型：</b>每张指标卡同时携带 4 个视觉信号 —— 主色（你在看哪个业务域）、边框样式（这是哪种计算层级的指标）、稀有度光环（这个指标治理得好不好）、纹样图案（这个指标属于哪个分析类别）。用户一眼即可识别卡片的完整身份。
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>CSS 属性</th>
+        <th>数据字段</th>
+        <th>取值数</th>
+        <th>视觉效果</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>主题（一级分类）</td>
+        <td class="mono">data-theme</td>
+        <td class="mono">theme</td>
+        <td>14</td>
+        <td>主色 accent / accent-deep / accent-soft / glow</td>
+      </tr>
+      <tr>
+        <td>指标类型</td>
+        <td class="mono">data-type</td>
+        <td class="mono">type</td>
+        <td>3</td>
+        <td>边框层数 + 四角饰大小 + 类型徽章</td>
+      </tr>
+      <tr>
+        <td>评分等级</td>
+        <td class="mono">data-rarity</td>
+        <td class="mono">score → rarity</td>
+        <td>4</td>
+        <td>边框配色 + 辉光强度 + 流动动画</td>
+      </tr>
+      <tr>
+        <td>二级分类</td>
+        <td class="mono">data-cat</td>
+        <td class="mono">cat</td>
+        <td>7</td>
+        <td>纹样图案（repeating/radial/conic-gradient）</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 3. 主题色系统 ============ -->
+<section class="chapter" id="ch3">
+  <h2><span class="num">03</span> 主题色系统（14 主题）</h2>
+  <p class="lead">每个一级分类对应一套 OKLCH 配色，包含三色阶（accent / accent-deep / accent-soft）和辉光阴影，驱动卡片全局主色调。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>主题</th>
+        <th>中文名</th>
+        <th>色调描述</th>
+        <th>accent (OKLCH)</th>
+        <th>色块</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">sale</td><td>交易</td><td>金铜橙</td><td class="mono">oklch(78% 0.14 55)</td><td><span class="swatch" style="background:oklch(78% 0.14 55)"></span></td></tr>
+      <tr><td class="mono">mall</td><td>商场</td><td>暖红</td><td class="mono">oklch(72% 0.16 25)</td><td><span class="swatch" style="background:oklch(72% 0.16 25)"></span></td></tr>
+      <tr><td class="mono">base</td><td>基础</td><td>钢灰蓝</td><td class="mono">oklch(68% 0.05 235)</td><td><span class="swatch" style="background:oklch(68% 0.05 235)"></span></td></tr>
+      <tr><td class="mono">cont</td><td>合同</td><td>靛青</td><td class="mono">oklch(70% 0.13 230)</td><td><span class="swatch" style="background:oklch(70% 0.13 230)"></span></td></tr>
+      <tr><td class="mono">cust</td><td>消费者</td><td>玫粉</td><td class="mono">oklch(78% 0.13 350)</td><td><span class="swatch" style="background:oklch(78% 0.13 350)"></span></td></tr>
+      <tr><td class="mono">fin</td><td>财务</td><td>墨绿</td><td class="mono">oklch(68% 0.1 165)</td><td><span class="swatch" style="background:oklch(68% 0.1 165)"></span></td></tr>
+      <tr><td class="mono">fund</td><td>资金</td><td>金黄</td><td class="mono">oklch(82% 0.14 95)</td><td><span class="swatch" style="background:oklch(82% 0.14 95)"></span></td></tr>
+      <tr><td class="mono">hr</td><td>人资</td><td>薰衣草</td><td class="mono">oklch(76% 0.09 290)</td><td><span class="swatch" style="background:oklch(76% 0.09 290)"></span></td></tr>
+      <tr><td class="mono">mkt</td><td>营销</td><td>橙红</td><td class="mono">oklch(70% 0.17 28)</td><td><span class="swatch" style="background:oklch(70% 0.17 28)"></span></td></tr>
+      <tr><td class="mono">prod</td><td>商品</td><td>橄榄绿</td><td class="mono">oklch(72% 0.1 130)</td><td><span class="swatch" style="background:oklch(72% 0.1 130)"></span></td></tr>
+      <tr><td class="mono">ptnr</td><td>商户</td><td>青绿</td><td class="mono">oklch(76% 0.12 175)</td><td><span class="swatch" style="background:oklch(76% 0.12 175)"></span></td></tr>
+      <tr><td class="mono">shop</td><td>店铺</td><td>砖红</td><td class="mono">oklch(64% 0.14 35)</td><td><span class="swatch" style="background:oklch(64% 0.14 35)"></span></td></tr>
+      <tr><td class="mono">traf</td><td>流量</td><td>天青</td><td class="mono">oklch(80% 0.08 220)</td><td><span class="swatch" style="background:oklch(80% 0.08 220)"></span></td></tr>
+      <tr><td class="mono">wk</td><td>流程</td><td>石青蓝</td><td class="mono">oklch(72% 0.07 245)</td><td><span class="swatch" style="background:oklch(72% 0.07 245)"></span></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">CSS 变量驱动机制</h3>
+  <p>每个主题通过属性选择器在 <code class="inline">.frame</code> 和 <code class="inline">.card</code> 上同时设置 4 个 CSS 变量：</p>
+  <pre><code><span class="cmt">/* 示例：交易主题 */</span>
+<span class="kw">[data-theme="sale"]</span> {
+  <span class="kw">--accent</span>:      oklch(78% 0.14 55);   <span class="cmt">/* 主色：标题、图标、徽章 */</span>
+  <span class="kw">--accent-deep</span>: oklch(54% 0.13 50);   <span class="cmt">/* 深色：按钮、边框下层 */</span>
+  <span class="kw">--accent-soft</span>: oklch(90% 0.09 60);   <span class="cmt">/* 浅色：标题文字、徽章文字 */</span>
+  <span class="kw">--glow</span>:        0 0 14px oklch(78% 0.14 55 / 0.35); <span class="cmt">/* 辉光阴影 */</span>
+}</code></pre>
+  <div class="callout warn">
+    <b>注意：</b>data-theme 必须同时设在 <code class="inline">.frame</code> 和 <code class="inline">.card</code> 上。因为 <code class="inline">.frame</code> 的 box-shadow 边框和 <code class="inline">.card</code> 的内部元素都需要访问 <code class="inline">--accent</code> 系变量，仅设在子级会导致父级边框拿不到变量值。
+  </div>
+</section>
+
+<!-- ============ 4. 指标类型边框 ============ -->
+<section class="chapter" id="ch4">
+  <h2><span class="num">04</span> 指标类型边框（3 类型）</h2>
+  <p class="lead">通过边框层数、四角饰大小和类型徽章样式区分原子/衍生/复合三种指标计算层级。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>类型</th>
+        <th>中文名</th>
+        <th>定义</th>
+        <th>边框层数</th>
+        <th>四角饰</th>
+        <th>徽章样式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono">atomic</td>
+        <td>原子</td>
+        <td>原始采集，无计算</td>
+        <td>2 层（1.5px + 4px）</td>
+        <td>标准 26×26px</td>
+        <td>solid 实线边框</td>
+      </tr>
+      <tr>
+        <td class="mono">derived</td>
+        <td>衍生</td>
+        <td>由原子指标计算得出</td>
+        <td>3 层（1.5 + 4 + 5.5px）+ 虚线点划环</td>
+        <td>标准 26×26px</td>
+        <td>dashed 虚线边框</td>
+      </tr>
+      <tr>
+        <td class="mono">composite</td>
+        <td>复合</td>
+        <td>多源聚合，最复杂</td>
+        <td>3 层（2 + 5 + 7px）+ 外辉光</td>
+        <td>加大 32×32px，4px 粗线</td>
+        <td>double 双线边框</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">衍生类型虚线环</h3>
+  <p>衍生指标在 <code class="inline">.frame::before</code> 上叠加 <code class="inline">outline: 1px dashed</code> 点划环，表示"由其他指标衍生而来"的语义：</p>
+  <pre><code><span class="kw">.frame[data-type="derived"]</span>::before {
+  box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.18);
+  outline: 1px dashed <span class="fn">color-mix</span>(in oklch, var(--accent) 70%, transparent);
+  outline-offset: -6px;
+}</code></pre>
+
+  <h3 class="sub">复合类型加厚边框</h3>
+  <p>复合指标使用最厚的 3 层 box-shadow + 外辉光 + 加大四角饰，视觉上传达"信息密度最高"：</p>
+  <pre><code><span class="kw">.frame[data-type="composite"]</span> {
+  box-shadow:
+    0 0 0 2px var(--frame-1),
+    0 0 0 5px var(--frame-2),
+    0 0 0 7px <span class="fn">color-mix</span>(in oklch, var(--accent) 45%, transparent),
+    0 28px 60px oklch(0% 0 0 / 0.6),
+    0 0 40px <span class="fn">color-mix</span>(in oklch, var(--accent) 50%, transparent);
+}</code></pre>
+</section>
+
+<!-- ============ 5. 稀有度评级 ============ -->
+<section class="chapter" id="ch5">
+  <h2><span class="num">05</span> 稀有度评级（4 等级）</h2>
+  <p class="lead">评分（0-100）映射为 4 档稀有度，控制边框配色、辉光强度和动画效果。映射关系为：≥90 优秀、≥75 良好、≥60 合格、<60 待改进。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>稀有度</th>
+        <th>评分区间</th>
+        <th>边框色调</th>
+        <th>辉光</th>
+        <th>动画</th>
+        <th>徽章文字</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono">excellent</td>
+        <td>≥ 90</td>
+        <td><span class="swatch" style="background:oklch(86% 0.13 82)"></span>金色 (hue 82)</td>
+        <td>强辉光</td>
+        <td>纹样流动 (14s)</td>
+        <td>★ 优秀</td>
+      </tr>
+      <tr>
+        <td class="mono">good</td>
+        <td>75 - 89</td>
+        <td><span class="swatch" style="background:oklch(78% 0.11 300)"></span>紫色 (hue 300)</td>
+        <td>中辉光</td>
+        <td>无</td>
+        <td>★ 良好</td>
+      </tr>
+      <tr>
+        <td class="mono">pass</td>
+        <td>60 - 74</td>
+        <td><span class="swatch" style="background:oklch(72% 0.11 250)"></span>蓝色 (hue 250)</td>
+        <td>弱辉光</td>
+        <td>无</td>
+        <td>★ 合格</td>
+      </tr>
+      <tr>
+        <td class="mono">poor</td>
+        <td>< 60</td>
+        <td><span class="swatch" style="background:oklch(74% 0.02 90)"></span>灰色 (低彩度)</td>
+        <td>最弱</td>
+        <td>无</td>
+        <td>★ 待改进</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">评分到稀有度的映射函数</h3>
+  <pre><code><span class="kw">const</span> RARITIES = [
+  { min: 90, key: <span class="str">'excellent'</span>, name: <span class="str">'优秀'</span> },
+  { min: 75, key: <span class="str">'good'</span>,      name: <span class="str">'良好'</span> },
+  { min: 60, key: <span class="str">'pass'</span>,      name: <span class="str">'合格'</span> },
+  { min:  0, key: <span class="str">'poor'</span>,      name: <span class="str">'待改进'</span> }
+];
+<span class="kw">function</span> <span class="fn">rarityOf</span>(score) {
+  <span class="kw">return</span> RARITIES.<span class="fn">find</span>(r => score >= r.min);
+}</code></pre>
+
+  <h3 class="sub">传说级流动纹样</h3>
+  <p>优秀（excellent）评级的卡片，其纹样图案会以 14 秒为周期缓慢流动，营造"传说品质"的动态质感：</p>
+  <pre><code><span class="kw">.frame[data-rarity="excellent"]</span>::before {
+  animation: patroll 14s linear infinite;
+}
+<span class="kw">@keyframes</span> patroll {
+  from { background-position: 0 0; }
+  to   { background-position: 48px 0; }
+}</code></pre>
+</section>
+
+<!-- ============ 6. 二级分类纹样 ============ -->
+<section class="chapter" id="ch6">
+  <h2><span class="num">06</span> 二级分类纹样（7 分类）</h2>
+  <p class="lead">每个二级分类对应一种纯 CSS 渐变纹样，绘制在 <code class="inline">.frame::before</code> 伪元素上，通过 <code class="inline">--pat</code> 变量与主题色联动。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>分类</th>
+        <th>中文名</th>
+        <th>渐变类型</th>
+        <th>视觉描述</th>
+        <th>图标</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono">overview</td>
+        <td>概览</td>
+        <td>repeating-linear-gradient(90deg)</td>
+        <td>竖条纹</td>
+        <td>同心圆 + 十字准星</td>
+      </tr>
+      <tr>
+        <td class="mono">report</td>
+        <td>报表</td>
+        <td>repeating-linear-gradient(0deg)</td>
+        <td>横条纹</td>
+        <td>文档矩形 + 文字线</td>
+      </tr>
+      <tr>
+        <td class="mono">detail</td>
+        <td>明细</td>
+        <td>radial-gradient(circle)</td>
+        <td>圆点阵</td>
+        <td>放大镜</td>
+      </tr>
+      <tr>
+        <td class="mono">trend</td>
+        <td>趋势</td>
+        <td>repeating-linear-gradient(-45deg)</td>
+        <td>斜条纹（右上）</td>
+        <td>折线图 + 箭头</td>
+      </tr>
+      <tr>
+        <td class="mono">alert</td>
+        <td>预警</td>
+        <td>repeating-linear-gradient(135deg)</td>
+        <td>斜条纹（左上）</td>
+        <td>三角警告</td>
+      </tr>
+      <tr>
+        <td class="mono">standard</td>
+        <td>口径</td>
+        <td>conic-gradient(from 0deg)</td>
+        <td>扇形四象限</td>
+        <td>五角星</td>
+      </tr>
+      <tr>
+        <td class="mono">dimension</td>
+        <td>维度</td>
+        <td>repeating-linear-gradient(45deg)</td>
+        <td>斜条纹（右下）</td>
+        <td>网格方块</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">纹样与主题色联动</h3>
+  <p>所有纹样均使用 <code class="inline">color-mix(in oklch, var(--accent) 80%, transparent)</code> 混合主题主色，确保纹样颜色随主题自动变化：</p>
+  <pre><code><span class="cmt">/* 示例：概览 = 竖条纹 */</span>
+<span class="kw">[data-cat="overview"]</span> {
+  --pat: <span class="fn">repeating-linear-gradient</span>(90deg,
+    <span class="fn">color-mix</span>(in oklch, var(--accent) 80%, transparent) 0 2px,
+    transparent 2px 8px);
+}</code></pre>
+</section>
+
+<!-- ============ 7. 卡面结构 ============ -->
+<section class="chapter" id="ch7">
+  <h2><span class="num">07</span> 卡面结构（18 字段）</h2>
+  <p class="lead">每张卡片完整展示 18 个字段，从上到下分为 10 个视觉区块，固定尺寸 360×540px（边框环 384px）。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>区块</th>
+        <th>视觉元素</th>
+        <th>对应字段</th>
+        <th>位置</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>顶部标签栏</td><td>阵营/分类 + 品质标记</td><td class="mono">theme, cat</td><td>topline</td></tr>
+      <tr><td>类型徽章</td><td>原子/衍生/复合</td><td class="mono">type</td><td>右上角</td></tr>
+      <tr><td>稀有度徽章</td><td>★ 评级文字</td><td class="mono">score → rarity</td><td>右上角</td></tr>
+      <tr><td>图标区</td><td>分类图标 + 光环</td><td class="mono">cat → ICONS</td><td>icon-zone</td></tr>
+      <tr><td>标题区</td><td>指标名 + 编号 + 徽章组</td><td class="mono">name, code</td><td>title-zone</td></tr>
+      <tr><td>属性网格</td><td>4 格属性</td><td class="mono">unit, cycle, precision, table</td><td>stats</td></tr>
+      <tr><td>词条标签</td><td>维度标签组</td><td class="mono">dims[]</td><td>affix</td></tr>
+      <tr><td>描述框</td><td>羊皮纸风格描述</td><td class="mono">desc</td><td>desc-box</td></tr>
+      <tr><td>技能框</td><td>业务公式 + 技术公式</td><td class="mono">formula, tech</td><td>skill-box</td></tr>
+      <tr><td>预警条</td><td>绿/黄/红三档</td><td>固定模板</td><td>bars</td></tr>
+      <tr><td>元信息</td><td>来源 + 负责人</td><td class="mono">source, owner</td><td>meta</td></tr>
+      <tr><td>底部栏</td><td>版本号 + 版本说明</td><td class="mono">ver, verNote</td><td>foot</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 8. 交互状态机 ============ -->
+<section class="chapter" id="ch8">
+  <h2><span class="num">08</span> 交互状态机</h2>
+  <p class="lead">卡片有三种交互状态：默认（卡包中）、查阅（悬停预览）、抽出（点击锁定展示），通过 JS 状态变量和 CSS 类名协同管理。</p>
+
+  <div class="state-diagram">
+    <div class="state-node default">
+      <div class="sn-name">默认 in-bag</div>
+      <div class="sn-desc">扇形堆叠在卡包中</div>
+    </div>
+    <div class="state-arrow">
+      <span class="sa-label">mouseenter</span>
+      →
+    </div>
+    <div class="state-node peek">
+      <div class="sn-name">查阅 peek</div>
+      <div class="sn-desc">上抬 240px · 放大 1.05 · 摆正</div>
+    </div>
+    <div class="state-arrow">
+      <span class="sa-label">mouseleave</span>
+      →
+    </div>
+    <div class="state-node default">
+      <div class="sn-name">默认 in-bag</div>
+      <div class="sn-desc">回归堆叠</div>
+    </div>
+  </div>
+
+  <div class="state-diagram">
+    <div class="state-node default">
+      <div class="sn-name">默认 in-bag</div>
+      <div class="sn-desc">扇形堆叠</div>
+    </div>
+    <div class="state-arrow">
+      <span class="sa-label">click</span>
+      →
+    </div>
+    <div class="state-node draw">
+      <div class="sn-name">抽出 draw</div>
+      <div class="sn-desc">飞向视口中央 · 放大 1.3 · 遮罩</div>
+    </div>
+    <div class="state-arrow">
+      <span class="sa-label">click/overlay/btn</span>
+      →
+    </div>
+    <div class="state-node default">
+      <div class="sn-name">收回 putBack</div>
+      <div class="sn-desc">飞回卡包原位</div>
+    </div>
+  </div>
+
+  <h3 class="sub">状态变量</h3>
+  <pre><code><span class="kw">let</span> activeIdx = -1;      <span class="cmt">// 当前抽出的卡（-1 = 无）</span>
+<span class="kw">let</span> hoverIdx = -1;       <span class="cmt">// 当前查阅的卡（-1 = 无）</span>
+<span class="kw">let</span> drawing = false;     <span class="cmt">// 动画进行中锁，防连点</span></code></pre>
+
+  <h3 class="sub">关键约束</h3>
+  <ul>
+    <li><b>查阅不阻塞：</b>peek 时卡片上抬 240px 完全脱离卡堆，其余卡仍可被 hover</li>
+    <li><b>抽出时禁查阅：</b><code class="inline">peek()</code> 在 <code class="inline">activeIdx >= 0</code> 时直接 return，避免误触发</li>
+    <li><b>动画锁：</b><code class="inline">drawing = true</code> 在动画期间阻止新操作，580ms 后释放</li>
+    <li><b>三条收回路径：</b>点击中央卡片本身 / 点击遮罩 / 点击底部收回按钮</li>
+  </ul>
+
+  <h3 class="sub">飞向视口中央的计算</h3>
+  <p><code class="inline">centerOffset()</code> 使用 <code class="inline">getBoundingClientRect()</code> 计算卡片当前到视口中心的位移，写入 CSS 变量供动画使用：</p>
+  <pre><code><span class="kw">function</span> <span class="fn">centerOffset</span>(el, dy = 0, scale = 1.3) {
+  <span class="kw">const</span> r = el.<span class="fn">getBoundingClientRect</span>();
+  <span class="kw">const</span> vw = document.documentElement.clientWidth;
+  <span class="kw">const</span> vh = document.documentElement.clientHeight;
+  <span class="kw">const</span> cx = vw / 2 - (r.left + r.width / 2);
+  <span class="kw">const</span> cy = vh / 2 - (r.top + r.height / 2) + dy;
+  el.style.<span class="fn">setProperty</span>(<span class="str">'--fly-x'</span>, cx + <span class="str">'px'</span>);
+  el.style.<span class="fn">setProperty</span>(<span class="str">'--fly-y'</span>, cy + <span class="str">'px'</span>);
+  el.style.<span class="fn">setProperty</span>(<span class="str">'--fly-scale'</span>, scale);
+}</code></pre>
+</section>
+
+<!-- ============ 9. 视图模式 ============ -->
+<section class="chapter" id="ch9">
+  <h2><span class="num">09</span> 视图模式</h2>
+  <p class="lead">系统支持三种视图模式：正常模式（扇形卡包）、白板模式（窄条快速浏览）、网格视图（全部取出总览）。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>模式</th>
+        <th>触发</th>
+        <th>卡片尺寸</th>
+        <th>显示内容</th>
+        <th>交互</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>正常模式</td>
+        <td>默认</td>
+        <td>360×540px</td>
+        <td>全部 18 字段</td>
+        <td>扇形堆叠 + peek/draw</td>
+      </tr>
+      <tr>
+        <td>白板模式</td>
+        <td class="mono">btn-mode 按钮</td>
+        <td>288×64px 窄条</td>
+        <td>仅名称 + 编号 + 稀有度 + 类型 + 主题色竖条</td>
+        <td>堆叠 + peek(上抬 160px) + draw(恢复完整卡)</td>
+      </tr>
+      <tr>
+        <td>网格视图</td>
+        <td class="mono">btn-all 按钮</td>
+        <td>206×148px 小卡</td>
+        <td>仅标题 + 编号 + 稀有度 + 类型 + 主题色竖条</td>
+        <td>4 列网格 + hover 高亮 + click(退出网格→draw)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">白板模式</h3>
+  <p>白板模式通过 <code class="inline">.pack.board-mode</code> 类名切换，隐藏除 <code class="inline">.title-zone</code>、<code class="inline">.rare-badge</code>、<code class="inline">.type-badge</code>、<code class="inline">.card-accent</code> 外的所有子元素：</p>
+  <pre><code><span class="kw">.pack.board-mode .card</span> > *:not(.title-zone):not(.rare-badge):not(.card-accent):not(.type-badge) {
+  display: none;
+}</code></pre>
+  <p>抽出时（<code class="inline">.active-lock</code>）自动恢复完整卡片尺寸和全部内容，确保查看详情不受影响。</p>
+
+  <h3 class="sub">网格视图</h3>
+  <p>网格视图将卡包转为 CSS Grid 4 列布局，每张卡变为 222×148px 小卡，在居中浮窗中整齐排列：</p>
+  <pre><code><span class="kw">.pack.grid-view</span> {
+  display: grid;
+  grid-template-columns: <span class="fn">repeat</span>(4, 1fr);
+  gap: 18px;
+  width: 960px;
+}
+<span class="kw">.pack.grid-view .frame</span> {
+  position: static;
+  transform: none !important;  <span class="cmt">/* 覆盖扇形 transform */</span>
+}</code></pre>
+</section>
+
+<!-- ============ 10. 卡包堆叠几何 ============ -->
+<section class="chapter" id="ch10">
+  <h2><span class="num">10</span> 卡包堆叠几何</h2>
+  <p class="lead">14 张卡片以扇形堆叠在卡包中，上层卡压下层卡左边，底部对齐，绕左下角旋转。</p>
+
+  <h3 class="sub">堆叠参数计算</h3>
+  <pre><code><span class="kw">const</span> n = METRICS.length;  <span class="cmt">// 14</span>
+
+<span class="cmt">// 扇形角度：i=0 直立(0°)，i=13 最倾(-18°)</span>
+<span class="kw">const</span> baseAngle = -18 * i / (n - 1);
+
+<span class="cmt">// 固定伪随机错乱（用质数取模保证稳定）</span>
+<span class="kw">const</span> jitterA = ((i * 37) % 9) - 4;   <span class="cmt">// -4° ~ +4°</span>
+<span class="kw">const</span> jitterX = ((i * 53) % 13) - 6;  <span class="cmt">// -6px ~ +6px</span>
+<span class="kw">const</span> jitterY = ((i * 29) % 7) - 3;   <span class="cmt">// -3px ~ +3px</span>
+
+<span class="kw">const</span> fanDeg = baseAngle + jitterA;
+<span class="kw">const</span> stackX = (n - 1 - i) * 34 + jitterX;  <span class="cmt">// i=0 最右(442px) → i=13 最左(0)</span>
+<span class="kw">const</span> stackY = jitterY;                      <span class="cmt">// 底部对齐，仅微抖</span></code></pre>
+
+  <h3 class="sub">CSS transform 组装</h3>
+  <pre><code><span class="kw">.frame</span> {
+  transform-origin: 0% 100%;  <span class="cmt">/* 绕左下角旋转 */</span>
+  transform: <span class="fn">translate</span>(var(--stack-x), var(--stack-y))
+             <span class="fn">rotate</span>(var(--fan-deg))
+             <span class="fn">scale</span>(0.97);
+}</code></pre>
+
+  <div class="callout">
+    <b>设计意图：</b>底部对齐 + 绕左下角旋转 = 像手持扑克牌扇形展开的真实物理感。上层卡（z-index 更高）压住下层卡的左边，每张卡从右侧露出 34px 让下层卡可被识别和点击。
+  </div>
+</section>
+
+<!-- ============ 11. 动画系统 ============ -->
+<section class="chapter" id="ch11">
+  <h2><span class="num">11</span> 动画系统</h2>
+  <p class="lead">系统包含 5 组关键帧动画，覆盖抽出、收回、闪光、纹样流动和无障碍降级。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>动画名</th>
+        <th>触发场景</th>
+        <th>时长</th>
+        <th>关键帧数</th>
+        <th>效果描述</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono">lockpop</td>
+        <td>抽出 draw</td>
+        <td>0.7s</td>
+        <td>6</td>
+        <td>蓄力下压 → 倾斜爆抽 → 飞向中央 → 超调回弹 → 稳定</td>
+      </tr>
+      <tr>
+        <td class="mono">lockback</td>
+        <td>收回 putBack</td>
+        <td>0.55s</td>
+        <td>4</td>
+        <td>中央位置 → 反向倾斜 → 飞回路径 → 归位扇形</td>
+      </tr>
+      <tr>
+        <td class="mono">flash</td>
+        <td>抽出时光效</td>
+        <td>0.6s</td>
+        <td>4</td>
+        <td>accent 色光带 105° 横切卡面，左→右扫过</td>
+      </tr>
+      <tr>
+        <td class="mono">patroll</td>
+        <td>优秀级纹样</td>
+        <td>14s</td>
+        <td>2</td>
+        <td>纹样 background-position 缓慢右移</td>
+      </tr>
+      <tr>
+        <td class="mono">reduced-motion</td>
+        <td>无障碍降级</td>
+        <td>—</td>
+        <td>—</td>
+        <td>禁用所有 transition 和 animation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">抽出动画 lockpop 关键帧</h3>
+  <pre><code><span class="kw">@keyframes</span> lockpop {
+  0%   { <span class="cmt">/* 卡包原位：扇形角度 + scale 0.97 */</span> }
+  15%  { <span class="cmt">/* 蓄力：下压 22px + 歪斜 +8° + 缩小 0.94 */</span> }
+  35%  { <span class="cmt">/* 爆抽：飞至 30% 处 + 反向倾斜 -12° + 放大 1.05 */</span> }
+  55%  { <span class="cmt">/* 超调：飞到位 + 倾斜 6° + 放大 1.42（超调 +0.12）*/</span> }
+  75%  { <span class="cmt">/* 回弹：微回 + 倾斜 -2° + 放大 1.34 */</span> }
+  100% { <span class="cmt">/* 稳定：归正 0° + 放大 1.3 */</span> }
+}</code></pre>
+
+  <h3 class="sub">无障碍降级</h3>
+  <pre><code><span class="kw">@media</span> (prefers-reduced-motion: reduce) {
+  .frame { transition: none !important; }
+  .frame::before, .frame::after { animation: none !important; }
+}</code></pre>
+</section>
+
+<!-- ============ 12. 数据模型 ============ -->
+<section class="chapter" id="ch12">
+  <h2><span class="num">12</span> 数据模型</h2>
+  <p class="lead">指标数据以 <code class="inline">METRICS</code> 数组维护，每条记录包含 18 个字段，对应卡面的 18 项信息。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>字段</th>
+        <th>类型</th>
+        <th>说明</th>
+        <th>示例</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">code</td><td>string</td><td>指标编码</td><td class="mono">M_SALE_001</td></tr>
+      <tr><td class="mono">name</td><td>string</td><td>指标名称</td><td>月度销售额</td></tr>
+      <tr><td class="mono">theme</td><td>enum</td><td>一级分类（14 主题）</td><td class="mono">sale</td></tr>
+      <tr><td class="mono">cat</td><td>enum</td><td>二级分类（7 分类）</td><td class="mono">overview</td></tr>
+      <tr><td class="mono">type</td><td>enum</td><td>指标类型（3 种）</td><td class="mono">atomic</td></tr>
+      <tr><td class="mono">score</td><td>number</td><td>治理评分（0-100）</td><td class="mono">92</td></tr>
+      <tr><td class="mono">unit</td><td>string</td><td>计量单位</td><td>元</td></tr>
+      <tr><td class="mono">cycle</td><td>string</td><td>统计周期</td><td>月度</td></tr>
+      <tr><td class="mono">precision</td><td>string</td><td>精度要求</td><td>两位小数</td></tr>
+      <tr><td class="mono">table</td><td>string</td><td>物理表名</td><td class="mono">dwd_sale_order_df</td></tr>
+      <tr><td class="mono">dims</td><td>string[]</td><td>统计维度</td><td class="mono">['时间','机构','渠道','产品']</td></tr>
+      <tr><td class="mono">desc</td><td>string</td><td>业务描述</td><td>自然月内已完成订单的销售总金额…</td></tr>
+      <tr><td class="mono">formula</td><td>string</td><td>业务公式</td><td class="mono">SUM(order_amount) WHERE…</td></tr>
+      <tr><td class="mono">source</td><td>string</td><td>数据来源</td><td>订单系统、主题报表系统</td></tr>
+      <tr><td class="mono">tech</td><td>string</td><td>技术公式（SQL）</td><td class="mono">SUM(sale_amt) WHERE…</td></tr>
+      <tr><td class="mono">owner</td><td>string</td><td>负责部门</td><td>交易分析部</td></tr>
+      <tr><td class="mono">ver</td><td>string</td><td>版本号</td><td class="mono">v1.0.0</td></tr>
+      <tr><td class="mono">verNote</td><td>string</td><td>版本说明</td><td>2026-08-03 · 口径定稿 v2</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">当前 14 张代表卡覆盖情况</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="ic-label">主题覆盖</div>
+      <div class="ic-value">14/14</div>
+      <div class="ic-desc">每个主题 1 张代表卡</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">类型分布</div>
+      <div class="ic-value">4/5/5</div>
+      <div class="ic-desc">原子 4 / 衍生 5 / 复合 5</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">评分分布</div>
+      <div class="ic-value">4/3/4/3</div>
+      <div class="ic-desc">优秀 4 / 良好 3 / 合格 4 / 待改进 3</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label">分类覆盖</div>
+      <div class="ic-value">7/7</div>
+      <div class="ic-desc">全部 7 个二级分类均有覆盖</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13. 技术架构 ============ -->
+<section class="chapter" id="ch13">
+  <h2><span class="num">13</span> 技术架构</h2>
+  <p class="lead">纯前端单文件实现（HTML + CSS + JS），无外部依赖，无构建步骤，浏览器直接打开即可运行。</p>
+
+  <h3 class="sub">技术栈</h3>
+  <table>
+    <thead>
+      <tr><th>层面</th><th>技术</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>色彩系统</td><td class="mono">OKLCH</td><td>感知均匀色彩空间，中性色带暖色调（hue 55-90）</td></tr>
+      <tr><td>颜色混合</td><td class="mono">color-mix(in oklch, …)</td><td>CSS 原生色彩混合，纹样与主题色联动</td></tr>
+      <tr><td>主题驱动</td><td class="mono">CSS 自定义属性</td><td>--accent / --accent-deep / --accent-soft / --glow</td></tr>
+      <tr><td>属性选择器</td><td class="mono">data-* 属性</td><td>data-theme / data-rarity / data-cat / data-type</td></tr>
+      <tr><td>布局</td><td class="mono">Flexbox + CSS Grid</td><td>卡包用 Flex，网格视图用 Grid</td></tr>
+      <tr><td>动画</td><td class="mono">CSS keyframes + transition</td><td>5 组关键帧动画 + cubic-bezier(0.16, 1, 0.3, 1) 缓动</td></tr>
+      <tr><td>定位计算</td><td class="mono">getBoundingClientRect()</td><td>动态计算飞向视口中心的位移</td></tr>
+      <tr><td>无障碍</td><td class="mono">prefers-reduced-motion</td><td>系统级降低动画偏好时自动降级</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">文件结构</h3>
+  <pre><code>metric-card.html          <span class="cmt"># 唯一产出文件（完整系统）</span>
+  ├── &lt;style&gt;               <span class="cmt"># 全部 CSS（~960 行）</span>
+  │   ├── :root             <span class="cmt"># 全局变量 + 默认主题</span>
+  │   ├── [data-theme]      <span class="cmt"># 14 套主题色</span>
+  │   ├── [data-rarity]     <span class="cmt"># 4 档稀有度边框</span>
+  │   ├── [data-type]       <span class="cmt"># 3 种类型边框</span>
+  │   ├── [data-cat]        <span class="cmt"># 7 类纹样</span>
+  │   ├── .frame / .card    <span class="cmt"># 卡片结构与状态</span>
+  │   ├── .pack.board-mode  <span class="cmt"># 白板模式</span>
+  │   └── .pack.grid-view   <span class="cmt"># 网格视图</span>
+  └── &lt;script&gt;              <span class="cmt"># 全部 JS（~315 行）</span>
+      ├── METRICS[]         <span class="cmt"># 14 张指标卡数据</span>
+      ├── ICONS{}           <span class="cmt"># 7 个分类 SVG 图标</span>
+      ├── THEME_NAMES{}     <span class="cmt"># 主题中文名映射</span>
+      ├── RARITIES[]        <span class="cmt"># 评分→稀有度映射</span>
+      ├── 渲染循环           <span class="cmt"># forEach 渲染卡片+清单</span>
+      └── 状态机             <span class="cmt"># peek/draw/putBack/setGrid</span></code></pre>
+
+  <h3 class="sub">缓动函数</h3>
+  <p>全局使用同一条缓动曲线，营造"弹性但不夸张"的手感：</p>
+  <pre><code>--ease: cubic-bezier(0.16, 1, 0.3, 1);  <span class="cmt">/* ease-out-expo 变体 */</span></code></pre>
+</section>
+
+<!-- ============ 14. 使用指南 ============ -->
+<section class="chapter" id="ch14">
+  <h2><span class="num">14</span> 使用指南</h2>
+  <p class="lead">如何操作卡包系统，以及如何扩展新的指标卡。</p>
+
+  <h3 class="sub">操作方式</h3>
+  <table>
+    <thead>
+      <tr><th>操作</th><th>触发</th><th>效果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>查阅卡片</td><td>鼠标悬停卡片</td><td>卡片上抬 240px，放大 1.05，摆正角度，其余卡压暗</td></tr>
+      <tr><td>抽出卡片</td><td>点击卡片 / 点击清单条目</td><td>卡片飞向视口中央，放大 1.3，出现遮罩和收回按钮</td></tr>
+      <tr><td>收回卡片</td><td>再点卡片 / 点遮罩 / 点收回按钮</td><td>卡片飞回卡包原位</td></tr>
+      <tr><td>全部取出</td><td>点「全部取出」按钮</td><td>切换为 4 列网格视图，所有卡片整齐排列</td></tr>
+      <tr><td>全部收回</td><td>点「全部收回」按钮</td><td>退出网格视图，收回所有卡片</td></tr>
+      <tr><td>白板模式</td><td>点「白板模式」按钮</td><td>卡片变为 64px 窄条，仅显示名称/编号/稀有度</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">扩展新指标卡</h3>
+  <p>在 <code class="inline">METRICS</code> 数组末尾添加一条记录即可，系统自动渲染：</p>
+  <pre><code>{
+  code: <span class="str">'M_SALE_002'</span>,
+  name: <span class="str">'季度销售额'</span>,
+  theme: <span class="str">'sale'</span>,           <span class="cmt"># 14 主题之一</span>
+  cat: <span class="str">'overview'</span>,          <span class="cmt"># 7 分类之一</span>
+  type: <span class="str">'derived'</span>,          <span class="cmt"># atomic / derived / composite</span>
+  score: <span class="num">85</span>,               <span class="cmt"># 0-100，自动映射稀有度</span>
+  unit: <span class="str">'元'</span>,
+  cycle: <span class="str">'季度'</span>,
+  precision: <span class="str">'两位小数'</span>,
+  table: <span class="str">'dwd_sale_order_q'</span>,
+  dims: [<span class="str">'时间'</span>, <span class="str">'机构'</span>, <span class="str">'渠道'</span>],
+  desc: <span class="str">'自然季度内已完成订单的销售总金额。'</span>,
+  formula: <span class="str">'SUM(order_amount) WHERE quarter=当前季度'</span>,
+  source: <span class="str">'订单系统'</span>,
+  tech: <span class="str">"SUM(sale_amt) WHERE stat_quarter=当前季度"</span>,
+  owner: <span class="str">'交易分析部'</span>,
+  ver: <span class="str">'v1.0.0'</span>,
+  verNote: <span class="str">'2026-08-06 · 初版'</span>
+}</code></pre>
+
+  <div class="callout">
+    <b>自动联动：</b>添加记录后，系统自动根据 <code class="inline">theme</code> 渲染主题色、根据 <code class="inline">type</code> 渲染边框样式、根据 <code class="inline">score</code> 映射稀有度、根据 <code class="inline">cat</code> 渲染纹样和图标，无需手动配置任何 CSS。
+  </div>
+</section>
+
+<hr>
+
+<div class="doc-footer">
+  指标卡包系统 v1.0.0 · 家居卖场租赁数据治理项目 · 2026-08-06
+</div>
+
+</div><!-- /container -->
+
+</body>
+</html>
