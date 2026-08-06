@@ -1816,7 +1816,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
 /* ── 批量导入：扇形手牌（H32 v5 Impeccable 优化：字阶系统 + 金色卡牌质感 + 入场动效 + 键盘导航） ── */
 .import-cards-stack {
   position: relative;
-  min-height: 600px;
+  min-height: 680px;
   margin: 8px 0 12px;
   padding: 0 0 34px;
   overflow: visible;
@@ -1881,14 +1881,14 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 /* 选中卡：移到容器中央，放大为完整卡 */
 .import-card-wrap.selected {
-  width: 330px;
+  width: 470px;
   height: auto;
   left: 50%;
-  top: 46%;
+  top: 41%;
   bottom: auto;
   transform-origin: 50% 50%;
   transform: translate(-50%, -50%) rotate(0deg) scale(1);
-  z-index: 200;
+  z-index: 300;
   cursor: default;
   animation: card-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1901,14 +1901,14 @@ tr.row-selected td { background: var(--primary-light) !important; }
   transform: translate(-50%, -50%) rotate(0deg) scale(1);
 }
 .import-card-wrap.selected .warcraft-card {
-  width: 330px;
+  width: 470px;
   height: auto;
   border-radius: 22px 22px 14px 14px;
   padding: 4px;
   overflow: visible;
   box-shadow: 0 0 0 2px rgba(212, 169, 78, 0.55),
-              0 18px 48px rgba(120, 90, 40, 0.35),
-              0 4px 14px rgba(0, 0, 0, 0.25);
+              0 24px 60px rgba(80, 60, 25, 0.4),
+              0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .import-card-wrap.selected .warcraft-art {
   height: 100px;
@@ -1931,12 +1931,12 @@ tr.row-selected td { background: var(--primary-light) !important; }
   50%      { transform: translateY(-4px) rotate(1deg); }
 }
 .import-card-wrap.selected .warcraft-name {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
-  padding: 7px 10px;
-  margin: 6px 8px 8px;
-  border-radius: 16px;
-  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  margin: 6px 10px 8px;
+  border-radius: 18px;
+  letter-spacing: 0.6px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .import-card-wrap.selected .warcraft-cost {
@@ -1969,8 +1969,8 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 /* 选中时，扇形里未选中的卡变暗（焦点突出） */
 .import-card-wrap.dimmed {
-  opacity: 0.38;
-  filter: saturate(0.4) brightness(0.92);
+  opacity: 0.6;
+  filter: saturate(0.6) brightness(0.95);
 }
 /* 选中卡右上角关闭按钮 */
 .warcraft-close {
@@ -2018,6 +2018,14 @@ tr.row-selected td { background: var(--primary-light) !important; }
   white-space: nowrap;
   text-transform: none;
 }
+/* 选中浮层内：字段标签更清晰、值更大且可换行（信息不拥挤） */
+.import-card-wrap.selected .warcraft-body .indicator-spec-table th {
+  font-size: 11px;
+  padding: 5px 0 3px;
+  white-space: nowrap;
+  width: 88px;
+  vertical-align: top;
+}
 /* 字段值：更大字号 + tabular 数字对齐 */
 .warcraft-body .indicator-spec-table td {
   font-size: 14px;
@@ -2027,6 +2035,12 @@ tr.row-selected td { background: var(--primary-light) !important; }
   background: transparent;
   font-variant-numeric: tabular-nums;
   word-break: break-word;
+}
+/* 选中浮层内：值更大、行距更松、右列留足空间 */
+.import-card-wrap.selected .warcraft-body .indicator-spec-table td {
+  font-size: 15px;
+  padding: 5px 10px 5px 0;
+  line-height: 1.5;
 }
 .warcraft-body .indicator-spec-header,
 .warcraft-body .indicator-spec-cat-tags,
@@ -2046,6 +2060,10 @@ tr.row-selected td { background: var(--primary-light) !important; }
   font-weight: 700;
   color: #4a2c00;
   font-size: 11px;
+}
+.import-card-wrap.selected .warcraft-body .indicator-spec-th-block {
+  font-size: 12px;
+  padding: 8px 0 3px;
 }
 /* 水晶数字：tabular 对齐 */
 .warcraft-cost, .warcraft-stat {

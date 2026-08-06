@@ -175,14 +175,10 @@
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
 
-    // 默认选中第一张未完成态卡（pending/rejected/未处理都算）
-    // 完成态（draft/skip/error）跳过；undefined 也视为未处理可选中
+    // 默认不自动选中（扇形堆叠完整可见）；仅当选中索引无效时清空
+    // 评审流程中 reviewImportRow 会自动选中下一张
     if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
       SELECTED_INDEX = -1;
-      for (var k = 0; k < n; k++) {
-        var st = rows[k]._status;
-        if (st !== 'draft' && st !== 'skip' && st !== 'error') { SELECTED_INDEX = k; break; }
-      }
     }
 
     var cardsHtml = rows.map(function (row, i) {
