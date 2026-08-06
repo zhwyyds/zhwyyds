@@ -4,8 +4,10 @@
  */
 (function (global) {
   var CURRENT_TASK = null;
-  // 扇形手牌：当前选中卡索引（-1 = 未选中）
-  var SELECTED_INDEX = -1;
+  // 卡包桌：筛选状态 + 抽出的卡在过滤结果中的索引（-1 = 未抽出）
+  var CUR_FILTER = 'all';   // all / pending / draft / rejected
+  var CUR_DOMAIN = 'all';   // all / domain_code
+  var DRAWN_IDX = -1;
 
   // 主题域 → 炉石卡插画配色 + emoji 图标（H32 魔兽卡风格）
   var DOMAIN_THEMES = {
@@ -160,7 +162,7 @@
   function openImportTask(taskId) {
     api('/api/import-tasks/' + encodeURIComponent(taskId)).then(function (task) {
       CURRENT_TASK = task;
-      SELECTED_INDEX = -1; // 打开新任务自动选中第一张待评审卡
+      DRAWN_IDX = -1; // 打开新任务未抽卡
       var card = document.getElementById('importTaskDetailCard');
       var title = document.getElementById('importTaskDetailTitle');
       var meta = document.getElementById('importTaskDetailMeta');
@@ -186,98 +188,141 @@
     }
     host.classList.add('mc-table');
 
-    // 扇形展开（卡包桌）：摘要卡弧形排列（渐进披露），选中 popout 放大为完整卡面
-    var n = rows.length;
-    var spreadDeg = Math.min(36, 2.2 * n + 10); // 倾斜克制
-    var step = n > 1 ? spreadDeg / (n - 1) : 0;
-    var mid = (n - 1) / 2;
-    var liftMax = Math.min(20, 2.2 * n); // 中间卡抬升峰值（弧线）
+    var filtered = filterRows(rows);
+    if (DRAWN_IDX < 0 || DRAWN_IDX >= filtered.length) DRAWN_IDX = -1;
 
-    // 默认不自动选中（卡包完整可见）；仅当选中索引无效时清空
-    // 评审流程中 reviewImportRow 会自动选中下一张
-    if (SELECTED_INDEX < 0 || SELECTED_INDEX >= n || ['draft', 'skip', 'error'].indexOf(rows[SELECTED_INDEX]._status) >= 0) {
-      SELECTED_INDEX = -1;
+    // 筛选器（状态 tabs + 主题域）
+    var filterHtml = buildFilterHtml(rows);
+    // 卡包
+    var packHtml = buildPackHtml(filtered);
+    // 抽出的完整卡
+    var drawHtml = '';
+    if (DRAWN_IDX >= 0 && filtered[DRAWN_IDX]) {
+      var dr = filtered[DRAWN_IDX];
+      drawHtml =
+        '<div class="mc-draw open">' +
+          '<button class="mc-draw-close" onclick="closeDraw()" title="收回（Esc）">✕</button>' +
+          buildMcCard(dr, DRAWN_IDX, filtered.length, dr._status || 'pending') +
+          '<div class="mc-draw-nav">' +
+            '<button class="btn" onclick="switchDraw(-1)" ' + (DRAWN_IDX <= 0 ? 'disabled' : '') + '>← 上一张</button>' +
+            '<span style="margin:0 12px;">' + (DRAWN_IDX + 1) + ' / ' + filtered.length + '</span>' +
+            '<button class="btn" onclick="switchDraw(1)" ' + (DRAWN_IDX >= filtered.length - 1 ? 'disabled' : '') + '>下一张 →</button>' +
+          '</div>' +
+        '</div>';
     }
-
-    var cardsHtml = rows.map(function (row, i) {
-      var theta = step * (i - mid);
-      var dist = Math.abs(i - mid);
-      var lift = -liftMax * (1 - dist / (mid || 1)); // 中间 -liftMax，两边 0
-      var z = 100 - dist; // 中间卡在上
-      var isSelected = i === SELECTED_INDEX;
-      var st = row._status || 'pending';
-      var theme = mcTheme(row.domain_code);
-      var rarity = mcRarity(st);
-      var cat = mcCat(row.metric_type);
-
-      return (
-        '<div class="mc-card-slot ' + (isSelected ? 'selected' : 'in-bag') +
-          (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + ' ' +
-          theme + ' ' + rarity + ' ' + cat + '" ' +
-          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';" ' +
-          'onclick="selectImportCard(' + i + ')">' +
-          (isSelected ? '<button class="mc-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
-          (isSelected ? buildMcCard(row, i, n, st) : buildMiniCard(row, i, n, st)) +
-        '</div>'
-      );
-    }).join('');
-
-    // 底部提示条：待评审/已通过/已打回统计
-    var cnt = { pending: 0, draft: 0, rejected: 0, skip: 0, error: 0 };
-    rows.forEach(function (r) { cnt[r._status] = (cnt[r._status] || 0) + 1; });
     var hint =
       '<div class="import-fan-hint">' +
-        (task.status === 'pending' && (cnt.pending + cnt.rejected) === n
-          ? '⚠️ 任务未处理 · 点击右上「<b>去重 + AI 生成</b>」开始 → '
-          : '') +
-        '共 ' + n + ' 张 · ' +
-        '<span class="dot" style="background:#f0a020;"></span>待评审 ' + (cnt.pending || 0) +
-        '<span class="dot" style="background:#2e8b57;"></span>已通过 ' + (cnt.draft || 0) +
-        '<span class="dot" style="background:#e24b4a;"></span>已打回 ' + (cnt.rejected || 0) +
-        '<span class="dot" style="background:#888;"></span>重复 ' + (cnt.skip || 0) +
-        '　·　点击卡片放大 · ← → 切换 · Esc 关闭' +
+        (task.status === 'pending' ? '⚠️ 任务未处理 · 点击右上「<b>去重 + AI 生成</b>」开始 → ' : '') +
+        '点击卡包抽卡 · ← → 切换 · Esc 收回' +
       '</div>';
-    host.innerHTML = cardsHtml + hint;
+    host.innerHTML = filterHtml + '<div class="mc-pack-zone">' + packHtml + drawHtml + '</div>' + hint;
   }
 
-  /* 摘要卡（扇形浏览态）：明亮工具型卡片——主题色顶边 + 大字 + 直接评审 */
-  function buildMiniCard(row, i, n, st) {
-    var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '失败' }[st] || st;
-    var stCls = st === 'draft' ? 'st-draft' : (st === 'rejected' || st === 'error' ? 'st-rejected' : (st === 'skip' ? 'st-skip' : 'st-pending'));
-    var rarity = MC_RARITY_NAME[mcRarity(st)] || '';
-    var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
-    var unit = row.unit || '';
-    var freq = row.frequency || '';
-    var vtype = row.value_type || '';
+  /* ── 筛选：按状态 + 主题域过滤 ── */
+  function filterRows(rows) {
+    return (rows || []).filter(function (r) {
+      var st = r._status || 'pending';
+      var group = st === 'draft' ? 'draft' : (st === 'rejected' ? 'rejected' : 'pending');
+      if (CUR_FILTER === 'pending' && group !== 'pending') return false;
+      if (CUR_FILTER === 'draft' && group !== 'draft') return false;
+      if (CUR_FILTER === 'rejected' && group !== 'rejected') return false;
+      if (CUR_DOMAIN !== 'all' && String(r.domain_code || '').toLowerCase() !== CUR_DOMAIN) return false;
+      return true;
+    });
+  }
 
+  function buildFilterHtml(rows) {
+    var cnt = { pending: 0, draft: 0, rejected: 0 };
+    rows.forEach(function (r) {
+      var st = r._status || 'pending';
+      var g = st === 'draft' ? 'draft' : (st === 'rejected' ? 'rejected' : 'pending');
+      cnt[g]++;
+    });
+    var tabs = [
+      ['all', '全部', rows.length],
+      ['pending', '待评审', cnt.pending],
+      ['draft', '已通过', cnt.draft],
+      ['rejected', '已打回', cnt.rejected]
+    ].map(function (t) {
+      return '<button class="' + (CUR_FILTER === t[0] ? 'active' : '') + '" onclick="setFilter(\'' + t[0] + '\')">' + t[1] + ' ' + t[2] + '</button>';
+    }).join('');
+    var doms = ['all'];
+    rows.forEach(function (r) {
+      var d = String(r.domain_code || '').toLowerCase();
+      if (d && doms.indexOf(d) < 0) doms.push(d);
+    });
+    var domOpts = doms.map(function (d) {
+      var label = d === 'all' ? '全部主题域' : (DOMAIN_CN[d] ? DOMAIN_CN[d] + '域' : d);
+      return '<option value="' + d + '"' + (CUR_DOMAIN === d ? ' selected' : '') + '>' + label + '</option>';
+    }).join('');
     return (
-      '<div class="mc-mini">' +
-        '<div class="mc-mini-body">' +
-          '<div class="mc-mini-status">' +
-            '<span class="st ' + stCls + '">' + stLabel + '</span>' +
-            '<span class="rare">★ ' + esc(rarity) + '</span>' +
-          '</div>' +
-          '<div class="mc-mini-topic">' +
-            '<span class="dom-cn">' + esc(domCn) + '域</span>' +
-            '<span class="dom-code">' + esc(row.domain_code || '') + '</span>' +
-          '</div>' +
-          '<div class="mc-mini-title">' + esc(row.metric_cn || '—') + '</div>' +
-          '<div class="mc-mini-sub">' + esc(row.metric_en || row.metric_id || '—') + '</div>' +
-          '<div class="mc-mini-tags">' +
-            (unit ? '<span class="t">' + esc(unit) + '</span>' : '') +
-            (freq ? '<span class="t">' + esc(freq) + '</span>' : '') +
-            (vtype ? '<span class="t">' + esc(vtype) + '</span>' : '') +
-          '</div>' +
-          (row.caliber_desc ? '<div class="mc-mini-desc">' + esc(row.caliber_desc) + '</div>' : '') +
-          ((st === 'pending' || st === 'rejected') ?
-            '<div class="mc-mini-actions">' +
-              '<button class="btn-reject" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
-              '<button class="btn-approve" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
-            '</div>' :
-            (st === 'draft' ? '<div class="mc-mini-done">✓ 已入草稿</div>' : '')) +
-        '</div>' +
+      '<div class="mc-filter">' +
+        '<span class="mc-filter-title">指标卡包</span>' +
+        '<span class="mc-filter-count">共 ' + rows.length + ' 张</span>' +
+        '<div class="mc-filter-tabs">' + tabs + '</div>' +
+        '<select class="mc-filter-domain" onchange="setDomain(this.value)">' + domOpts + '</select>' +
+        ((CUR_FILTER !== 'all' || CUR_DOMAIN !== 'all') ?
+          '<button class="mc-filter-reset" onclick="setFilter(\'all\');setDomain(\'all\')">重置</button>' : '') +
       '</div>'
     );
+  }
+
+  function buildPackHtml(filtered) {
+    if (!filtered.length) {
+      return '<div class="mc-pack-empty">该筛选下暂无指标卡<br/><span style="font-size:11px;">切换筛选或重置查看全部</span></div>';
+    }
+    var theme = mcTheme(filtered[0].domain_code);
+    var rarity = mcRarity(filtered[0]._status || 'pending');
+    var groupLabel = { all: '全部指标', pending: '待评审指标', draft: '已通过指标', rejected: '已打回指标' }[CUR_FILTER] || '指标';
+    return (
+      '<div class="mc-pack ' + theme + ' ' + rarity + '" id="mcPack" onclick="drawCard()" title="点击抽卡">' +
+        '<span class="deck-card d1"></span><span class="deck-card d2"></span><span class="deck-card d3"></span>' +
+        '<div class="mc-pack-front">' +
+          '<div class="mc-pack-count">' + filtered.length + '</div>' +
+          '<div class="mc-pack-label">指标卡包</div>' +
+          '<div class="mc-pack-sub">' + groupLabel + '</div>' +
+        '</div>' +
+        '<div class="mc-pack-hint">点击抽卡</div>' +
+      '</div>'
+    );
+  }
+
+  /* ── 抽卡 / 切换 / 收回 ── */
+  function drawCard() {
+    if (!CURRENT_TASK) return;
+    var filtered = filterRows(CURRENT_TASK.generated || []);
+    if (!filtered.length) return;
+    var pack = document.getElementById('mcPack');
+    if (pack) pack.classList.add('pop');
+    DRAWN_IDX = 0;
+    renderTaskCards(CURRENT_TASK);
+  }
+
+  function closeDraw() {
+    DRAWN_IDX = -1;
+    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
+  }
+
+  function switchDraw(delta) {
+    if (!CURRENT_TASK) return;
+    var filtered = filterRows(CURRENT_TASK.generated || []);
+    if (!filtered.length) return;
+    var ni = DRAWN_IDX + delta;
+    if (ni < 0 || ni >= filtered.length) return;
+    DRAWN_IDX = ni;
+    renderTaskCards(CURRENT_TASK);
+  }
+
+  function setFilter(f) {
+    CUR_FILTER = f;
+    DRAWN_IDX = -1;
+    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
+  }
+
+  function setDomain(d) {
+    CUR_DOMAIN = d;
+    DRAWN_IDX = -1;
+    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
   }
 
   /* 指标卡视觉系统 v5 卡面渲染（参考 ui-prototype/metric-card-ref.html） */
@@ -363,39 +408,19 @@
     );
   }
 
-  /* 点击扇形中的卡 → 移到中央放大 */
-  function selectImportCard(i) {
-    if (!CURRENT_TASK) return;
-    var rows = CURRENT_TASK.generated || [];
-    if (i < 0 || i >= rows.length) return;
-    SELECTED_INDEX = (SELECTED_INDEX === i) ? -1 : i; // 再次点击取消选中
-    renderTaskCards(CURRENT_TASK);
-  }
-
-  /* 关闭选中（× 按钮 / Esc） */
-  function closeSelectedCard() {
-    SELECTED_INDEX = -1;
-    if (CURRENT_TASK) renderTaskCards(CURRENT_TASK);
-  }
-
-  /* 键盘导航：← → 切换卡片，Esc 关闭（任务详情打开时生效） */
+  /* 键盘导航：← → 切换抽出的卡，Esc 收回（任务详情打开时生效） */
   document.addEventListener('keydown', function (e) {
     if (!CURRENT_TASK) return;
-    var rows = CURRENT_TASK.generated || [];
-    if (!rows.length || SELECTED_INDEX < 0) return;
-    var skip = { draft: 1, skip: 1, error: 1 };
+    var filtered = filterRows(CURRENT_TASK.generated || []);
+    if (!filtered.length || DRAWN_IDX < 0) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
-      var ni = SELECTED_INDEX + 1;
-      while (ni < rows.length && skip[rows[ni]._status]) ni++;
-      if (ni < rows.length) { SELECTED_INDEX = ni; renderTaskCards(CURRENT_TASK); }
+      switchDraw(1);
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
-      var pi = SELECTED_INDEX - 1;
-      while (pi >= 0 && skip[rows[pi]._status]) pi--;
-      if (pi >= 0) { SELECTED_INDEX = pi; renderTaskCards(CURRENT_TASK); }
+      switchDraw(-1);
     } else if (e.key === 'Escape') {
-      closeSelectedCard();
+      closeDraw();
     }
   });
 
@@ -462,14 +487,14 @@
     }).then(function (task) {
       CURRENT_TASK = task;
       if (window.toast) toast(action === 'approve' ? '✓ 已通过，指标进入草稿' : '已打回', action === 'approve' ? 'success' : '');
-      // 当前卡评审完后，自动选中下一条待评审/待打回卡（连续评审不卡壳）
-      var rows = task.generated || [];
+      // 当前卡评审完后，自动抽下一张待评审卡（连续评审不卡壳）
+      var filtered = filterRows(task.generated || []);
       var nextIdx = -1;
-      for (var i = 0; i < rows.length; i++) {
-        var s = rows[i]._status;
+      for (var i = 0; i < filtered.length; i++) {
+        var s = filtered[i]._status;
         if (s === 'pending' || s === 'rejected') { nextIdx = i; break; }
       }
-      SELECTED_INDEX = nextIdx;
+      DRAWN_IDX = nextIdx;
       renderTaskCards(task);
       loadImportTasks();
     }).catch(function (e) {
@@ -481,7 +506,7 @@
     var card = document.getElementById('importTaskDetailCard');
     if (card) card.style.display = 'none';
     CURRENT_TASK = null;
-    SELECTED_INDEX = -1;
+    DRAWN_IDX = -1;
   }
 
   /* ---------- 导出 ---------- */
@@ -491,6 +516,9 @@
   global.processImportTask = processImportTask;
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
-  global.selectImportCard = selectImportCard;
-  global.closeSelectedCard = closeSelectedCard;
+  global.drawCard = drawCard;
+  global.closeDraw = closeDraw;
+  global.switchDraw = switchDraw;
+  global.setFilter = setFilter;
+  global.setDomain = setDomain;
 })(window);
