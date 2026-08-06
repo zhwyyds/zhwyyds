@@ -1,0 +1,9 @@
+model_id,model_name,provider,use_case,priority,enabled,api_endpoint,api_key_env,remark
+1,gpt-4o,OpenAI,root_generation,1,false,,OPENAI_API_KEY,
+2,claude-3.5-sonnet,Anthropic,root_generation,2,false,,ANTHROPIC_API_KEY,
+3,qwen-plus,Qwen,root_generation,3,false,,DASHSCOPE_API_KEY,通义千问 DashScope 兼容模式
+4,gpt-4o,OpenAI,metric_review,1,false,,OPENAI_API_KEY,
+5,claude-3.5-sonnet,Anthropic,metric_review,2,false,,ANTHROPIC_API_KEY,
+6,qwen-plus,Qwen,metric_review,3,false,,DASHSCOPE_API_KEY,通义千问 DashScope 兼容模式
+7,deepseek-v4-flash,DeepSeek,root_generation,4,true,https://api.deepseek.com,DEEPSEEK_API_KEY,DeepSeek 兼容模式
+8,deepseek-v4-flash,DeepSeek,metric_review,4,true,https://api.deepseek.com,DEEPSEEK_API_KEY,DeepSeek 兼容模式

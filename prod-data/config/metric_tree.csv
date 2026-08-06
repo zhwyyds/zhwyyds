@@ -1,0 +1,14 @@
+node_id,node_name,node_type,parent_id,domain_code,sort_order,description
+L1_SALE,交易,domain,,sale,3,交易主题域
+L2_SALE_01,订单分析,module,L1_SALE,sale,1,订单相关分析
+L2_SALE_02,支付分析,module,L1_SALE,sale,2,支付与退款
+L2_SALE_03,转化分析,module,L1_SALE,sale,3,转化漏斗
+L3_SALE_01_01,订单规模,category,L2_SALE_01,sale,1,订单规模类指标
+L3_SALE_01_02,订单效率,category,L2_SALE_01,sale,2,订单效率类
+L3_SALE_01_03,订单趋势,category,L2_SALE_01,sale,3,环比同比等
+L1_MALL,商场,domain,,mall,4,商场主题域
+L2_MALL_01,经营分析,module,L1_MALL,mall,1,经营分析
+L2_MALL_02,租赁分析,module,L1_MALL,mall,2,租赁分析
+L3_MALL_01_01,规模指标,category,L2_MALL_01,mall,1,面积与规模
+L3_MALL_01_02,效率指标,category,L2_MALL_01,mall,2,出租率坪效
+L3_FIN_01_01,现金流,category,L1_FIN,fin,2,现金流类指标
