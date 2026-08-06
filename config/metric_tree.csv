@@ -11,3 +11,5 @@ L2_MALL_01,经营分析,module,L1_MALL,mall,1,经营分析
 L2_MALL_02,租赁分析,module,L1_MALL,mall,2,租赁分析
 L3_MALL_01_01,规模指标,category,L2_MALL_01,mall,1,面积与规模
 L3_MALL_01_02,效率指标,category,L2_MALL_01,mall,2,出租率坪效
+L2_FIN_01,经营分析,module,L1_FIN,fin,1,财务经营分析
+L3_FIN_01_01,现金流,category,L2_FIN_01,fin,1,现金流类指标

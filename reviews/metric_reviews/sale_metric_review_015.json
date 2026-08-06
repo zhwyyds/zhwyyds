@@ -8,7 +8,7 @@
   ],
   "items": [
     {
-      "metric_id": "M_SALE_N493",
+      "metric_id": "M_FIN_N493",
       "metric_en": "operating_cash_flow_yoy",
       "model_reviews": [
         {
