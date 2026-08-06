@@ -4,8 +4,7 @@
  */
 (function (global) {
   var CURRENT_TASK = null;
-  // 卡包桌：筛选状态 + 抽出的卡在过滤结果中的索引（-1 = 未抽出）
-  var CUR_FILTER = 'all';   // all / pending / draft / rejected
+  // 卡包桌：主题域筛选 + 抽出的卡在过滤结果中的索引（-1 = 未抽出）
   var CUR_DOMAIN = 'all';   // all / domain_code
   var DRAWN_IDX = -1;
 
