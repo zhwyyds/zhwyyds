@@ -1816,10 +1816,10 @@ tr.row-selected td { background: var(--primary-light) !important; }
 /* ── 批量导入：扇形手牌（H32 v4：参考炉石手牌，底部聚拢 + 顶部扇面，选中放中央放大） ── */
 .import-cards-stack {
   position: relative;
-  height: 580px;
+  min-height: 580px;
   margin: 8px 0 12px;
-  padding: 0;
-  overflow: hidden;
+  padding: 0 0 30px;
+  overflow: visible;
 }
 /* 扇形中每张迷你卡：底部中心为原点，绕 --theta 旋转展开成扇形 */
 .import-card-wrap {
@@ -1890,7 +1890,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
 }
 .import-card-wrap.selected .warcraft-card {
   width: 330px;
-  height: 520px;
+  height: auto;
   border-radius: 22px 22px 14px 14px;
   padding: 4px;
   overflow: visible;
@@ -1924,7 +1924,7 @@ tr.row-selected td { background: var(--primary-light) !important; }
 .import-card-wrap.selected .warcraft-body {
   display: block;
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
 }
 .import-card-wrap.selected .import-card-status {
   display: flex;
