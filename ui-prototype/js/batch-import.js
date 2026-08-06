@@ -18,6 +18,11 @@
     fin: { icon: '💎', c1: '#2a8a5a', c2: '#0a3a2a' },
     _default: { icon: '📊', c1: '#4a4a4a', c2: '#1a1a1a' }
   };
+  // 主题域中文名（迷你卡属性标签用）
+  var DOMAIN_CN = {
+    sale: '交易域', cust: '消费者域', prod: '商品域', mall: '商场域',
+    mkt: '营销域', cont: '合同域', fin: '财务域'
+  };
 
   function themeFor(domain) {
     return DOMAIN_THEMES[(domain || '').toLowerCase()] || DOMAIN_THEMES._default;
@@ -171,10 +176,12 @@
 
     // 扇形展开（打开的扇子）：卡片完整可见，弧形排列——中间正立抬升、两侧倾斜
     var n = rows.length;
-    var spreadDeg = Math.min(50, 3 * n + 18); // 6 张约 36°、50 张约 50°（倾斜克制，信息可读）
+    // 卡宽随数量收缩：≤6 张 300px、≤12 张 260px、>12 张 220px（50 张也能平铺可读）
+    var cardW = n <= 6 ? 300 : (n <= 12 ? 260 : 220);
+    var spreadDeg = Math.min(42, 2.5 * n + 12); // 6 张约 27°、50 张约 42°（倾斜克制）
     var step = n > 1 ? spreadDeg / (n - 1) : 0;
     var mid = (n - 1) / 2;
-    var liftMax = Math.min(26, 3 * n); // 中间卡抬升峰值（弧线）
+    var liftMax = Math.min(22, 2.5 * n); // 中间卡抬升峰值（弧线）
 
     // 默认不自动选中（扇形完整可见）；仅当选中索引无效时清空
     // 评审流程中 reviewImportRow 会自动选中下一张
@@ -193,42 +200,60 @@
       var stBadge = st === 'draft' ? 'badge-pass' : (st === 'rejected' || st === 'error' ? 'badge-danger' : (st === 'skip' ? 'badge-neutral' : 'badge-warn'));
       var dedupLabel = row._dedup === 'dup' ? '重复' : (row._dedup === 'suspect' ? '疑似重复' : '新增');
       var dedupBadge = row._dedup === 'dup' ? 'badge-danger' : (row._dedup === 'suspect' ? 'badge-warn' : 'badge-pass');
+      var domCn = DOMAIN_CN[String(row.domain_code || '').toLowerCase()] || row.domain_code || '—';
+      var en = row.metric_en || '—';
+      var unit = row.unit || '';
+      var freq = row.frequency || '';
+      var desc = row.caliber_desc || '—';
 
       return (
         '<div class="import-card-wrap' + (isSelected ? ' selected' : '') + (SELECTED_INDEX >= 0 && !isSelected ? ' dimmed' : '') + '" ' +
-          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';" ' +
+          'style="--theta:' + theta.toFixed(2) + 'deg;--lift:' + lift.toFixed(1) + 'px;--z:' + z + ';--card-w:' + cardW + 'px;" ' +
           'data-index="' + i + '" ' +
           'onclick="selectImportCard(' + i + ')">' +
-          // 炉石卡（H32 魔兽卡包；扇形里显示迷你形态，选中显示完整形态）
+          // 炉石卡（保留金属质感 + 椭圆顶底；信息分层显示）
           '<div class="warcraft-card" ' +
             'style="--art-c1:' + themeFor(row.domain_code).c1 + ';' +
             '--art-c2:' + themeFor(row.domain_code).c2 + ';">' +
             // 选中卡右上角关闭按钮
             (isSelected ? '<button class="warcraft-close" onclick="event.stopPropagation();closeSelectedCard()" title="关闭（Esc）">✕</button>' : '') +
-            // 顶部状态条（选中完整卡时显示）
+            // 状态徽章行（迷你卡直接可见：去重 + 状态 + 序号）
             '<div class="import-card-status">' +
               '<span class="badge ' + dedupBadge + '">' + dedupLabel + '</span>' +
               '<span class="badge ' + stBadge + '">' + stLabel + '</span>' +
-              (row._reject_reason ? '<span class="text-sm" style="color:var(--danger);">打回原因: ' + esc(row._reject_reason) + '</span>' : '') +
-              '<span class="text-sm text-muted" style="margin-left:auto;">' + (i + 1) + ' / ' + rows.length + '</span>' +
+              '<span class="text-sm text-muted" style="margin-left:auto;">' + (i + 1) + '/' + n + '</span>' +
             '</div>' +
-            // 左上角黄色水晶数字（成本）
+            // 左上角黄色水晶数字（装饰角标）
             '<div class="warcraft-cost">' + cardCost(row) + '</div>' +
-            // 顶部插画区（按主题域配色 + emoji）
+            // 主题域插画条（小，不占信息空间）
             '<div class="warcraft-art"><span class="warcraft-art-icon">' + themeFor(row.domain_code).icon + '</span></div>' +
-            // 卡名条（米色椭圆渐变，紧贴插画下方）
+            // 指标名（大字）
             '<div class="warcraft-name">' + esc(row.metric_cn || '—') + '</div>' +
-            // 内容区（完整字段渲染，选中时显示）
+            // 信息层：英文名 · 编号 + 属性标签（单位/周期/主题域）
+            '<div class="wc-meta">' +
+              '<div class="wc-en">' + esc(en) + ' · ' + esc(row.metric_id || '—') + '</div>' +
+              '<div class="wc-tags">' +
+                (unit ? '<span class="wc-tag">' + esc(unit) + '</span>' : '') +
+                (freq ? '<span class="wc-tag">' + esc(freq) + '</span>' : '') +
+                '<span class="wc-tag wc-tag-dom">' + esc(domCn) + '</span>' +
+              '</div>' +
+            '</div>' +
+            // 口径描述（3 行截断）
+            '<div class="warcraft-desc">' + esc(desc) + '</div>' +
+            // 完整字段表（仅选中浮层显示）
             '<div class="warcraft-body">' + buildImportSpecHtml(row) + '</div>' +
-            // 右下角蓝色水晶数字（耐久）
+            // 右下角蓝色水晶数字（装饰角标）
             '<div class="warcraft-stat">' + cardStat(row) + '</div>' +
-            // 错误提示 + 评审按钮
-            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:10px 12px;background:#fef2f2;border-radius:0 0 12px 12px;">' + esc(row._error) + '</div>' : '') +
+            // 错误提示
+            (row._error ? '<div class="text-sm" style="color:var(--danger);padding:8px 12px;background:#fef2f2;">' + esc(row._error) + '</div>' : '') +
+            // 评审按钮（迷你卡直接评审，不用点开）
             ((st === 'pending' || st === 'rejected') ?
               '<div class="import-card-actions">' +
-                '<button class="btn" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">✕ 打回</button>' +
-                '<button class="btn btn-primary" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">✓ 通过入草稿</button>' +
-              '</div>' : '') +
+                '<button class="btn" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'reject\')">打回</button>' +
+                '<button class="btn btn-primary" onclick="event.stopPropagation();reviewImportRow(' + i + ',\'approve\')">通过</button>' +
+              '</div>' :
+              (st === 'draft' ?
+                '<div class="import-card-done"><span class="ok">已入草稿</span><span class="dim">· 可撤回</span></div>' : '')) +
           '</div>' +
         '</div>'
       );
