@@ -253,10 +253,9 @@
     }
     activeIdx = -1; hoverIdx = -1; frames = [];
 
-    // 结构：stage > (panel 控制面板 + pack-zone 卡包区)
+    // 结构：stage > pack-zone（panel 已移入任务详情 header，清单已去掉）
     host.innerHTML =
       '<div class="stage">' +
-        panelHtml(task, rows) +
         '<div class="pack-zone">' +
           '<div class="pack-base" aria-hidden="true"></div>' +
           '<div class="pack" id="mc8pack" aria-label="指标卡包，悬停查阅，点击抽出"></div>' +
@@ -280,7 +279,7 @@
     });
 
     bindEvents();
-    syncList();
+
 
     // 初始/评审后自动抽出指定卡（参考行为）；drawIdx < 0 不抽
     if (drawIdx >= 0 && frames[drawIdx]) {
@@ -291,32 +290,7 @@
     }
   }
 
-  /* 控制面板（参考：全部取出 / 全部收回 / 白板模式 + 清单） */
-  function panelHtml(task, rows) {
-    var list = rows.map(function (row, i) {
-      var m = mapRow(row, i);
-      return (
-        '<div class="li" data-idx="' + i + '">' +
-          '<span class="dot"></span>' +
-          '<span class="code">' + esc(m.code) + '</span>' +
-          '<span class="nm">' + esc(m.name) + '</span>' +
-        '</div>'
-      );
-    }).join('');
-    return (
-      '<aside class="panel" aria-label="卡包控制">' +
-        '<h2>🎒 指标卡包</h2>' +
-        '<div class="btn-row">' +
-          '<button class="btn" id="mc8btn-all" type="button">📤 全部取出</button>' +
-          '<button class="btn ghost" id="mc8btn-back-all" type="button">📥 全部收回</button>' +
-          '<button class="btn ghost" id="mc8btn-mode" type="button">📄 白板模式</button>' +
-        '</div>' +
-        '<div class="hint">悬停卡片<b>在卡包处查阅</b>（抬起放大、其余压暗）；<b>点击</b>抽出到页面中央展示，评审按钮出现在卡片下方两侧；再点卡片、遮罩或按钮<b>收回卡包</b>。</div>' +
-        '<div style="font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-faint);padding-top:.2rem;">卡包清单 · ' + rows.length + ' 张</div>' +
-        '<div class="cardlist" id="mc8cardlist">' + list + '</div>' +
-      '</aside>'
-    );
-  }
+  /* 控制面板已移入任务详情卡 header（panelHtml 不再使用） */
 
   /* 单卡构建：扇形堆叠几何（参考 ch10） */
   function buildFrame(pack, row, i, n, step) {
@@ -418,14 +392,14 @@
     el.classList.add('hovered');
     var pack = document.getElementById('mc8pack');
     if (pack) pack.classList.add('dimmed');
-    syncList();
+
   }
   function peekOut() {
     frames.forEach(function (f) { f.classList.remove('hovered'); });
     var pack = document.getElementById('mc8pack');
     if (pack) pack.classList.remove('dimmed');
     hoverIdx = -1;
-    syncList();
+
   }
   function centerOffset(el, dy, scale) {
     var r = el.getBoundingClientRect();
@@ -452,7 +426,7 @@
       f.classList.remove('active-lock', 'retracting');
       clearFly(f);
     });
-    centerOffset(el, -60, 1.3);
+    centerOffset(el, 0, 1.15);
     el.classList.add('active-lock');
     activeIdx = idx;
     var overlay = document.getElementById('mc8overlay');
@@ -461,7 +435,7 @@
     if (actions) actions.classList.add('show');
     updateReviewButtons();
     setTimeout(function () { drawing = false; }, 580);
-    syncList();
+
   }
   function putBack() {
     if (drawing || activeIdx < 0) return;
@@ -479,7 +453,7 @@
       if (actions) actions.classList.remove('show');
       if (pack) pack.classList.remove('dimmed');
       drawing = false;
-      syncList();
+
     }, 520);
   }
   /* 评审按钮状态：抽出卡下方左右（打回 / 进入草稿） */
@@ -509,23 +483,14 @@
       btnApprove.onclick = function () { reviewImportRow(activeIdx, 'approve'); };
     }
   }
-  function syncList() {
-    var list = document.getElementById('mc8cardlist');
-    if (!list) return;
-    Array.prototype.forEach.call(list.children, function (li, i) {
-      li.classList.toggle('active', i === activeIdx || i === hoverIdx);
-    });
-  }
-
   /* ============ 视图模式（参考 ch9） ============ */
   function setGrid(on) {
     gridMode = on;
     var pack = document.getElementById('mc8pack');
     var zone = document.querySelector('#importTaskCards .pack-zone');
-    var btn = document.getElementById('mc8btn-all');
     if (pack) pack.classList.toggle('grid-view', on);
     if (zone) zone.classList.toggle('grid-active', on);
-    if (btn) btn.textContent = on ? '📊 网格视图' : '📤 全部取出';
+    updateHeaderButtons();
     if (!on) {
       frames.forEach(function (f) {
         f.classList.remove('active-lock', 'retracting', 'hovered');
@@ -538,6 +503,20 @@
       if (actions) actions.classList.remove('show');
       activeIdx = -1;
     }
+  }
+  function toggleBoardMode() {
+    if (gridMode) setGrid(false);
+    boardMode = !boardMode;
+    var pack = document.getElementById('mc8pack');
+    if (pack) pack.classList.toggle('board-mode', boardMode);
+    updateHeaderButtons();
+    putBack();
+  }
+  function updateHeaderButtons() {
+    var btnGrid = document.getElementById('mc8btn-grid');
+    var btnBoard = document.getElementById('mc8btn-board');
+    if (btnGrid) btnGrid.textContent = gridMode ? '📊 收起网格' : '📤 全部取出';
+    if (btnBoard) btnBoard.textContent = boardMode ? '🎴 完整模式' : '📄 白板模式';
   }
 
   /* ============ 事件绑定 ============ */
@@ -563,36 +542,6 @@
     if (overlay) overlay.addEventListener('click', putBack);
     var btnBack = document.getElementById('mc8btn-back');
     if (btnBack) btnBack.addEventListener('click', putBack);
-
-    var btnAll = document.getElementById('mc8btn-all');
-    if (btnAll) btnAll.addEventListener('click', function () {
-      if (drawing) return;
-      peekOut();
-      if (gridMode) { setGrid(false); return; }
-      setGrid(true);
-      activeIdx = -1;
-      syncList();
-    });
-    var btnBackAll = document.getElementById('mc8btn-back-all');
-    if (btnBackAll) btnBackAll.addEventListener('click', function () {
-      setGrid(false);
-      putBack();
-    });
-    var btnMode = document.getElementById('mc8btn-mode');
-    if (btnMode) btnMode.addEventListener('click', function () {
-      if (gridMode) setGrid(false);
-      boardMode = !boardMode;
-      var pack = document.getElementById('mc8pack');
-      if (pack) pack.classList.toggle('board-mode', boardMode);
-      btnMode.textContent = boardMode ? '🎴 完整模式' : '📄 白板模式';
-      putBack();
-    });
-    var list = document.getElementById('mc8cardlist');
-    if (list) {
-      Array.prototype.forEach.call(list.children, function (li, i) {
-        li.addEventListener('click', function () { draw(frames[i]); });
-      });
-    }
   }
 
   /* 键盘：← → 切换抽出的卡（参考无，评审流程增益），Esc 收回 */
@@ -616,7 +565,7 @@
     }
   });
   window.addEventListener('resize', function () {
-    if (activeIdx >= 0 && frames[activeIdx]) centerOffset(frames[activeIdx], -60, 1.3);
+    if (activeIdx >= 0 && frames[activeIdx]) centerOffset(frames[activeIdx], 0, 1.15);
   });
 
   /* ---------- 处理任务：去重 + AI 生成 ---------- */
@@ -673,4 +622,12 @@
   global.reviewImportRow = reviewImportRow;
   global.closeImportTaskDetail = closeImportTaskDetail;
   global.renderTaskCards = renderTaskCards;
+  global.toggleGridMode = function () {
+    if (drawing) return;
+    peekOut();
+    if (gridMode) { setGrid(false); return; }
+    setGrid(true);
+    activeIdx = -1;
+  };
+  global.toggleBoardMode = toggleBoardMode;
 })(window);

@@ -1412,3 +1412,22 @@
 }
 /* 已入草稿状态：替换按钮 */
 #importTaskCards .draw-actions .act-btn.ghost2:disabled { display: none; }
+
+
+/* ================================================================
+   v12 调整（用户反馈）：去掉上方控制面板 + 修复抽出超出视口
+   ================================================================ */
+/* 隐藏控制面板（panel + 清单）—— 模式按钮已移至任务详情卡 header */
+#importTaskCards .panel,
+#importTaskCards .panel *,
+#importTaskCards .cardlist { display: none !important; }
+
+/* 抽出卡面：限制最大高度，超出可滚动；防止卡顶超出视口 */
+#importTaskCards .frame.active-lock .card {
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+/* 滚动条样式（深色主题） */
+#importTaskCards .frame.active-lock .card::-webkit-scrollbar { width: 6px; }
+#importTaskCards .frame.active-lock .card::-webkit-scrollbar-track { background: oklch(15% 0.02 275); }
+#importTaskCards .frame.active-lock .card::-webkit-scrollbar-thumb { background: oklch(40% 0.03 275); border-radius: 3px; }
