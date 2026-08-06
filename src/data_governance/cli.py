@@ -18,6 +18,7 @@ from data_governance.validation import validate_project
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI 入口：serve / validate / generate / review / caliber 等子命令分发。"""
     parser = argparse.ArgumentParser(prog="data-governance")
     sub = parser.add_subparsers(dest="command")
 

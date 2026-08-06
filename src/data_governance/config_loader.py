@@ -67,6 +67,7 @@ def load_models(
     config_path: Path | None = None,
     min_enabled: int = 1,
 ) -> list[ModelConfig]:
+    """加载 LLM 模型配置（config/models.csv），按 use_case 过滤。"""
     path = config_path or (repo_root() / "config" / "models.csv")
     if not path.is_file():
         raise FileNotFoundError(f"models config not found: {path}")

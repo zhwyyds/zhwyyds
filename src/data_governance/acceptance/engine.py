@@ -81,6 +81,7 @@ def _safe_rate(num: int, den: int) -> float:
 
 
 def score_root_coverage(catalog: ProjectCatalog) -> DimensionScore:
+    """验收维度：词根覆盖度——指标 root_ids 引用是否齐全、metric_en 能否由词根还原。"""
     subs: list[SubScore] = []
     metrics = catalog.metrics
     roots = catalog.roots
