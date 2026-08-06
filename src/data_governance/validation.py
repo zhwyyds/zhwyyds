@@ -50,9 +50,7 @@ def _check_csv(
     for lineno, raw in enumerate(lines[1:], start=2):
         row = next(csv.reader([raw]))
         if len(row) != len(header):
-            issues.append(
-                ValidationIssue("error", path.name, f"第 {lineno} 行字段数 {len(row)} != 表头 {len(header)}")
-            )
+            issues.append(ValidationIssue("error", path.name, f"第 {lineno} 行字段数 {len(row)} != 表头 {len(header)}"))
             continue
         rec = {k.strip(): (v or "").strip() for k, v in zip(header, row, strict=True)}
         for field in required:

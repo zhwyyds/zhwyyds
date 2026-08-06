@@ -53,9 +53,7 @@ class MetricReviewPipeline:
         root_text = ""
         try:
             catalog = load_catalog(self.base_dir)
-            root_text = dictionary_to_prompt_text(
-                build_root_dictionary(catalog.roots, domain=request.domain)
-            )
+            root_text = dictionary_to_prompt_text(build_root_dictionary(catalog.roots, domain=request.domain))
         except (FileNotFoundError, OSError, ValueError):
             root_text = ""  # 轻量项目无 catalog 时跳过词根字典注入
         prompt = build_metric_review_prompt(metrics, root_dictionary_text=root_text)

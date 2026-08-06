@@ -44,10 +44,10 @@ def build_prompt(metric: MetricRecord) -> str:
     return f"""你是数据治理平台的指标口径专家。请根据下面这个「含糊的指标定义」，输出一份精准、结构化的口径定义。
 
 指标中文名：{metric.metric_cn}
-指标英文名：{metric.metric_en or '（无）'}
-现有口径描述：{metric.caliber_desc or '（无）'}
-统计频率：{metric.frequency or '（未定）'}
-来源表：{metric.source_table or metric.data_sources or '（未定）'}
+指标英文名：{metric.metric_en or "（无）"}
+现有口径描述：{metric.caliber_desc or "（无）"}
+统计频率：{metric.frequency or "（未定）"}
+来源表：{metric.source_table or metric.data_sources or "（未定）"}
 
 要求：
 1. 只输出一个 JSON 对象，不要多余文字

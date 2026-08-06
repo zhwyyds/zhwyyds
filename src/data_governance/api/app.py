@@ -325,7 +325,6 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
                 "template": ROOT_GENERATION_TEMPLATE,
             }
         if prompt_type == "caliber_draft":
-
             return {
                 "type": "caliber_draft",
                 "name": "口径起草提示词（动态构建）",
@@ -362,4 +361,3 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
             return JSONResponse({"message": "Data Governance API", "docs": "/docs", "meta": "/api/meta"})
 
     return app
-

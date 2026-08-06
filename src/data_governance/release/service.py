@@ -30,19 +30,14 @@ def publish_domain(
     - 注册表记录本次发布（含指标清单、时间、备注）
     """
     catalog = load_catalog(base_dir)
-    approved = [
-        m for m in catalog.metrics
-        if m.domain_code == domain and m.review_status == "approved"
-    ]
+    approved = [m for m in catalog.metrics if m.domain_code == domain and m.review_status == "approved"]
     if not approved:
         raise ValueError(f"domain {domain!r} has no approved metrics to publish")
 
     # 发布门禁：口径草稿未核查（pending/rejected）禁止发布；"" 表示未进入口径流程（兼容存量）
     blocked = [m.metric_id for m in approved if m.caliber_status in ("pending", "rejected")]
     if blocked:
-        raise ValueError(
-            f"以下指标口径未核查，禁止发布: {', '.join(blocked)}（请先批准/修改口径）"
-        )
+        raise ValueError(f"以下指标口径未核查，禁止发布: {', '.join(blocked)}（请先批准/修改口径）")
 
     registry = ReleaseRegistry(base_dir)
     version = registry.next_version(domain)

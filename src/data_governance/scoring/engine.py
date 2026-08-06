@@ -129,9 +129,7 @@ def score_metric(
 # ── 维度打分实现 ──────────────────────────────────────────────────────────
 
 
-def _score_naming(
-    metric: MetricRecord, root_en_set: set[str]
-) -> tuple[list[ScoreItem], bool]:
+def _score_naming(metric: MetricRecord, root_en_set: set[str]) -> tuple[list[ScoreItem], bool]:
     en = metric.metric_en.strip()
     items: list[ScoreItem] = []
     veto = False
@@ -146,13 +144,19 @@ def _score_naming(
 
     # 无拼音残留
     pinyin_tokens: list[str] = []
-    for t in (en.split("_") if en else []):
+    for t in en.split("_") if en else []:
         if t and looks_like_pinyin(t, root_en_set):
             pinyin_tokens.append(t)
     if pinyin_tokens:
         veto = True
         items.append(
-            ScoreItem("无拼音残留", 0, 4, "fail", f"检测到拼音片段: {', '.join(pinyin_tokens)}（启发式检测）", )
+            ScoreItem(
+                "无拼音残留",
+                0,
+                4,
+                "fail",
+                f"检测到拼音片段: {', '.join(pinyin_tokens)}（启发式检测）",
+            )
         )
     else:
         items.append(ScoreItem("无拼音残留", 4, 4, "pass", "未检测到拼音残留"))
@@ -187,7 +191,11 @@ def _score_root_link(metric: MetricRecord, root_by_id: dict[str, RootRecord]) ->
         items.append(ScoreItem("词根可逆推", 0, 5, "fail", "无关联词根"))
     else:
         en_tokens = set(en.split("_")) if en else set()
-        reversible = all((r.root_en.strip() in en_tokens) for r in (root_by_id[i] for i in ids if i in root_by_id) if r.root_en.strip())
+        reversible = all(
+            (r.root_en.strip() in en_tokens)
+            for r in (root_by_id[i] for i in ids if i in root_by_id)
+            if r.root_en.strip()
+        )
         if reversible:
             items.append(ScoreItem("词根可逆推", 5, 5, "pass", "metric_en 可由 root_en 组合还原"))
         else:
@@ -200,9 +208,7 @@ def _score_caliber(metric: MetricRecord) -> tuple[list[ScoreItem], bool]:
     # 结构化口径字段优先（口径助手产出），回退到 caliber_desc（存量文本口径）
     business = (metric.caliber_business or "").strip()
     formula = (
-        (metric.caliber_formula or "").strip()
-        or (metric.formula or "").strip()
-        or (metric.tech_caliber or "").strip()
+        (metric.caliber_formula or "").strip() or (metric.formula or "").strip() or (metric.tech_caliber or "").strip()
     )
     period = (metric.caliber_period or "").strip()
     caliber = business or metric.caliber_desc.strip()
@@ -246,21 +252,35 @@ def _score_same_name(metric: MetricRecord, catalog: ProjectCatalog) -> tuple[lis
 
     # 同名异义
     homonym = [
-        m for m in metrics
-        if m.metric_en.strip() == en and m.caliber_desc.strip() and m.caliber_desc.strip() != caliber and m.metric_id != metric.metric_id
+        m
+        for m in metrics
+        if m.metric_en.strip() == en
+        and m.caliber_desc.strip()
+        and m.caliber_desc.strip() != caliber
+        and m.metric_id != metric.metric_id
     ]
     if homonym:
         veto = True
         items.append(
-            ScoreItem("无同名异义", 0, 10, "fail", f"同名异义 {len(homonym)} 例: {', '.join(m.metric_id for m in homonym[:3])}")
+            ScoreItem(
+                "无同名异义",
+                0,
+                10,
+                "fail",
+                f"同名异义 {len(homonym)} 例: {', '.join(m.metric_id for m in homonym[:3])}",
+            )
         )
     else:
         items.append(ScoreItem("无同名异义", 10, 10, "pass", "全库无同名异义"))
 
     # 同义异名（精确 caliber 匹配）
     synonym = [
-        m for m in metrics
-        if m.caliber_desc.strip() == caliber and caliber and m.metric_en.strip() != en and m.metric_id != metric.metric_id
+        m
+        for m in metrics
+        if m.caliber_desc.strip() == caliber
+        and caliber
+        and m.metric_en.strip() != en
+        and m.metric_id != metric.metric_id
     ]
     if synonym:
         deduct = min(7.0, 3.0 * len(synonym))
@@ -332,18 +352,35 @@ def _score_model_review(model_review_detail: dict | None) -> tuple[list[ScoreIte
     final = item.get("final_decision") or {}
 
     items.append(
-        ScoreItem("经过模型评审", 5 if len(model_reviews) >= 2 else 0, 5, "pass" if len(model_reviews) >= 2 else "fail",
-                  f"参与模型 {len(model_reviews)} 个" if len(model_reviews) >= 2 else f"仅 {len(model_reviews)} 个模型，不足 2")
+        ScoreItem(
+            "经过模型评审",
+            5 if len(model_reviews) >= 2 else 0,
+            5,
+            "pass" if len(model_reviews) >= 2 else "fail",
+            f"参与模型 {len(model_reviews)} 个"
+            if len(model_reviews) >= 2
+            else f"仅 {len(model_reviews)} 个模型，不足 2",
+        )
     )
     complete = bool(model_reviews) and bool(comparison) and bool(final)
     items.append(
-        ScoreItem("评审记录完整", 3 if complete else 0, 3, "pass" if complete else "fail",
-                  "model_reviews+comparison+final_decision 齐全" if complete else "评审 JSON 结构不完整")
+        ScoreItem(
+            "评审记录完整",
+            3 if complete else 0,
+            3,
+            "pass" if complete else "fail",
+            "model_reviews+comparison+final_decision 齐全" if complete else "评审 JSON 结构不完整",
+        )
     )
     approved = bool(final.get("approved"))
     items.append(
-        ScoreItem("评审通过", 2 if approved else 0, 2, "pass" if approved else "fail",
-                  f"决策: {final.get('decision_type', 'unknown')}")
+        ScoreItem(
+            "评审通过",
+            2 if approved else 0,
+            2,
+            "pass" if approved else "fail",
+            f"决策: {final.get('decision_type', 'unknown')}",
+        )
     )
 
     # 多模型明细（用于 UI 展示）
@@ -377,7 +414,9 @@ def _dim_from_items(rules: ScoringRuleSet, dim_code: str, items: list[ScoreItem]
     else:
         status = "warn"
     name = rule.dim_name if rule else dim_code
-    return ScoreDimension(dim_code=dim_code, dim_name=name, score=score, max_score=max_score, status=status, items=items)
+    return ScoreDimension(
+        dim_code=dim_code, dim_name=name, score=score, max_score=max_score, status=status, items=items
+    )
 
 
 _GRADE_ORDER = ["D", "C", "B", "A", "S"]

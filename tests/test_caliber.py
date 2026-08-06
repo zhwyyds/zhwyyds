@@ -25,7 +25,7 @@ def api_client(mini_project: Path) -> TestClient:
 
 
 def test_parse_response_extracts_json_block():
-    text = "好的，以下是结果：\n{\"caliber_business\": \"测试\", \"caliber_period\": \"月\"}\n结束"
+    text = '好的，以下是结果：\n{"caliber_business": "测试", "caliber_period": "月"}\n结束'
     data = parse_response(text)
     assert data["caliber_business"] == "测试"
 

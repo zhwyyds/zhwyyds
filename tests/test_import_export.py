@@ -58,7 +58,12 @@ def test_modifier_crud(api_client: TestClient, mini_project: Path):
     # 新增
     r = api_client.post(
         "/api/modifier-rules",
-        json={"modifier_cn": "上月", "modifier_en": "last_month", "modifier_type": "time", "time_scope": "prior_period"},
+        json={
+            "modifier_cn": "上月",
+            "modifier_en": "last_month",
+            "modifier_type": "time",
+            "time_scope": "prior_period",
+        },
     )
     assert r.status_code == 200
     mid = r.json()["modifier_id"]
@@ -79,7 +84,14 @@ def test_modifier_crud(api_client: TestClient, mini_project: Path):
 def test_model_crud(api_client: TestClient, mini_project: Path):
     r = api_client.post(
         "/api/models",
-        json={"model_name": "deepseek-v3", "provider": "DeepSeek", "use_case": "root_generation", "priority": "5", "api_endpoint": "https://api.deepseek.com", "api_key_env": "DEEPSEEK_API_KEY"},
+        json={
+            "model_name": "deepseek-v3",
+            "provider": "DeepSeek",
+            "use_case": "root_generation",
+            "priority": "5",
+            "api_endpoint": "https://api.deepseek.com",
+            "api_key_env": "DEEPSEEK_API_KEY",
+        },
     )
     assert r.status_code == 200
     mid = r.json()["model_id"]

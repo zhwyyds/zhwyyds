@@ -80,9 +80,7 @@ def test_root_generate_commit_empty_terms_writes_all(mini_project: Path, api_cli
 
 def test_root_pipeline_single_model_threshold(mini_project: Path):
     """单模型门槛已放宽（<2 → <1），pipeline 至少不因门槛报错。"""
-    req = RootGenerationRequest(
-        domain="sale", terms=[TermInput(cn_term="客户", context="")]
-    )
+    req = RootGenerationRequest(domain="sale", terms=[TermInput(cn_term="客户", context="")])
     doc = RootGenerationPipeline(base_dir=mini_project, use_mock=True).run(req)
     assert len(doc.items) == 1
 

@@ -48,9 +48,7 @@ def domain_dashboard(base_dir: Path) -> list[dict]:
                 "score_avg": round(score_sum / len(scores), 1) if scores else None,
                 "grade_dist": grade_dist,
                 "lineage_ok": domain in lineage_domains,
-                "caliber_pending": sum(
-                    1 for m in domain_metrics if m.caliber_status in ("pending", "rejected")
-                ),
+                "caliber_pending": sum(1 for m in domain_metrics if m.caliber_status in ("pending", "rejected")),
                 "latest_version": latest.version_label if latest else None,
                 "latest_released_at": latest.released_at if latest else None,
             }

@@ -41,13 +41,28 @@ from data_governance.schemas.roots import (
 
 # metric_en 收集的字段清单（与 suggest prompt 输出对齐）
 _METRIC_FIELDS = (
-    "metric_en", "caliber_desc", "unit", "frequency",
-    "value_type", "dimensions", "scenario", "formula", "formula_cn",
-    "reports", "analysis_methods", "alert_rules", "precision",
-    "owner", "category_l1", "category_l2",
-    "data_sources", "source_table", "tech_caliber", "suggestions", "suggested_roots",
+    "metric_en",
+    "caliber_desc",
+    "unit",
+    "frequency",
+    "value_type",
+    "dimensions",
+    "scenario",
+    "formula",
+    "formula_cn",
+    "reports",
+    "analysis_methods",
+    "alert_rules",
+    "precision",
+    "owner",
+    "category_l1",
+    "category_l2",
+    "data_sources",
+    "source_table",
+    "tech_caliber",
+    "suggestions",
+    "suggested_roots",
 )
-
 
 
 class AsyncTaskManager:
@@ -68,9 +83,13 @@ class AsyncTaskManager:
         task_id = f"task_{uuid.uuid4().hex[:12]}"
         with self._lock:
             self._tasks[task_id] = {
-                "task_id": task_id, "type": task_type,
-                "status": "running", "completed": 0, "total": 0,
-                "result": None, "error": None,
+                "task_id": task_id,
+                "type": task_type,
+                "status": "running",
+                "completed": 0,
+                "total": 0,
+                "result": None,
+                "error": None,
             }
         self._pool.submit(self._execute, task_id, run_fn)
         return task_id
@@ -103,7 +122,6 @@ class AsyncTaskManager:
         with self._lock:
             task = self._tasks.get(task_id)
             return dict(task) if task is not None else None
-
 
 
 class AiService:
@@ -160,7 +178,13 @@ class AiService:
                 result = self._suggest_metric_mock(catalog, metric_cn, domain, desc)
             else:
                 merged = self._suggest_metric_live(
-                    catalog, metric_cn, domain, desc, formula, unit, frequency,
+                    catalog,
+                    metric_cn,
+                    domain,
+                    desc,
+                    formula,
+                    unit,
+                    frequency,
                     on_progress=on_progress,
                 )
                 result = merged
@@ -175,7 +199,6 @@ class AiService:
     def get_task(self, task_id: str) -> dict | None:
         """查询异步任务状态：{status, completed, total, result?, error?}。"""
         return self.tasks.get(task_id)
-
 
     def _suggest_metric_mock(self, catalog, metric_cn: str, domain: str, desc: str) -> dict:
         """mock 模式：同名指标复用 / 词根组合提示。"""
@@ -212,7 +235,14 @@ class AiService:
         }
 
     def _suggest_metric_live(
-        self, catalog, metric_cn: str, domain: str, desc: str, formula: str, unit: str, frequency: str,
+        self,
+        catalog,
+        metric_cn: str,
+        domain: str,
+        desc: str,
+        formula: str,
+        unit: str,
+        frequency: str,
         on_progress: Callable[[int, int], None] | None = None,
     ) -> dict:
         """live 模式：LLM 生成指标定义，多模型取首个非空字段（合并）。
@@ -234,9 +264,7 @@ class AiService:
             context_lines.append(f"统计频率：{frequency}")
         context_block = "\n".join(context_lines)
         prompt = _build_metric_prompt(metric_cn, domain, root_text, context_block)
-        raws = run_models_parallel_prompt(
-            clients, prompt, cache_base_dir=self.base, on_progress=on_progress
-        )
+        raws = run_models_parallel_prompt(clients, prompt, cache_base_dir=self.base, on_progress=on_progress)
 
         merged: dict = {}
         for _mname, raw in raws:
@@ -294,9 +322,7 @@ class AiService:
         context = str((body or {}).get("context") or "").strip()
         catalog = load_catalog(self.base)
 
-        hit = find_root_for_term(catalog.roots, root_cn, domain=domain) or find_root_for_term(
-            catalog.roots, root_cn
-        )
+        hit = find_root_for_term(catalog.roots, root_cn, domain=domain) or find_root_for_term(catalog.roots, root_cn)
         if hit is not None:
             return {
                 "root_cn": root_cn,

@@ -162,7 +162,7 @@ def next_metric_id(existing_ids: list[str], domain: str) -> str:
     max_seq = 0
     for mid in existing_ids:
         if mid.startswith(prefix):
-            tail = mid[len(prefix):]
+            tail = mid[len(prefix) :]
             if tail.isdigit():
                 max_seq = max(max_seq, int(tail))
     return f"{prefix}{max_seq + 1:03d}"

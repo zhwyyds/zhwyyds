@@ -96,8 +96,7 @@ def register(app, base: Path, metric_svc: MetricService, ai_svc: AiService) -> N
         return {
             "dry_run": dry_run,
             "generated": [
-                {"metric_id": m.metric_id, "metric_cn": m.metric_cn, "metric_en": m.metric_en}
-                for m in result.generated
+                {"metric_id": m.metric_id, "metric_cn": m.metric_cn, "metric_en": m.metric_en} for m in result.generated
             ],
             "existing": result.existing,
             "invalid_atomics": result.invalid_atomics,

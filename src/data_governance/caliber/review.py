@@ -86,11 +86,7 @@ def backfill_calibers(base_dir: Path, domain: str | None = None, *, dry_run: boo
     from data_governance.caliber.draft import draft_caliber, persist_draft
 
     catalog = load_catalog(base_dir)
-    targets = [
-        m
-        for m in catalog.metrics
-        if m.caliber_status == "" and (not domain or m.domain_code == domain)
-    ]
+    targets = [m for m in catalog.metrics if m.caliber_status == "" and (not domain or m.domain_code == domain)]
     drafted = 0
     failed: list[dict] = []
     for m in targets:

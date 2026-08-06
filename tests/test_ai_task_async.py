@@ -16,7 +16,7 @@ class _SlowClient:
         self.model_name = name
         self.delay = delay
 
-    def complete(self, prompt: str) -> str:  # noqa: ARG001
+    def complete(self, prompt: str) -> str:
         time.sleep(self.delay)
         return (
             '{"metric_en":"monthly_rent_amount",'

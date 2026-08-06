@@ -23,8 +23,7 @@ def test_validate_clean_mini_project(mini_project: Path):
 def test_validate_bad_field_count(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
-        metrics.read_text(encoding="utf-8")
-        + "M_SALE_BAD,测试,test_bad,sale\n",
+        metrics.read_text(encoding="utf-8") + "M_SALE_BAD,测试,test_bad,sale\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -34,8 +33,7 @@ def test_validate_bad_field_count(mini_project: Path):
 def test_validate_missing_required(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
-        metrics.read_text(encoding="utf-8")
-        + "M_SALE_901,,test_901,,,,,,,,,,,\n",
+        metrics.read_text(encoding="utf-8") + "M_SALE_901,,test_901,,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -45,8 +43,7 @@ def test_validate_missing_required(mini_project: Path):
 def test_validate_duplicate_id(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
-        metrics.read_text(encoding="utf-8")
-        + "M_SALE_001,重复指标,dup_metric,sale,,,,,,,,,,\n",
+        metrics.read_text(encoding="utf-8") + "M_SALE_001,重复指标,dup_metric,sale,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -67,8 +64,7 @@ def test_validate_bad_root_reference(mini_project: Path):
 def test_validate_bad_domain_code(mini_project: Path):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
-        metrics.read_text(encoding="utf-8")
-        + "M_SALE_902,测试,test_dom,nope,,,,,,,,,,\n",
+        metrics.read_text(encoding="utf-8") + "M_SALE_902,测试,test_dom,nope,,,,,,,,,,\n",
         encoding="utf-8",
     )
     issues = validate_project(mini_project)
@@ -92,8 +88,7 @@ def test_cli_validate_clean_exit_0(mini_project: Path, capsys):
 def test_cli_validate_dirty_exit_1(mini_project: Path, capsys):
     metrics = mini_project / "metrics" / "sale_metrics.csv"
     metrics.write_text(
-        metrics.read_text(encoding="utf-8")
-        + "M_SALE_903,测试,test_x,sale,R_NO_SUCH,atomic,,,,,,,,\n",
+        metrics.read_text(encoding="utf-8") + "M_SALE_903,测试,test_x,sale,R_NO_SUCH,atomic,,,,,,,,\n",
         encoding="utf-8",
     )
     code = main(["validate", "--base-dir", str(mini_project)])

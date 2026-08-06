@@ -47,8 +47,7 @@ def load_modifiers(base_dir: Path) -> list[ModifierRecord]:
     names = {f.name for f in fields(ModifierRecord)}
     with path.open(newline="", encoding="utf-8") as f:
         return [
-            ModifierRecord(**{k: (v or "").strip() for k, v in row.items() if k in names})
-            for row in csv.DictReader(f)
+            ModifierRecord(**{k: (v or "").strip() for k, v in row.items() if k in names}) for row in csv.DictReader(f)
         ]
 
 

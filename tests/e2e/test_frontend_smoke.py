@@ -46,24 +46,28 @@ async def run(url: str) -> None:
             count = getattr(mock_ai_task, "count", 0)
             mock_ai_task.count = count + 1
             if count == 0:
-                await _route.fulfill(status=200, content_type="application/json",
-                    body='{"status":"running","completed":1,"total":2,"result":null}')
+                await _route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body='{"status":"running","completed":1,"total":2,"result":null}',
+                )
             else:
-                await _route.fulfill(status=200, content_type="application/json",
+                await _route.fulfill(
+                    status=200,
+                    content_type="application/json",
                     body='{"status":"done","completed":2,"total":2,'
-                         '"result":{"metric_en":"monthly_rent_revenue",'
-                         '"caliber_desc":"自然月内生效租赁合同的租金收入","formula_cn":"汇总当月租金",'
-                         '"formula":"SUM(amount)","unit":"元","frequency":"月","value_type":"金额",'
-                         '"dimensions":"租赁项目,客户,区域","scenario":"月度经营分析","owner":"财务部",'
-                         '"reports":"月度租赁收入报表","analysis_methods":"同比,环比","alert_rules":"",'
-                         '"precision":"2位小数","data_sources":"dwd_fact_rent","source_table":"dws_rent_monthly",'
-                         '"tech_caliber":"按月汇总","category_l1":"收入类","category_l2":"租赁收入",'
-                         '"suggestions":[],"suggested_roots":[],"source":"llm_multi","metric_cn":"月度租赁收入"}}')
+                    '"result":{"metric_en":"monthly_rent_revenue",'
+                    '"caliber_desc":"自然月内生效租赁合同的租金收入","formula_cn":"汇总当月租金",'
+                    '"formula":"SUM(amount)","unit":"元","frequency":"月","value_type":"金额",'
+                    '"dimensions":"租赁项目,客户,区域","scenario":"月度经营分析","owner":"财务部",'
+                    '"reports":"月度租赁收入报表","analysis_methods":"同比,环比","alert_rules":"",'
+                    '"precision":"2位小数","data_sources":"dwd_fact_rent","source_table":"dws_rent_monthly",'
+                    '"tech_caliber":"按月汇总","category_l1":"收入类","category_l2":"租赁收入",'
+                    '"suggestions":[],"suggested_roots":[],"source":"llm_multi","metric_cn":"月度租赁收入"}}',
+                )
+
         async def mock_suggest(_route):
-            await _route.fulfill(
-                status=200, content_type="application/json",
-                body='{"task_id":"task_mock_001"}'
-            )
+            await _route.fulfill(status=200, content_type="application/json", body='{"task_id":"task_mock_001"}')
 
         async def mock_metrics(_route):
             row = (
@@ -72,7 +76,8 @@ async def run(url: str) -> None:
                 '"review_status":"pending","version":"1","formula":"SUM(amt)","unit":"元","frequency":"月"},'
             )
             await _route.fulfill(
-                status=200, content_type="application/json",
+                status=200,
+                content_type="application/json",
                 body="[" + row * 15 + "]",
             )
 
