@@ -181,20 +181,10 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
     <div
       className="relative flex h-full flex-col overflow-hidden"
       style={{
-        background: [
-          // 稀有度氛围色调（顶部柔光 + 底部微光，传说橙金/史诗紫等）
-          `radial-gradient(130% 90% at 50% 0%, ${rarity.gem}1f 0%, transparent 55%)`,
-          `radial-gradient(90% 70% at 50% 100%, ${rarity.gem}14 0%, transparent 60%)`,
-          `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`,
-        ].join(", "),
+        // 实心卡面（不透明，纯 SURFACE 渐变，无半透明叠加）
+        background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`,
       }}
     >
-      {/* 斜纹纹理层（极低透明度，无粒子，营造卡面质感） */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "repeating-linear-gradient(135deg, transparent 0 9px, oklch(100% 0 0 / 0.016) 9px 10px)" }}
-      />
       {/* ── 金属雕花边框（内层 inset 装饰线 + 角部雕花）── */}
       <div
         aria-hidden="true"

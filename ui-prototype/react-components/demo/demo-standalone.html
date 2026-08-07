@@ -21980,22 +21980,10 @@ Check your Browserslist config to be sure that your targets are set up correctly
       {
         className: "relative flex h-full flex-col overflow-hidden",
         style: {
-          background: [
-            // 稀有度氛围色调（顶部柔光 + 底部微光，传说橙金/史诗紫等）
-            `radial-gradient(130% 90% at 50% 0%, ${rarity.gem}1f 0%, transparent 55%)`,
-            `radial-gradient(90% 70% at 50% 100%, ${rarity.gem}14 0%, transparent 60%)`,
-            `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`
-          ].join(", ")
+          // 实心卡面（不透明，纯 SURFACE 渐变，无半透明叠加）
+          background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "div",
-            {
-              "aria-hidden": "true",
-              className: "pointer-events-none absolute inset-0",
-              style: { background: "repeating-linear-gradient(135deg, transparent 0 9px, oklch(100% 0 0 / 0.016) 9px 10px)" }
-            }
-          ),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
             "div",
             {
