@@ -21732,66 +21732,121 @@
   // ../MetricCard.jsx
   var import_react = __toESM(require_react());
   var import_jsx_runtime = __toESM(require_jsx_runtime());
-  var DOMAIN_STYLES = {
-    sale: { label: "\u4EA4\u6613", bg: "#0b4f6c" },
-    mall: { label: "\u5546\u573A", bg: "#2d5a27" },
-    base: { label: "\u57FA\u7840", bg: "#3f4a5c" },
-    cont: { label: "\u5408\u540C", bg: "#5c3d2e" },
-    cust: { label: "\u6D88\u8D39\u8005", bg: "#4b3b8c" },
-    fin: { label: "\u8D22\u52A1", bg: "#7d2e2e" },
-    fund: { label: "\u8D44\u91D1", bg: "#0f5e5e" },
-    hr: { label: "\u4EBA\u8D44", bg: "#6d4a2b" },
-    mkt: { label: "\u8425\u9500", bg: "#8a3d6e" },
-    prod: { label: "\u5546\u54C1", bg: "#2e5a7d" },
-    ptnr: { label: "\u5546\u6237", bg: "#5c4a8c" },
-    shop: { label: "\u5E97\u94FA", bg: "#4a5a8c" },
-    traf: { label: "\u6D41\u91CF", bg: "#1f5f6e" },
-    wk: { label: "\u6D41\u7A0B", bg: "#5f5f3d" }
+  var SURFACE = {
+    deep: "oklch(19% 0.022 265)",
+    // 最深层（卡面底部）
+    base: "oklch(23% 0.026 265)",
+    // 卡面主体
+    rise: "oklch(28% 0.03 265)",
+    // 名称栏
+    raise2: "oklch(33% 0.034 265)"
+    // 角标/交互层
   };
-  var DOMAIN_FALLBACK = { label: "\u672A\u77E5\u57DF", bg: "#4b5563" };
-  var STATUS_STYLES = {
-    approved: { label: "\u5DF2\u5BA1\u6838", bg: "#1a7f37" },
-    // 白字 ≈ 4.9:1
-    pending: { label: "\u5F85\u5BA1\u6838", bg: "#8a5a00" },
-    // 白字 ≈ 5.1:1
-    rejected: { label: "\u5DF2\u6253\u56DE", bg: "#a40e26" },
-    // 白字 ≈ 7.0:1
-    draft: { label: "\u8349\u7A3F", bg: "#5c6b7a" }
-    // 白字 ≈ 6.0:1
-  };
-  var OBJECTION_STYLE = {
-    border: "#e5534b",
-    text: "#ffd7d5",
-    // 深色卡面上可读
-    bg: "rgba(165,14,38,0.25)"
+  var TEXT = {
+    title: "oklch(97% 0.012 265)",
+    // ≈12:1
+    body: "oklch(88% 0.016 265)",
+    // ≈8.5:1
+    muted: "oklch(77% 0.02 265)",
+    // ≈6:1
+    faint: "oklch(66% 0.02 265)",
+    // ≈4.6:1
+    onGem: "oklch(16% 0.02 265)"
+    // 稀有度角标上的深色数字
   };
   function rarityOf(score) {
-    if (score >= 90) return { stars: 4, label: "\u4F20\u8BF4", gem: "#f5a623", glow: "0 0 22px rgba(245,166,35,0.55)" };
-    if (score >= 75) return { stars: 3, label: "\u53F2\u8BD7", gem: "#a335ee", glow: "0 0 22px rgba(163,53,238,0.55)" };
-    if (score >= 60) return { stars: 2, label: "\u7A00\u6709", gem: "#0070dd", glow: "0 0 18px rgba(0,112,221,0.5)" };
-    return { stars: 1, label: "\u666E\u901A", gem: "#8a919e", glow: "0 0 12px rgba(138,145,158,0.35)" };
+    if (score >= 90)
+      return {
+        stars: 4,
+        label: "\u4F20\u8BF4",
+        gem: "oklch(72% 0.14 65)",
+        // 橙金
+        gemDeep: "oklch(16% 0.02 265)",
+        // 数字色
+        edge: "oklch(78% 0.12 65)",
+        // 边框高光
+        glow: "0 0 26px oklch(72% 0.14 65 / 0.40)"
+      };
+    if (score >= 75)
+      return {
+        stars: 3,
+        label: "\u53F2\u8BD7",
+        gem: "oklch(60% 0.19 305)",
+        // 紫
+        gemDeep: "oklch(16% 0.02 265)",
+        edge: "oklch(70% 0.15 305)",
+        glow: "0 0 24px oklch(60% 0.19 305 / 0.38)"
+      };
+    if (score >= 60)
+      return {
+        stars: 2,
+        label: "\u7A00\u6709",
+        gem: "oklch(62% 0.16 255)",
+        // 蓝
+        gemDeep: "oklch(16% 0.02 265)",
+        edge: "oklch(72% 0.12 255)",
+        glow: "0 0 22px oklch(62% 0.16 255 / 0.34)"
+      };
+    return {
+      stars: 1,
+      label: "\u666E\u901A",
+      gem: "oklch(74% 0.012 265)",
+      // 冷调银
+      gemDeep: "oklch(16% 0.02 265)",
+      edge: "oklch(82% 0.014 265)",
+      glow: "0 0 16px oklch(74% 0.012 265 / 0.22)"
+    };
   }
+  var DOMAIN_STYLES = {
+    sale: { label: "\u4EA4\u6613", bg: "oklch(40% 0.09 245)" },
+    mall: { label: "\u5546\u573A", bg: "oklch(42% 0.09 150)" },
+    base: { label: "\u57FA\u7840", bg: "oklch(42% 0.02 265)" },
+    cont: { label: "\u5408\u540C", bg: "oklch(38% 0.07 55)" },
+    cust: { label: "\u6D88\u8D39\u8005", bg: "oklch(40% 0.11 300)" },
+    fin: { label: "\u8D22\u52A1", bg: "oklch(38% 0.11 25)" },
+    fund: { label: "\u8D44\u91D1", bg: "oklch(40% 0.08 195)" },
+    hr: { label: "\u4EBA\u8D44", bg: "oklch(40% 0.08 70)" },
+    mkt: { label: "\u8425\u9500", bg: "oklch(40% 0.11 330)" },
+    prod: { label: "\u5546\u54C1", bg: "oklch(40% 0.08 220)" },
+    ptnr: { label: "\u5546\u6237", bg: "oklch(40% 0.1 280)" },
+    shop: { label: "\u5E97\u94FA", bg: "oklch(40% 0.08 260)" },
+    traf: { label: "\u6D41\u91CF", bg: "oklch(40% 0.08 205)" },
+    wk: { label: "\u6D41\u7A0B", bg: "oklch(40% 0.07 95)" }
+  };
+  var DOMAIN_FALLBACK = { label: "\u672A\u77E5\u57DF", bg: "oklch(42% 0.02 265)" };
+  var STATUS_STYLES = {
+    approved: { label: "\u5DF2\u5BA1\u6838", bg: "oklch(50% 0.13 150)" },
+    pending: { label: "\u5F85\u5BA1\u6838", bg: "oklch(52% 0.11 75)" },
+    rejected: { label: "\u5DF2\u6253\u56DE", bg: "oklch(48% 0.19 25)" },
+    draft: { label: "\u8349\u7A3F", bg: "oklch(48% 0.03 265)" }
+  };
+  var OBJECTION_STYLE = {
+    border: "oklch(70% 0.13 25)",
+    text: "oklch(86% 0.06 25)",
+    bg: "oklch(30% 0.09 25 / 0.5)"
+  };
+  var FS = {
+    xs: "10.5px",
+    // 角标/标签
+    sm: "12px",
+    // 辅助
+    base: "13px",
+    // 正文（口径）
+    lg: "16.5px",
+    // 卡名
+    xl: "21px"
+    // 名称栏主字（弹窗）
+  };
   function formatTime(iso) {
     if (!iso) return "\u2014";
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
     const p = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   }
-  var CARD_TEXT = {
-    title: "#ffffff",
-    // 卡名，on #2a3040 ≈ 12.9:1
-    body: "#d3d9e2",
-    // 口径正文，≈ 9.6:1
-    muted: "#b8c0cc",
-    // 英文名/ID，≈ 7.3:1
-    faint: "#8f98a8"
-    // 辅助标签/时间，≈ 4.9:1
-  };
-  var CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%),repeating-linear-gradient(45deg, rgba(255,255,255,0.028) 0 2px, transparent 2px 6px)";
-  var NAME_BAR_BG = "linear-gradient(180deg, #3b4359 0%, #2a3040 100%)";
-  var GEM_BORDER = "#e8eaf0";
-  function Gem({ color, size = 14 }) {
+  var typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
+  var dataTypeLabels = { amt: "\u91D1\u989D", cnt: "\u6570\u91CF", pct: "\u6BD4\u7387", rate: "\u6BD4\u7387", ratio: "\u6BD4\u7387", avg: "\u5747\u503C", idx: "\u6307\u6570" };
+  function Gem({ color, size = 15 }) {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "span",
       {
@@ -21801,10 +21856,10 @@
           width: size,
           height: size,
           transform: "rotate(45deg)",
-          background: color,
-          border: `1.5px solid ${GEM_BORDER}`,
+          background: `linear-gradient(135deg, ${color}, oklch(55% 0.08 265))`,
+          border: "1px solid oklch(93% 0.015 265)",
           borderRadius: 3,
-          boxShadow: `0 0 6px ${color}`
+          boxShadow: `0 0 8px ${color}66`
         }
       }
     );
@@ -21814,185 +21869,201 @@
     const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
     const hasObjection = Boolean(m.objection_status && m.objection_status !== "none" && m.objection_status !== "") || Boolean(m.objection);
     const roots = String(m.root_ids || "").split(/[;,]/).map((s) => s.trim()).filter(Boolean);
-    const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
-    const dataTypeLabels = { amt: "\u91D1\u989D", cnt: "\u6570\u91CF", pct: "\u6BD4\u7387", rate: "\u6BD4\u7387", ratio: "\u6BD4\u7387", avg: "\u5747\u503C", idx: "\u6307\u6570" };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex h-full flex-col overflow-hidden rounded-lg", style: { background: CARD_BG }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
-        {
-          className: "relative flex items-center gap-2 px-3 py-2",
-          style: {
-            background: NAME_BAR_BG,
-            borderBottom: `2px solid ${rarity.gem}`,
-            boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -8px 16px -8px ${rarity.gem}, 0 1px 0 rgba(0,0,0,0.4)`
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem, size: 15 }),
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+      "div",
+      {
+        className: "relative flex h-full flex-col overflow-hidden",
+        style: { background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)` },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+            "div",
+            {
+              className: "relative flex items-center gap-2.5 px-3.5 pb-2.5 pt-3",
+              style: {
+                background: `linear-gradient(180deg, ${SURFACE.raise2}, ${SURFACE.rise})`,
+                borderBottom: `1.5px solid ${rarity.edge}`,
+                boxShadow: `inset 0 1px 0 oklch(95% 0.02 265 / 0.10), inset 0 -10px 18px -12px ${rarity.gem}`
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                  "h3",
+                  {
+                    className: "min-w-0 flex-1 truncate",
+                    style: {
+                      fontSize: FS.lg,
+                      fontWeight: 900,
+                      letterSpacing: "0.015em",
+                      lineHeight: 1.25,
+                      color: TEXT.title,
+                      textShadow: `0 1px 2px oklch(0% 0 0 / 0.55)`
+                    },
+                    children: m.metric_cn || "\u2014"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex shrink-0 items-center gap-1", children: [
+                  hasObjection && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                    "span",
+                    {
+                      className: "rounded-sm border px-1 py-0.5",
+                      style: { fontSize: FS.xs, fontWeight: 700, borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg },
+                      title: m.objection_note || m.objection || "\u5B58\u5728\u5F02\u8BAE",
+                      children: "\u5F02\u8BAE"
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                    "span",
+                    {
+                      className: "rounded-sm px-1.5 py-0.5",
+                      style: { fontSize: FS.xs, fontWeight: 700, backgroundColor: status.bg, color: "oklch(98% 0.01 265)" },
+                      children: status.label
+                    }
+                  )
+                ] })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex flex-1 flex-col px-3.5 pt-3", children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              "h3",
+              "div",
               {
-                className: "min-w-0 flex-1 truncate text-[16px] font-black leading-tight tracking-wide",
-                style: { color: CARD_TEXT.title, textShadow: `0 0 8px ${rarity.gem}, 0 2px 3px rgba(0,0,0,0.8)` },
-                children: m.metric_cn || "\u2014"
+                className: "absolute right-3.5 top-2.5 rounded-[3px] px-1.5 py-0.5",
+                style: { fontSize: FS.xs, fontWeight: 700, letterSpacing: "0.08em", backgroundColor: domain.bg, color: "oklch(98% 0.01 265)" },
+                children: domain.label
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex shrink-0 items-center gap-1", children: [
-              hasObjection && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "span",
-                {
-                  className: "rounded-sm border px-1 py-0.5 text-[9px] font-bold tracking-wide",
-                  style: { borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg },
-                  title: m.objection_note || m.objection || "\u5B58\u5728\u5F02\u8BAE",
-                  children: "\u5F02\u8BAE"
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "span",
-                {
-                  className: "rounded-sm px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
-                  style: { backgroundColor: status.bg, color: "#ffffff" },
-                  children: status.label
-                }
-              )
-            ] })
-          ]
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex flex-1 flex-col px-3 pt-2.5", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "div",
-          {
-            className: "absolute right-3 top-2 flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide",
-            style: { backgroundColor: domain.bg, color: "#ffffff" },
-            children: domain.label
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "pr-16 font-mono text-[10.5px] tracking-wide", style: { color: CARD_TEXT.muted }, children: m.metric_en || "pending_naming" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "font-mono text-[9px] tracking-widest", style: { color: CARD_TEXT.faint }, children: [
-          m.metric_id || "",
-          " \xB7 ",
-          typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50",
-          dataTypeLabels[m.data_type] ? " \xB7 " + dataTypeLabels[m.data_type] : ""
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-2 flex flex-wrap gap-1", children: roots.length > 0 ? roots.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "span",
-          {
-            className: "rounded-sm border px-1 py-px font-mono text-[9px] font-medium",
-            style: { borderColor: "rgba(255,255,255,0.18)", color: CARD_TEXT.muted, backgroundColor: "rgba(255,255,255,0.06)" },
-            title: "\u6784\u6210\u8BE5\u6307\u6807\u7684\u8BCD\u6839\u6784\u4EF6",
-            children: r
-          },
-          r
-        )) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[9px]", style: { color: CARD_TEXT.faint }, children: "\u65E0\u6784\u4EF6\u6620\u5C04" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "p",
-          {
-            className: "mt-2 line-clamp-3 text-[11.5px] leading-relaxed",
-            style: { color: CARD_TEXT.body },
-            title: m.caliber_desc,
-            children: m.caliber_desc || "\u6682\u65E0\u53E3\u5F84\u63CF\u8FF0"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative px-3 pb-2.5 pt-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            className: "absolute bottom-2.5 left-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
-            style: {
-              background: `radial-gradient(circle at 35% 30%, ${rarity.gem}, ${rarity.gem})`,
-              border: "2px solid #f2f4f8",
-              boxShadow: `0 3px 8px rgba(0,0,0,0.55), ${rarity.glow}`
-            },
-            "aria-label": `\u8D28\u91CF\u8BC4\u5206 ${m.score ?? "\u2014"}\uFF0C${rarity.label}`,
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[16px] font-black leading-none", style: { color: "#14181f", textShadow: "0 0 3px rgba(255,255,255,0.45)" }, children: m.score ?? "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-black tracking-wide", style: { color: "#14181f" }, children: rarity.label })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            className: "absolute bottom-2.5 right-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
-            style: {
-              background: "radial-gradient(circle at 35% 30%, #3a4258, #262c3c)",
-              border: "2px solid #f2f4f8",
-              boxShadow: "0 3px 8px rgba(0,0,0,0.55)"
-            },
-            "aria-label": `\u7248\u672C ${m.version || "\u2014"}\uFF0C${typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50"}\u6307\u6807`,
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-mono text-[14px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.6)" }, children: m.version || "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-bold tracking-wide", style: { color: "rgba(255,255,255,0.85)" }, children: typeLabels[m.metric_type] || "\u539F\u5B50" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            className: "mt-1 flex items-center gap-2 rounded-sm px-2 py-1",
-            style: {
-              backgroundColor: "rgba(255,255,255,0.05)",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-              paddingRight: 58
-              // 避开右下"版本"角标（absolute 覆盖区）
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10px] font-semibold", style: { color: rarity.gem === "#f5a623" ? "#f5b24c" : rarity.gem }, children: [
-                "\u2605".repeat(rarity.stars),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "rgba(255,255,255,0.25)" }, children: "\u2605".repeat(4 - rarity.stars) })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "ml-auto text-[9px]", style: { color: CARD_TEXT.faint }, children: [
-                "\u66F4\u65B0 ",
-                formatTime(m.updated_at || m.created_at)
-              ] }),
-              onFlip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  type: "button",
-                  onClick: onFlip,
-                  className: "shrink-0 rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2",
-                  style: { color: "#a8c7ff", "--tw-ring-color": "#58a6ff" },
-                  children: flipped ? "\u8FD4\u56DE\u6B63\u9762" : "\u5B8C\u6574\u53E3\u5F84 \u21BB"
-                }
-              )
-            ]
-          }
-        )
-      ] })
-    ] });
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "pr-14", style: { fontSize: FS.sm, fontWeight: 500, letterSpacing: "0.03em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.muted }, children: m.metric_en || "pending_naming" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "mt-0.5", style: { fontSize: FS.xs, letterSpacing: "0.14em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.faint }, children: [
+              m.metric_id || "",
+              " \xB7 ",
+              typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50",
+              dataTypeLabels[m.data_type] ? " \xB7 " + dataTypeLabels[m.data_type] : ""
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-2.5 flex flex-wrap gap-1", children: roots.length > 0 ? roots.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "span",
+              {
+                className: "rounded-[3px] border px-1 py-px",
+                style: {
+                  fontSize: "9.5px",
+                  fontWeight: 600,
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  borderColor: "oklch(80% 0.02 265 / 0.28)",
+                  color: TEXT.muted,
+                  backgroundColor: "oklch(90% 0.02 265 / 0.06)"
+                },
+                title: "\u6784\u6210\u8BE5\u6307\u6807\u7684\u8BCD\u6839\u6784\u4EF6",
+                children: r
+              },
+              r
+            )) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: FS.xs, color: TEXT.faint }, children: "\u65E0\u6784\u4EF6\u6620\u5C04" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "p",
+              {
+                className: "mt-2.5 line-clamp-3",
+                style: { fontSize: FS.base, lineHeight: 1.62, color: TEXT.body },
+                title: m.caliber_desc,
+                children: m.caliber_desc || "\u6682\u65E0\u53E3\u5F84\u63CF\u8FF0"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative px-3.5 pb-3 pt-1.5", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+              "div",
+              {
+                className: "absolute bottom-3 left-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full",
+                style: {
+                  background: `radial-gradient(circle at 34% 28%, ${rarity.gem}, ${rarity.gem})`,
+                  border: `2px solid oklch(94% 0.015 265)`,
+                  boxShadow: `0 3px 10px oklch(0% 0 0 / 0.5), ${rarity.glow}`
+                },
+                "aria-label": `\u8D28\u91CF\u8BC4\u5206 ${m.score ?? "\u2014"}\uFF0C${rarity.label}`,
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "16px", fontWeight: 900, lineHeight: 1, color: rarity.gemDeep }, children: m.score ?? "\u2014" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5", style: { fontSize: "7.5px", fontWeight: 800, letterSpacing: "0.06em", color: rarity.gemDeep }, children: rarity.label })
+                ]
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+              "div",
+              {
+                className: "absolute bottom-3 right-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full",
+                style: {
+                  background: `radial-gradient(circle at 34% 28%, ${SURFACE.raise2}, ${SURFACE.rise})`,
+                  border: `2px solid oklch(94% 0.015 265)`,
+                  boxShadow: "0 3px 10px oklch(0% 0 0 / 0.5)"
+                },
+                "aria-label": `\u7248\u672C ${m.version || "\u2014"}\uFF0C${typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50"}\u6307\u6807`,
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "14px", fontWeight: 900, lineHeight: 1, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.title }, children: m.version || "\u2014" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5", style: { fontSize: "7.5px", fontWeight: 700, letterSpacing: "0.06em", color: TEXT.faint }, children: typeLabels[m.metric_type] || "\u539F\u5B50" })
+                ]
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+              "div",
+              {
+                className: "flex items-center gap-2 rounded-[4px] px-2 py-1.5",
+                style: { backgroundColor: "oklch(90% 0.02 265 / 0.05)", borderTop: `1px solid oklch(90% 0.02 265 / 0.08)`, paddingRight: 60 },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: FS.xs, fontWeight: 700, color: rarity.edge }, children: [
+                    "\u2605".repeat(rarity.stars),
+                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "oklch(90% 0.02 265 / 0.22)" }, children: "\u2605".repeat(4 - rarity.stars) })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "ml-auto", style: { fontSize: "10px", color: TEXT.faint }, children: [
+                    "\u66F4\u65B0 ",
+                    formatTime(m.updated_at || m.created_at)
+                  ] }),
+                  onFlip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: onFlip,
+                      className: "shrink-0 rounded-[3px] px-1 py-0.5 outline-none focus-visible:ring-2",
+                      style: { fontSize: "10px", fontWeight: 600, color: "oklch(80% 0.09 250)", "--tw-ring-color": "oklch(70% 0.12 250)" },
+                      children: flipped ? "\u8FD4\u56DE\u6B63\u9762" : "\u5B8C\u6574\u53E3\u5F84 \u21BB"
+                    }
+                  )
+                ]
+              }
+            )
+          ] })
+        ]
+      }
+    );
   }
   function FieldRow({ k, v, mono }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 text-[11.5px] leading-relaxed", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { className: "w-20 shrink-0 font-semibold", style: { color: CARD_TEXT.faint }, children: k }),
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2.5", style: { lineHeight: 1.55 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { className: "w-20 shrink-0", style: { fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.04em", color: TEXT.faint }, children: k }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "dd",
         {
-          className: mono ? "font-mono break-all" : "break-words",
-          style: { color: CARD_TEXT.body },
+          className: mono ? "break-all font-mono" : "break-words",
+          style: { fontSize: FS.sm, color: TEXT.body },
           children: v === void 0 || v === null || v === "" ? "\u2014" : v
         }
       )
     ] });
   }
-  function FieldGroup({ title, fields }) {
+  function FieldGroup({ index, title, fields }) {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
         "h5",
         {
-          className: "mb-1.5 border-b pb-1 text-[10.5px] font-bold tracking-widest",
-          style: { borderColor: "rgba(255,255,255,0.14)", color: CARD_TEXT.muted },
-          children: title
+          className: "mb-2 flex items-baseline gap-2 border-b pb-1",
+          style: { borderColor: "oklch(90% 0.02 265 / 0.14)", fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.16em", color: TEXT.muted },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "9px", color: "oklch(70% 0.12 250)" }, children: index }),
+            title
+          ]
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dl", { className: "space-y-1.5", children: fields })
     ] });
   }
   function CardBack({ m, onFlip }) {
-    const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col overflow-hidden rounded-lg p-4", style: { background: CARD_BG }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { className: "text-sm font-bold", style: { color: CARD_TEXT.title }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col overflow-hidden", style: { background: `linear-gradient(168deg, ${SURFACE.rise}, ${SURFACE.base} 45%, ${SURFACE.deep})` }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between px-4 pb-2 pt-3.5", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { style: { fontSize: FS.lg, fontWeight: 900, color: TEXT.title }, children: [
           m.metric_cn,
           " \xB7 \u5B8C\u6574\u4FE1\u606F"
         ] }),
@@ -22001,16 +22072,17 @@
           {
             type: "button",
             onClick: onFlip,
-            className: "rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none focus-visible:ring-2",
-            style: { color: "#a8c7ff" },
+            className: "rounded-[3px] px-1.5 py-0.5 outline-none focus-visible:ring-2",
+            style: { fontSize: "10.5px", fontWeight: 600, color: "oklch(80% 0.09 250)" },
             children: "\u21BB \u8FD4\u56DE\u6B63\u9762"
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-3 space-y-3 overflow-y-auto pr-1", style: { maxHeight: "calc(100% - 32px)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "space-y-3.5 overflow-y-auto px-4 pb-4 pr-2", style: { maxHeight: "calc(100% - 46px)" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           FieldGroup,
           {
+            index: "01",
             title: "\u6807\u8BC6\u4E0E\u5F52\u5C5E",
             fields: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807ID", v: m.metric_id, mono: true }, "id"),
@@ -22018,16 +22090,16 @@
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E3B\u9898\u57DF", v: `${m.domain_code}${m.category_l1 ? " \xB7 " + m.category_l1 : ""}` }, "dom"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7C7B\u578B", v: typeLabels[m.metric_type] || m.metric_type }, "type"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u7C7B\u578B", v: m.data_type }, "dtype"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6784\u4EF6(\u8BCD\u6839)", v: m.root_ids, mono: true }, "roots"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807\u6811\u8282\u70B9", v: m.tree_node_id, mono: true }, "tree"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E8C\u7EA7\u5206\u7C7B", v: m.category_l2 }, "c2"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u503C\u7C7B\u578B", v: m.value_type }, "vt")
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6784\u4EF6", v: m.root_ids, mono: true }, "roots"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6811\u8282\u70B9", v: m.tree_node_id, mono: true }, "tree"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E8C\u7EA7\u5206\u7C7B", v: m.category_l2 }, "c2")
             ]
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           FieldGroup,
           {
+            index: "02",
             title: "\u53E3\u5F84\uFF08\u5B8C\u6574\uFF09",
             fields: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u63CF\u8FF0", v: m.caliber_desc }, "cd"),
@@ -22043,6 +22115,7 @@
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           FieldGroup,
           {
+            index: "03",
             title: "\u516C\u5F0F\u4E0E\u5B9E\u73B0",
             fields: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(\u4E2D\u6587)", v: m.formula_cn }, "fc"),
@@ -22056,6 +22129,7 @@
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           FieldGroup,
           {
+            index: "04",
             title: "\u6570\u503C\u4E0E\u5C5E\u6027",
             fields: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8BA1\u91CF\u5355\u4F4D", v: m.unit }, "u"),
@@ -22072,6 +22146,7 @@
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           FieldGroup,
           {
+            index: "05",
             title: "\u6CBB\u7406\u4E0E\u7248\u672C",
             fields: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5BA1\u6838\u72B6\u6001", v: m.review_status }, "rs"),
@@ -22081,10 +22156,10 @@
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8D1F\u8D23\u4EBA", v: m.owner }, "ow"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8D1F\u8D23\u4EBA", v: m.caliber_owner }, "co"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u72B6\u6001", v: m.caliber_status }, "cst"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84AI\u751F\u6210", v: m.caliber_ai_by }, "ca"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "AI\u751F\u6210", v: m.caliber_ai_by }, "ca"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u4EBA", v: m.caliber_checked_by }, "ccb"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u65F6\u95F4", v: m.caliber_checked_at }, "cca"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u9A73\u56DE\u539F\u56E0", v: m.caliber_reject_reason }, "cr"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u9A73\u56DE", v: m.caliber_reject_reason }, "cr"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C", v: m.version, mono: true }, "ver"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C\u5386\u53F2", v: m.version_history, mono: true }, "vh"),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u539F\u56E0", v: m.offline_reason }, "or"),
@@ -22118,9 +22193,10 @@
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "div",
       {
-        className: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(8,10,14,0.72)] p-4 pt-[7vh]",
+        className: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[7vh]",
         onClick: onClose,
         "aria-label": "\u5173\u95ED\u5F39\u7A97",
+        style: { backgroundColor: "oklch(8% 0.02 265 / 0.72)" },
         children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
           "div",
           {
@@ -22130,19 +22206,16 @@
             "aria-label": `\u6307\u6807 ${metric.metric_cn} \u8BE6\u60C5`,
             tabIndex: -1,
             onClick: (e) => e.stopPropagation(),
-            className: "relative w-full max-w-md rounded-xl outline-none [animation:drop-in_200ms_ease-out] motion-reduce:[animation:none]",
-            style: {
-              boxShadow: `0 24px 64px rgba(0,0,0,0.6), 0 0 0 2px ${rarity.gem}, 0 0 0 3px #ffffff`,
-              background: "#1c212e"
-            },
+            className: "relative w-full max-w-md rounded-2xl outline-none [animation:drop-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:[animation:none]",
+            style: { boxShadow: `0 30px 80px oklch(0% 0 0 / 0.6), 0 0 0 2px ${rarity.edge}, 0 0 0 3px oklch(12% 0.015 265)`, background: SURFACE.base },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
           @keyframes drop-in {
-            from { transform: translateY(-16px) scale(0.96); opacity: 0; }
+            from { transform: translateY(-18px) scale(0.96); opacity: 0; }
             to   { transform: translateY(0) scale(1); opacity: 1; }
           }
           .mc-flip-scene { perspective: 1200px; }
-          .mc-flip-inner { transform-style: preserve-3d; transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1); }
+          .mc-flip-inner { transform-style: preserve-3d; transition: transform 550ms cubic-bezier(0.16, 1, 0.3, 1); }
           .mc-flip-inner.flipped { transform: rotateY(180deg); }
           .mc-flip-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
           .mc-flip-back { transform: rotateY(180deg); }
@@ -22157,13 +22230,13 @@
                   onClick: onClose,
                   "aria-label": "\u5173\u95ED\u8BE6\u60C5",
                   className: "absolute right-3 top-3 z-10 rounded-md px-2 py-1 text-sm font-bold outline-none focus-visible:ring-2",
-                  style: { color: CARD_TEXT.muted },
+                  style: { color: TEXT.muted },
                   children: "\u2715"
                 }
               ),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[360px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
               ] }) })
             ]
           }
