@@ -21875,16 +21875,43 @@
         className: "relative flex h-full flex-col overflow-hidden",
         style: { background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)` },
         children: [
+          [
+            "left-1.5 top-1.5",
+            "right-1.5 top-1.5",
+            "left-1.5 bottom-1.5",
+            "right-1.5 bottom-1.5"
+          ].map((pos) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "span",
+            {
+              "aria-hidden": "true",
+              className: `absolute ${pos} h-[7px] w-[7px] rounded-[1.5px]`,
+              style: {
+                background: `linear-gradient(135deg, ${rarity.edge}, ${rarity.gem})`,
+                boxShadow: `0 0 6px ${rarity.gem}66, inset 0 0 0 1px oklch(95% 0.01 265 / 0.6)`,
+                opacity: 0.85
+              }
+            },
+            pos
+          )),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
             "div",
             {
-              className: "relative flex items-center gap-2.5 px-3.5 pb-2.5 pt-3",
+              className: "relative flex items-center gap-2.5 px-3.5 pb-3 pt-3",
               style: {
                 background: `linear-gradient(180deg, ${SURFACE.raise2}, ${SURFACE.rise})`,
-                borderBottom: `1.5px solid ${rarity.edge}`,
-                boxShadow: `inset 0 1px 0 oklch(95% 0.02 265 / 0.10), inset 0 -10px 18px -12px ${rarity.gem}`
+                boxShadow: `inset 0 1px 0 oklch(95% 0.02 265 / 0.12), inset 0 -14px 20px -14px ${rarity.gem}`
               },
               children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-x-0 bottom-0 h-[3px]",
+                    style: {
+                      background: `linear-gradient(90deg, transparent 0%, ${rarity.gem} 22%, ${rarity.edge} 50%, ${rarity.gem} 78%, transparent 100%)`,
+                      boxShadow: `0 1px 4px ${rarity.gem}88`
+                    }
+                  }
+                ),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem }),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
                   "h3",
@@ -22290,31 +22317,93 @@
           className: [
             "relative cursor-pointer select-none outline-none focus-visible:ring-2",
             "transition-transform duration-300 motion-reduce:transition-none",
+            // hover：抬升 + 微放大（炉石卡包悬停反馈）
+            "hover:scale-[1.05] hover:-translate-y-1.5",
             state === "gone" ? "pointer-events-none opacity-0 scale-0" : ""
           ].join(" "),
           style: {
             width: 208,
-            height: 288,
-            transform: state === "idle" ? "translateY(0)" : void 0
+            height: 288
           },
           children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
             "div",
             {
               className: "absolute inset-0 rounded-xl",
               style: {
-                background: `linear-gradient(160deg, ${colors.from}, ${colors.to})`,
-                boxShadow: "0 18px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 2px 0 rgba(255,255,255,0.22)",
+                background: [
+                  // 弧面高光（顶部鼓起感）
+                  "radial-gradient(130% 55% at 50% -12%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 42%, transparent 60%)",
+                  // 基础渐变（包身主色）
+                  `linear-gradient(160deg, ${colors.from} 0%, ${colors.to} 100%)`,
+                  // 底部收口暗影（包底凹陷）
+                  "linear-gradient(180deg, transparent 62%, rgba(0,0,0,0.38) 100%)"
+                ].join(", "),
+                boxShadow: "0 18px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 2px 0 rgba(255,255,255,0.26)",
                 animation: state === "shaking" ? "pack-shake 0.14s linear infinite" : "pack-float 3.2s ease-in-out infinite"
               },
               children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+                  "div",
+                  {
+                    className: "absolute inset-x-0 top-2 h-5",
+                    style: {
+                      background: "linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.16) 55%, rgba(0,0,0,0.34) 100%)",
+                      boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.10)"
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "absolute inset-x-0 top-1/2 h-px", style: { background: "rgba(255,255,255,0.16)" } }),
+                      [20, 60, 110, 160].map((x) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                        "div",
+                        {
+                          className: "absolute top-0 h-full w-px",
+                          style: { left: `${x}px`, background: "linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.15))" }
+                        },
+                        x
+                      ))
+                    ]
+                  }
+                ),
                 /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                   "div",
                   {
-                    className: "absolute inset-x-0 top-3 h-4",
-                    style: { background: "rgba(0,0,0,0.28)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)" }
+                    className: "absolute inset-y-6 left-1 w-[2px]",
+                    style: { background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.03) 60%)" }
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-y-6 right-1 w-[2px]",
+                    style: { background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.03) 60%)" }
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "absolute inset-0 flex items-center justify-center", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: 112,
+                        height: 112,
+                        transform: "rotate(45deg)",
+                        borderRadius: 10,
+                        border: "1.5px solid rgba(240,230,200,0.45)",
+                        boxShadow: "0 0 20px rgba(0,0,0,0.45), inset 0 0 12px rgba(0,0,0,0.35)"
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: 94,
+                        height: 94,
+                        transform: "rotate(45deg)",
+                        borderRadius: 6,
+                        border: "1px solid rgba(240,230,200,0.65)",
+                        boxShadow: "0 0 12px rgba(0,0,0,0.35)"
+                      }
+                    }
+                  ),
                   /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                     "div",
                     {
@@ -22324,7 +22413,7 @@
                         transform: "rotate(45deg)",
                         background: `radial-gradient(circle at 35% 30%, ${colors.seal}, #7a5c1e)`,
                         border: "3px solid #f0e6c8",
-                        boxShadow: `0 0 30px ${colors.seal}`
+                        boxShadow: `0 0 30px ${colors.seal}, inset 0 0 14px rgba(0,0,0,0.45)`
                       }
                     }
                   ),
@@ -22337,6 +22426,13 @@
                     }
                   )
                 ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-x-3 bottom-1.5 h-2.5 rounded-b-lg",
+                    style: { background: "linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.42))" }
+                  }
+                ),
                 state === "burst" && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                   "div",
                   {

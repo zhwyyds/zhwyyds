@@ -92,31 +92,87 @@ export function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled
         className={[
           "relative cursor-pointer select-none outline-none focus-visible:ring-2",
           "transition-transform duration-300 motion-reduce:transition-none",
+          // hover：抬升 + 微放大（炉石卡包悬停反馈）
+          "hover:scale-[1.05] hover:-translate-y-1.5",
           state === "gone" ? "pointer-events-none opacity-0 scale-0" : "",
         ].join(" ")}
         style={{
           width: 208,
           height: 288,
-          transform: state === "idle" ? "translateY(0)" : undefined,
         }}
       >
-        {/* 包体：蓝紫渐变 + 系带 + 中央封印 */}
+        {/* 包体：弧面渐变 + 顶部高光带 + 底部收口 + 折痕 */}
         <div
           className="absolute inset-0 rounded-xl"
           style={{
-            background: `linear-gradient(160deg, ${colors.from}, ${colors.to})`,
+            background: [
+              // 弧面高光（顶部鼓起感）
+              "radial-gradient(130% 55% at 50% -12%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 42%, transparent 60%)",
+              // 基础渐变（包身主色）
+              `linear-gradient(160deg, ${colors.from} 0%, ${colors.to} 100%)`,
+              // 底部收口暗影（包底凹陷）
+              "linear-gradient(180deg, transparent 62%, rgba(0,0,0,0.38) 100%)",
+            ].join(", "),
             boxShadow:
-              "0 18px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 2px 0 rgba(255,255,255,0.22)",
+              "0 18px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 2px 0 rgba(255,255,255,0.26)",
             animation: state === "shaking" ? "pack-shake 0.14s linear infinite" : "pack-float 3.2s ease-in-out infinite",
           }}
         >
-          {/* 顶部系带 */}
+          {/* 顶部封口带（系带）：渐变 + 中缝 + 褶皱 */}
           <div
-            className="absolute inset-x-0 top-3 h-4"
-            style={{ background: "rgba(0,0,0,0.28)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)" }}
+            className="absolute inset-x-0 top-2 h-5"
+            style={{
+              background: "linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.16) 55%, rgba(0,0,0,0.34) 100%)",
+              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.10)",
+            }}
+          >
+            {/* 系带中缝高光 */}
+            <div className="absolute inset-x-0 top-1/2 h-px" style={{ background: "rgba(255,255,255,0.16)" }} />
+            {/* 褶皱短线 */}
+            {[20, 60, 110, 160].map((x) => (
+              <div
+                key={x}
+                className="absolute top-0 h-full w-px"
+                style={{ left: `${x}px`, background: "linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.15))" }}
+              />
+            ))}
+          </div>
+
+          {/* 包脊装饰线（左右两侧竖线，包体鼓起的脊） */}
+          <div
+            className="absolute inset-y-6 left-1 w-[2px]"
+            style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.03) 60%)" }}
           />
-          {/* 中央封印（菱形） */}
+          <div
+            className="absolute inset-y-6 right-1 w-[2px]"
+            style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.03) 60%)" }}
+          />
+
+          {/* 中央封印：外装饰环 + 菱形 + DG */}
           <div className="absolute inset-0 flex items-center justify-center">
+            {/* 外圈装饰环（45° 大方框，封印外环） */}
+            <div
+              style={{
+                width: 112,
+                height: 112,
+                transform: "rotate(45deg)",
+                borderRadius: 10,
+                border: "1.5px solid rgba(240,230,200,0.45)",
+                boxShadow: "0 0 20px rgba(0,0,0,0.45), inset 0 0 12px rgba(0,0,0,0.35)",
+              }}
+            />
+            {/* 内圈装饰环 */}
+            <div
+              style={{
+                width: 94,
+                height: 94,
+                transform: "rotate(45deg)",
+                borderRadius: 6,
+                border: "1px solid rgba(240,230,200,0.65)",
+                boxShadow: "0 0 12px rgba(0,0,0,0.35)",
+              }}
+            />
+            {/* 封印主体（菱形） */}
             <div
               style={{
                 width: 78,
@@ -124,7 +180,7 @@ export function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled
                 transform: "rotate(45deg)",
                 background: `radial-gradient(circle at 35% 30%, ${colors.seal}, #7a5c1e)`,
                 border: "3px solid #f0e6c8",
-                boxShadow: `0 0 30px ${colors.seal}`,
+                boxShadow: `0 0 30px ${colors.seal}, inset 0 0 14px rgba(0,0,0,0.45)`,
               }}
             />
             <span
@@ -134,6 +190,13 @@ export function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled
               DG
             </span>
           </div>
+
+          {/* 底部折痕（包底收口阴影） */}
+          <div
+            className="absolute inset-x-3 bottom-1.5 h-2.5 rounded-b-lg"
+            style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.42))" }}
+          />
+
           {/* 爆开光效 */}
           {state === "burst" && (
             <div

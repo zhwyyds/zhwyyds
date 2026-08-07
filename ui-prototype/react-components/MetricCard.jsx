@@ -169,15 +169,40 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
       className="relative flex h-full flex-col overflow-hidden"
       style={{ background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)` }}
     >
-      {/* ── 顶部名称栏（铸造顶栏）── */}
+      {/* ── 四角装饰（稀有度色小角标，炉石卡角细节）── */}
+      {[
+        "left-1.5 top-1.5",
+        "right-1.5 top-1.5",
+        "left-1.5 bottom-1.5",
+        "right-1.5 bottom-1.5",
+      ].map((pos) => (
+        <span
+          key={pos}
+          aria-hidden="true"
+          className={`absolute ${pos} h-[7px] w-[7px] rounded-[1.5px]`}
+          style={{
+            background: `linear-gradient(135deg, ${rarity.edge}, ${rarity.gem})`,
+            boxShadow: `0 0 6px ${rarity.gem}66, inset 0 0 0 1px oklch(95% 0.01 265 / 0.6)`,
+            opacity: 0.85,
+          }}
+        />
+      ))}
+      {/* ── 顶部名称栏（铸造顶栏 + 稀有度渐变底条）── */}
       <div
-        className="relative flex items-center gap-2.5 px-3.5 pb-2.5 pt-3"
+        className="relative flex items-center gap-2.5 px-3.5 pb-3 pt-3"
         style={{
           background: `linear-gradient(180deg, ${SURFACE.raise2}, ${SURFACE.rise})`,
-          borderBottom: `1.5px solid ${rarity.edge}`,
-          boxShadow: `inset 0 1px 0 oklch(95% 0.02 265 / 0.10), inset 0 -10px 18px -12px ${rarity.gem}`,
+          boxShadow: `inset 0 1px 0 oklch(95% 0.02 265 / 0.12), inset 0 -14px 20px -14px ${rarity.gem}`,
         }}
       >
+        {/* 稀有度渐变底条（名称栏下缘，炉石顶栏装饰） */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[3px]"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${rarity.gem} 22%, ${rarity.edge} 50%, ${rarity.gem} 78%, transparent 100%)`,
+            boxShadow: `0 1px 4px ${rarity.gem}88`,
+          }}
+        />
         <Gem color={rarity.gem} />
         <h3
           className="min-w-0 flex-1 truncate"
@@ -466,13 +491,14 @@ export function CardBack({ m, onFlip }) {
  * 主组件
  * ------------------------------------------------------------------------- */
 
-/** 铸造边框系统：内高光 + 稀有度主框 + 外缘暗影 */
+/** 铸造边框系统（炉石多层嵌套框）：暗线 → 稀有度主框 → 白高光 → 稀有度内圈 → 外缘暗影 */
 function frameShadow(rarity, hovered) {
   const layers = [
-    "inset 0 0 0 1px oklch(95% 0.02 265 / 0.08)",       // 内高光细线
-    `0 0 0 1px oklch(12% 0.015 265)`,                    // 外缘暗线（托底）
-    `0 0 0 2px ${hovered ? rarity.edge : "oklch(30% 0.03 265)"}`, // 稀有度主框
-    hovered ? `0 14px 34px oklch(0% 0 0 / 0.55), ${rarity.glow}` : "0 5px 14px oklch(0% 0 0 / 0.45)",
+    `0 0 0 1px oklch(12% 0.015 265)`,                   // 最外暗线（托底）
+    `0 0 0 2px ${hovered ? rarity.gem : rarity.edge}`,   // 稀有度主框（hover 亮起）
+    `0 0 0 3px oklch(96% 0.01 265 / 0.9)`,               // 白高光细线（铸造感）
+    `0 0 0 4px ${hovered ? rarity.gem : "oklch(40% 0.02 265)"}`, // 稀有度内圈
+    hovered ? `0 16px 38px oklch(0% 0 0 / 0.55), ${rarity.glow}` : "0 6px 16px oklch(0% 0 0 / 0.45)",
   ];
   return layers.join(", ");
 }
@@ -492,12 +518,13 @@ export function MetricCard({ metric, onOpen }) {
         "group relative w-full cursor-pointer rounded-[12px] text-left outline-none",
         "focus-visible:ring-2 focus-visible:ring-offset-2",
         // ease-out-expo 缓动，状态变化动画
-        "transition-[transform,box-shadow] duration-300",
+        "transition-[transform,box-shadow,filter] duration-300",
         "motion-reduce:transition-none motion-reduce:hover:transform-none",
       ].join(" ")}
       style={{
         boxShadow: frameShadow(rarity, hovered),
         transform: hovered ? "translateY(-6px) scale(1.015)" : "translateY(0)",
+        filter: hovered ? "brightness(1.08)" : "brightness(1)",
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
