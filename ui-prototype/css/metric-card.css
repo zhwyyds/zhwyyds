@@ -415,9 +415,9 @@
 /* ============ 卡包区域 ============ */
 #importTaskCards .pack-zone {
 
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
+    position: relative;
+    width: 100%;
+    margin: 10px auto 0;
     z-index: 10;
     pointer-events: none;
   
@@ -432,7 +432,7 @@
     left: 50%;
     bottom: -34px;
     transform: translateX(-50%);
-    width: 468px;
+    width: 540px;
     height: 74px;
     border-radius: 26px 26px 18px 18px;
     background: linear-gradient(180deg, oklch(30% 0.05 275), oklch(20% 0.04 275));
@@ -456,8 +456,9 @@
 #importTaskCards .pack {
 
     position: relative;
-    width: 600px;               /* 加宽容纳扇形展开 */
-    height: 700px;
+    width: var(--fan-w, 600px);  /* 扇形展开宽度（JS 计算），居中显示 */
+    min-height: 720px;
+    margin: 0 auto;
     z-index: 1;
   
 }
@@ -466,7 +467,7 @@
 
     position: absolute;
     left: 0; top: 0;
-    width: 384px;
+    width: 440px;
     border-radius: 16px;
     padding: 12px;
     background: var(--frame-bg);
@@ -701,8 +702,8 @@
 /* ============ 卡面 ============ */
 #importTaskCards .card {
 
-    width: 360px;
-    height: 540px;
+    width: 416px;
+    height: 600px;
     position: relative;
     background:
       radial-gradient(120% 90% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 60%),
@@ -1495,6 +1496,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 6px 2px 2px;
+  max-height: calc(100vh - 170px);  /* 全字段表单超高时可滚动 */
+  overflow-y: auto;
 }
 #importTaskCards .edit-form .ef-head {
   display: flex;
@@ -1515,6 +1518,14 @@
   font-family: var(--font-mono);
   font-size: 9px; letter-spacing: 0.14em;
   color: var(--text-faint);
+}
+#importTaskCards .edit-form .ef-group {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in oklch, var(--accent) 30%, transparent);
+  font-size: 9px; font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--accent);
 }
 #importTaskCards .edit-form .ef-row {
   display: flex;
