@@ -205,7 +205,7 @@ export function HandFan({ cards, onSelect }) {
             role="listitem"
             className="card-slot shrink-0"
             style={{
-              marginLeft: i === 0 ? 0 : spread ? -64 : -192,
+              marginLeft: i === 0 ? 0 : spread ? -20 : -80,
               zIndex: i,
               transition: "margin 0.32s cubic-bezier(0.22,1,0.36,1)",
             }}
