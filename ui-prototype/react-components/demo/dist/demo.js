@@ -22484,7 +22484,7 @@
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-3", children: cards.map((c, i) => {
               const cardR = rarityOf(c.score);
-              const overlap = n > 8 ? 64 : n > 5 ? 96 : 120;
+              const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
               return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                 "div",
                 {

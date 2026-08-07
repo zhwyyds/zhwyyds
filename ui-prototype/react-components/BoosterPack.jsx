@@ -363,7 +363,8 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-3">
             {cards.map((c, i) => {
               const cardR = rarityOf(c.score);
-              const overlap = n > 8 ? 64 : n > 5 ? 96 : 120; // 每张露出的宽度
+              // overlap 策略：露得足够宽才看得清卡名/构件/口径/评分
+              const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
               return (
                 <div
                   key={c.metric_id || c.metric_cn}
