@@ -142,9 +142,14 @@ const dataTypeLabels = { amt: "金额", cnt: "数量", pct: "比率", rate: "比
  * 子组件
  * ------------------------------------------------------------------------- */
 
+/** 将稀有度 glow（box-shadow 格式）转为 drop-shadow filter 片段 */
+function glowToDrop(rarity) {
+  // rarity.glow 形如 "0 0 26px oklch(72% 0.14 65 / 0.40)" → drop-shadow(0 0 26px oklch(72% 0.14 65 / 0.40))
+  return "drop-shadow(" + rarity.glow + ")";
+}
+
 /** 稀有度宝石（菱形 ◆） */
-export function Gem({ color, size = 15 }) {
-  return (
+export function Gem({ color, size = 15 }) {  return (
     <span
       aria-hidden="true"
       className="inline-block shrink-0"
@@ -175,9 +180,39 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
   return (
     <div
       className="relative flex h-full flex-col overflow-hidden"
-      style={{ background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)` }}
+      style={{
+        background: [
+          // 稀有度氛围色调（顶部柔光 + 底部微光，传说橙金/史诗紫等）
+          `radial-gradient(130% 90% at 50% 0%, ${rarity.gem}1f 0%, transparent 55%)`,
+          `radial-gradient(90% 70% at 50% 100%, ${rarity.gem}14 0%, transparent 60%)`,
+          `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`,
+        ].join(", "),
+      }}
     >
-      {/* ── 四角装饰（稀有度色小角标，炉石卡角细节）── */}
+      {/* 斜纹纹理层（极低透明度，无粒子，营造卡面质感） */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "repeating-linear-gradient(135deg, transparent 0 9px, oklch(100% 0 0 / 0.016) 9px 10px)" }}
+      />
+      {/* ── 金属雕花边框（内层 inset 装饰线 + 角部雕花）── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          boxShadow: `inset 0 0 0 1px ${rarity.edge}66, inset 0 0 0 2px oklch(95% 0.01 265 / 0.06)`,
+          background: [
+            // 上边缘稀有度饰带
+            `linear-gradient(90deg, transparent 6%, ${rarity.gem}55 22%, ${rarity.edge}88 50%, ${rarity.gem}55 78%, transparent 94%)`,
+            // 下边缘稀有度饰带
+            `linear-gradient(180deg, transparent 97%, ${rarity.gem}33 100%)`,
+          ].join(", "),
+          backgroundSize: "100% 3px, 100% 3px",
+          backgroundPosition: "0 0, 0 calc(100% - 3px)",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      {/* ── 四角铆钉（稀有度色，金属卡角细节）── */}
       {[
         "left-1.5 top-1.5",
         "right-1.5 top-1.5",
@@ -187,11 +222,10 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
         <span
           key={pos}
           aria-hidden="true"
-          className={`absolute ${pos} h-[7px] w-[7px] rounded-[1.5px]`}
+          className={`absolute ${pos} h-[9px] w-[9px] rounded-full`}
           style={{
-            background: `linear-gradient(135deg, ${rarity.edge}, ${rarity.gem})`,
-            boxShadow: `0 0 6px ${rarity.gem}66, inset 0 0 0 1px oklch(95% 0.01 265 / 0.6)`,
-            opacity: 0.85,
+            background: `radial-gradient(circle at 35% 30%, ${rarity.edge}, ${rarity.gem})`,
+            boxShadow: `0 0 6px ${rarity.gem}88, inset 0 0 0 1px oklch(95% 0.01 265 / 0.7)`,
           }}
         />
       ))}
@@ -220,7 +254,7 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
             letterSpacing: "0.015em",
             lineHeight: 1.25,
             color: TEXT.title,
-            textShadow: `0 1px 2px oklch(0% 0 0 / 0.55)`,
+            textShadow: `0 1px 2px oklch(0% 0 0 / 0.55), 0 0 14px ${rarity.gem}66`,
           }}
         >
           {m.metric_cn || "—"}
@@ -321,19 +355,19 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
         </p>
       </div>
 
-      {/* ── 底部：攻/血式角标 + 信息条 ── */}
+      {/* ── 底部：攻/血式大数字角标 + 信息条 ── */}
       <div className="relative px-3.5 pb-3 pt-1.5">
-        {/* 左下：质量评分（稀有度角标 · 亮底深字） */}
+        {/* 左下：质量评分（炉石式大数字角标 · 稀有度宝石底） */}
         <div
-          className="absolute bottom-3 left-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full"
+          className="absolute bottom-3 left-3.5 flex h-[52px] w-[52px] flex-col items-center justify-center"
           style={{
-            background: `radial-gradient(circle at 34% 28%, ${rarity.gem}, ${rarity.gem})`,
-            border: `2px solid oklch(94% 0.015 265)`,
-            boxShadow: `0 3px 10px oklch(0% 0 0 / 0.5), ${rarity.glow}`,
+            background: `radial-gradient(circle at 34% 28%, color-mix(in oklch, ${rarity.gem} 85%, white 15%), ${rarity.gem})`,
+            clipPath: "polygon(50% 0%, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%)",
+            filter: `drop-shadow(0 2px 5px oklch(0% 0 0 / 0.45)) ${glowToDrop(rarity)}`,
           }}
           aria-label={`质量评分 ${m.score ?? "—"}，${rarity.label}`}
         >
-          <span style={{ fontSize: "16px", fontWeight: 900, lineHeight: 1, color: rarity.gemDeep }}>
+          <span style={{ fontSize: "19px", fontWeight: 900, lineHeight: 1, color: rarity.gemDeep, textShadow: "0 1px 0 oklch(100% 0 0 / 0.35)" }}>
             {m.score ?? "—"}
           </span>
           <span className="mt-0.5" style={{ fontSize: "7.5px", fontWeight: 800, letterSpacing: "0.06em", color: rarity.gemDeep }}>
@@ -341,17 +375,17 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
           </span>
         </div>
 
-        {/* 右下：版本号 */}
+        {/* 右下：版本号（六边形宝石底 · 大数字） */}
         <div
-          className="absolute bottom-3 right-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full"
+          className="absolute bottom-3 right-3.5 flex h-[52px] w-[52px] flex-col items-center justify-center"
           style={{
             background: `radial-gradient(circle at 34% 28%, ${SURFACE.raise2}, ${SURFACE.rise})`,
-            border: `2px solid oklch(94% 0.015 265)`,
-            boxShadow: "0 3px 10px oklch(0% 0 0 / 0.5)",
+            clipPath: "polygon(50% 0%, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%)",
+            filter: "drop-shadow(0 2px 5px oklch(0% 0 0 / 0.45))",
           }}
           aria-label={`版本 ${m.version || "—"}，${typeLabels[m.metric_type] || m.metric_type || "原子"}指标`}
         >
-          <span style={{ fontSize: "14px", fontWeight: 900, lineHeight: 1, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.title }}>
+          <span style={{ fontSize: "17px", fontWeight: 900, lineHeight: 1, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.title, textShadow: "0 1px 0 oklch(100% 0 0 / 0.2)" }}>
             {m.version || "—"}
           </span>
           <span className="mt-0.5" style={{ fontSize: "7.5px", fontWeight: 700, letterSpacing: "0.06em", color: TEXT.faint }}>
@@ -407,112 +441,146 @@ function FieldRow({ k, v, mono }) {
   );
 }
 
-function FieldGroup({ index, title, fields }) {
+function FieldGroup({ index, title, icon, fields, open, onToggle }) {
   return (
-    <section>
-      <h5
-        className="mb-2 flex items-baseline gap-2 border-b pb-1"
-        style={{ borderColor: "oklch(90% 0.02 265 / 0.14)", fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.16em", color: TEXT.muted }}
+    <section
+      className="overflow-hidden rounded-[6px]"
+      style={{ border: "1px solid oklch(90% 0.02 265 / 0.12)", background: "oklch(90% 0.02 265 / 0.03)" }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left outline-none focus-visible:ring-2"
       >
-        <span style={{ fontSize: "9px", color: "oklch(70% 0.12 250)" }}>{index}</span>
-        {title}
-      </h5>
-      <dl className="space-y-1.5">{fields}</dl>
+        <span
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px]"
+          style={{ background: "oklch(90% 0.02 265 / 0.1)", color: "oklch(70% 0.12 250)", fontSize: "9px" }}
+        >
+          {icon}
+        </span>
+        <span style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.1em", color: TEXT.muted }}>{title}</span>
+        <span className="ml-auto" style={{ fontSize: "9px", color: TEXT.faint, transform: open ? "rotate(90deg)" : "none", transition: "transform 0.2s" }}>
+          ▶
+        </span>
+      </button>
+      {open && (
+        <div className="border-t px-2.5 py-2" style={{ borderColor: "oklch(90% 0.02 265 / 0.1)" }}>
+          <dl className="space-y-1.5">{fields}</dl>
+        </div>
+      )}
     </section>
   );
 }
 
 export function CardBack({ m, onFlip }) {
+  const [open, setOpen] = useState(null); // 展开的分区（null=全收起，'01'=第一个）
+  const groups = [
+    {
+      key: "01", title: "标识与归属", icon: "ID",
+      fields: [
+        <FieldRow key="id" k="指标ID" v={m.metric_id} mono />,
+        <FieldRow key="en" k="英文名" v={m.metric_en} mono />,
+        <FieldRow key="dom" k="主题域" v={`${m.domain_code}${m.category_l1 ? " · " + m.category_l1 : ""}`} />,
+        <FieldRow key="type" k="类型" v={typeLabels[m.metric_type] || m.metric_type} />,
+        <FieldRow key="dtype" k="数据类型" v={m.data_type} />,
+        <FieldRow key="roots" k="构件" v={m.root_ids} mono />,
+        <FieldRow key="tree" k="树节点" v={m.tree_node_id} mono />,
+        <FieldRow key="c2" k="二级分类" v={m.category_l2} />,
+      ],
+    },
+    {
+      key: "02", title: "口径（完整）", icon: "口",
+      fields: [
+        <FieldRow key="cd" k="口径描述" v={m.caliber_desc} />,
+        <FieldRow key="cb" k="业务口径" v={m.caliber_business} />,
+        <FieldRow key="cf" k="口径公式" v={m.caliber_formula} />,
+        <FieldRow key="cp" k="口径周期" v={m.caliber_period} />,
+        <FieldRow key="cg" k="口径粒度" v={m.caliber_granularity} />,
+        <FieldRow key="cbd" k="口径边界" v={m.caliber_boundary} />,
+        <FieldRow key="cs" k="口径来源" v={m.caliber_source} />,
+      ],
+    },
+    {
+      key: "03", title: "公式与实现", icon: "Σ",
+      fields: [
+        <FieldRow key="fc" k="公式(中文)" v={m.formula_cn} />,
+        <FieldRow key="f" k="公式(SQL)" v={m.formula} mono />,
+        <FieldRow key="tc" k="技术口径" v={m.tech_caliber} mono />,
+        <FieldRow key="st" k="物理表" v={m.source_table} mono />,
+        <FieldRow key="ds" k="数据来源" v={m.data_sources} />,
+      ],
+    },
+    {
+      key: "04", title: "数值与属性", icon: "数",
+      fields: [
+        <FieldRow key="u" k="计量单位" v={m.unit} />,
+        <FieldRow key="fq" k="统计周期" v={m.frequency} />,
+        <FieldRow key="p" k="精度" v={m.precision} />,
+        <FieldRow key="d" k="统计维度" v={m.dimensions} />,
+        <FieldRow key="s" k="适用场景" v={m.scenario} />,
+        <FieldRow key="r" k="关联报表" v={m.reports} />,
+        <FieldRow key="am" k="分析方法" v={m.analysis_methods} />,
+        <FieldRow key="ar" k="预警规则" v={m.alert_rules} />,
+      ],
+    },
+    {
+      key: "05", title: "治理与版本", icon: "管",
+      fields: [
+        <FieldRow key="rs" k="审核状态" v={m.review_status} />,
+        <FieldRow key="sm" k="来源模型" v={m.source_model} />,
+        <FieldRow key="os" k="异议状态" v={m.objection_status} />,
+        <FieldRow key="on" k="异议说明" v={m.objection_note || m.objection} />,
+        <FieldRow key="ow" k="负责人" v={m.owner} />,
+        <FieldRow key="co" k="口径负责人" v={m.caliber_owner} />,
+        <FieldRow key="cst" k="口径状态" v={m.caliber_status} />,
+        <FieldRow key="ca" k="AI生成" v={m.caliber_ai_by} />,
+        <FieldRow key="ccb" k="口径审核人" v={m.caliber_checked_by} />,
+        <FieldRow key="cca" k="口径审核时间" v={m.caliber_checked_at} />,
+        <FieldRow key="cr" k="口径驳回" v={m.caliber_reject_reason} />,
+        <FieldRow key="ver" k="版本" v={m.version} mono />,
+        <FieldRow key="vh" k="版本历史" v={m.version_history} mono />,
+        <FieldRow key="or" k="下线原因" v={m.offline_reason} />,
+        <FieldRow key="onn" k="下线备注" v={m.offline_note} />,
+        <FieldRow key="ct" k="创建时间" v={m.created_at} mono />,
+        <FieldRow key="ut" k="更新时间" v={m.updated_at} mono />,
+      ],
+    },
+  ];
+
   return (
     <div className="flex h-full flex-col overflow-hidden" style={{ background: `linear-gradient(168deg, ${SURFACE.rise}, ${SURFACE.base} 45%, ${SURFACE.deep})` }}>
+      {/* 头部摘要：ID + 名称 + 英文 + 返回 */}
       <div className="flex items-center justify-between px-4 pb-2 pt-3.5">
-        <h4 style={{ fontSize: FS.lg, fontWeight: 900, color: TEXT.title }}>{m.metric_cn} · 完整信息</h4>
+        <div className="min-w-0">
+          <h4 style={{ fontSize: FS.lg, fontWeight: 900, color: TEXT.title }}>{m.metric_cn} · 完整信息</h4>
+          <p className="truncate" style={{ fontSize: "10px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: "0.04em", color: TEXT.faint }}>
+            {m.metric_id || ""}{m.metric_en ? " · " + m.metric_en : ""}
+          </p>
+        </div>
         <button
           type="button"
           onClick={onFlip}
-          className="rounded-[3px] px-1.5 py-0.5 outline-none focus-visible:ring-2"
+          className="shrink-0 rounded-[3px] px-1.5 py-0.5 outline-none focus-visible:ring-2"
           style={{ fontSize: "10.5px", fontWeight: 600, color: "oklch(80% 0.09 250)" }}
         >
           ↻ 返回正面
         </button>
       </div>
 
-      <div className="space-y-3.5 overflow-y-auto px-4 pb-4 pr-2" style={{ maxHeight: "calc(100% - 46px)" }}>
-        <FieldGroup
-          index="01"
-          title="标识与归属"
-          fields={[
-            <FieldRow key="id" k="指标ID" v={m.metric_id} mono />,
-            <FieldRow key="en" k="英文名" v={m.metric_en} mono />,
-            <FieldRow key="dom" k="主题域" v={`${m.domain_code}${m.category_l1 ? " · " + m.category_l1 : ""}`} />,
-            <FieldRow key="type" k="类型" v={typeLabels[m.metric_type] || m.metric_type} />,
-            <FieldRow key="dtype" k="数据类型" v={m.data_type} />,
-            <FieldRow key="roots" k="构件" v={m.root_ids} mono />,
-            <FieldRow key="tree" k="树节点" v={m.tree_node_id} mono />,
-            <FieldRow key="c2" k="二级分类" v={m.category_l2} />,
-          ]}
-        />
-        <FieldGroup
-          index="02"
-          title="口径（完整）"
-          fields={[
-            <FieldRow key="cd" k="口径描述" v={m.caliber_desc} />,
-            <FieldRow key="cb" k="业务口径" v={m.caliber_business} />,
-            <FieldRow key="cf" k="口径公式" v={m.caliber_formula} />,
-            <FieldRow key="cp" k="口径周期" v={m.caliber_period} />,
-            <FieldRow key="cg" k="口径粒度" v={m.caliber_granularity} />,
-            <FieldRow key="cbd" k="口径边界" v={m.caliber_boundary} />,
-            <FieldRow key="cs" k="口径来源" v={m.caliber_source} />,
-          ]}
-        />
-        <FieldGroup
-          index="03"
-          title="公式与实现"
-          fields={[
-            <FieldRow key="fc" k="公式(中文)" v={m.formula_cn} />,
-            <FieldRow key="f" k="公式(SQL)" v={m.formula} mono />,
-            <FieldRow key="tc" k="技术口径" v={m.tech_caliber} mono />,
-            <FieldRow key="st" k="物理表" v={m.source_table} mono />,
-            <FieldRow key="ds" k="数据来源" v={m.data_sources} />,
-          ]}
-        />
-        <FieldGroup
-          index="04"
-          title="数值与属性"
-          fields={[
-            <FieldRow key="u" k="计量单位" v={m.unit} />,
-            <FieldRow key="fq" k="统计周期" v={m.frequency} />,
-            <FieldRow key="p" k="精度" v={m.precision} />,
-            <FieldRow key="d" k="统计维度" v={m.dimensions} />,
-            <FieldRow key="s" k="适用场景" v={m.scenario} />,
-            <FieldRow key="r" k="关联报表" v={m.reports} />,
-            <FieldRow key="am" k="分析方法" v={m.analysis_methods} />,
-            <FieldRow key="ar" k="预警规则" v={m.alert_rules} />,
-          ]}
-        />
-        <FieldGroup
-          index="05"
-          title="治理与版本"
-          fields={[
-            <FieldRow key="rs" k="审核状态" v={m.review_status} />,
-            <FieldRow key="sm" k="来源模型" v={m.source_model} />,
-            <FieldRow key="os" k="异议状态" v={m.objection_status} />,
-            <FieldRow key="on" k="异议说明" v={m.objection_note || m.objection} />,
-            <FieldRow key="ow" k="负责人" v={m.owner} />,
-            <FieldRow key="co" k="口径负责人" v={m.caliber_owner} />,
-            <FieldRow key="cst" k="口径状态" v={m.caliber_status} />,
-            <FieldRow key="ca" k="AI生成" v={m.caliber_ai_by} />,
-            <FieldRow key="ccb" k="口径审核人" v={m.caliber_checked_by} />,
-            <FieldRow key="cca" k="口径审核时间" v={m.caliber_checked_at} />,
-            <FieldRow key="cr" k="口径驳回" v={m.caliber_reject_reason} />,
-            <FieldRow key="ver" k="版本" v={m.version} mono />,
-            <FieldRow key="vh" k="版本历史" v={m.version_history} mono />,
-            <FieldRow key="or" k="下线原因" v={m.offline_reason} />,
-            <FieldRow key="onn" k="下线备注" v={m.offline_note} />,
-            <FieldRow key="ct" k="创建时间" v={m.created_at} mono />,
-            <FieldRow key="ut" k="更新时间" v={m.updated_at} mono />,
-          ]}
-        />
+      {/* 分区折叠面板（参考指标库详情排版，适配卡背） */}
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-2.5 pb-3">
+        {groups.map((g) => (
+          <FieldGroup
+            key={g.key}
+            index={g.key}
+            title={g.title}
+            icon={g.icon}
+            fields={g.fields}
+            open={open === g.key}
+            onToggle={() => setOpen((k) => (k === g.key ? null : g.key))}
+          />
+        ))}
       </div>
     </div>
   );

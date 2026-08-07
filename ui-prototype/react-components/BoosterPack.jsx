@@ -474,13 +474,14 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
+        /* peek：所有卡不动，仅 hover 卡向上平移露出完整名称栏（模拟抽卡看一眼，不抽出） */
         .rarity-pile-open-card:hover {
-          transform: translateY(-10px); /* peek：只上移，不放大不浮现，露出名称栏 */
-          z-index: 99;
+          transform: translateY(-30px);
+          z-index: 2;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-4px); }
+          .rarity-pile-open-card:hover { transform: translateY(-10px); }
         }
       `}</style>
     </div>

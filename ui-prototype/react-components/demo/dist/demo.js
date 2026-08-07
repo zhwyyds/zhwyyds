@@ -21863,6 +21863,9 @@
   }
   var typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
   var dataTypeLabels = { amt: "\u91D1\u989D", cnt: "\u6570\u91CF", pct: "\u6BD4\u7387", rate: "\u6BD4\u7387", ratio: "\u6BD4\u7387", avg: "\u5747\u503C", idx: "\u6307\u6570" };
+  function glowToDrop(rarity) {
+    return "drop-shadow(" + rarity.glow + ")";
+  }
   function Gem({ color, size = 15 }) {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "span",
@@ -21890,8 +21893,42 @@
       "div",
       {
         className: "relative flex h-full flex-col overflow-hidden",
-        style: { background: `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)` },
+        style: {
+          background: [
+            // 稀有度氛围色调（顶部柔光 + 底部微光，传说橙金/史诗紫等）
+            `radial-gradient(130% 90% at 50% 0%, ${rarity.gem}1f 0%, transparent 55%)`,
+            `radial-gradient(90% 70% at 50% 100%, ${rarity.gem}14 0%, transparent 60%)`,
+            `linear-gradient(168deg, ${SURFACE.rise} 0%, ${SURFACE.base} 46%, ${SURFACE.deep} 100%)`
+          ].join(", ")
+        },
         children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "div",
+            {
+              "aria-hidden": "true",
+              className: "pointer-events-none absolute inset-0",
+              style: { background: "repeating-linear-gradient(135deg, transparent 0 9px, oklch(100% 0 0 / 0.016) 9px 10px)" }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "div",
+            {
+              "aria-hidden": "true",
+              className: "pointer-events-none absolute inset-0",
+              style: {
+                boxShadow: `inset 0 0 0 1px ${rarity.edge}66, inset 0 0 0 2px oklch(95% 0.01 265 / 0.06)`,
+                background: [
+                  // 上边缘稀有度饰带
+                  `linear-gradient(90deg, transparent 6%, ${rarity.gem}55 22%, ${rarity.edge}88 50%, ${rarity.gem}55 78%, transparent 94%)`,
+                  // 下边缘稀有度饰带
+                  `linear-gradient(180deg, transparent 97%, ${rarity.gem}33 100%)`
+                ].join(", "),
+                backgroundSize: "100% 3px, 100% 3px",
+                backgroundPosition: "0 0, 0 calc(100% - 3px)",
+                backgroundRepeat: "no-repeat"
+              }
+            }
+          ),
           [
             "left-1.5 top-1.5",
             "right-1.5 top-1.5",
@@ -21901,11 +21938,10 @@
             "span",
             {
               "aria-hidden": "true",
-              className: `absolute ${pos} h-[7px] w-[7px] rounded-[1.5px]`,
+              className: `absolute ${pos} h-[9px] w-[9px] rounded-full`,
               style: {
-                background: `linear-gradient(135deg, ${rarity.edge}, ${rarity.gem})`,
-                boxShadow: `0 0 6px ${rarity.gem}66, inset 0 0 0 1px oklch(95% 0.01 265 / 0.6)`,
-                opacity: 0.85
+                background: `radial-gradient(circle at 35% 30%, ${rarity.edge}, ${rarity.gem})`,
+                boxShadow: `0 0 6px ${rarity.gem}88, inset 0 0 0 1px oklch(95% 0.01 265 / 0.7)`
               }
             },
             pos
@@ -21940,7 +21976,7 @@
                       letterSpacing: "0.015em",
                       lineHeight: 1.25,
                       color: TEXT.title,
-                      textShadow: `0 1px 2px oklch(0% 0 0 / 0.55)`
+                      textShadow: `0 1px 2px oklch(0% 0 0 / 0.55), 0 0 14px ${rarity.gem}66`
                     },
                     children: m.metric_cn || "\u2014"
                   }
@@ -22038,15 +22074,15 @@
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
               "div",
               {
-                className: "absolute bottom-3 left-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full",
+                className: "absolute bottom-3 left-3.5 flex h-[52px] w-[52px] flex-col items-center justify-center",
                 style: {
-                  background: `radial-gradient(circle at 34% 28%, ${rarity.gem}, ${rarity.gem})`,
-                  border: `2px solid oklch(94% 0.015 265)`,
-                  boxShadow: `0 3px 10px oklch(0% 0 0 / 0.5), ${rarity.glow}`
+                  background: `radial-gradient(circle at 34% 28%, color-mix(in oklch, ${rarity.gem} 85%, white 15%), ${rarity.gem})`,
+                  clipPath: "polygon(50% 0%, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%)",
+                  filter: `drop-shadow(0 2px 5px oklch(0% 0 0 / 0.45)) ${glowToDrop(rarity)}`
                 },
                 "aria-label": `\u8D28\u91CF\u8BC4\u5206 ${m.score ?? "\u2014"}\uFF0C${rarity.label}`,
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "16px", fontWeight: 900, lineHeight: 1, color: rarity.gemDeep }, children: m.score ?? "\u2014" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "19px", fontWeight: 900, lineHeight: 1, color: rarity.gemDeep, textShadow: "0 1px 0 oklch(100% 0 0 / 0.35)" }, children: m.score ?? "\u2014" }),
                   /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5", style: { fontSize: "7.5px", fontWeight: 800, letterSpacing: "0.06em", color: rarity.gemDeep }, children: rarity.label })
                 ]
               }
@@ -22054,15 +22090,15 @@
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
               "div",
               {
-                className: "absolute bottom-3 right-3.5 flex h-12 w-12 flex-col items-center justify-center rounded-full",
+                className: "absolute bottom-3 right-3.5 flex h-[52px] w-[52px] flex-col items-center justify-center",
                 style: {
                   background: `radial-gradient(circle at 34% 28%, ${SURFACE.raise2}, ${SURFACE.rise})`,
-                  border: `2px solid oklch(94% 0.015 265)`,
-                  boxShadow: "0 3px 10px oklch(0% 0 0 / 0.5)"
+                  clipPath: "polygon(50% 0%, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%)",
+                  filter: "drop-shadow(0 2px 5px oklch(0% 0 0 / 0.45))"
                 },
                 "aria-label": `\u7248\u672C ${m.version || "\u2014"}\uFF0C${typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50"}\u6307\u6807`,
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "14px", fontWeight: 900, lineHeight: 1, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.title }, children: m.version || "\u2014" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "17px", fontWeight: 900, lineHeight: 1, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.title, textShadow: "0 1px 0 oklch(100% 0 0 / 0.2)" }, children: m.version || "\u2014" }),
                   /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5", style: { fontSize: "7.5px", fontWeight: 700, letterSpacing: "0.06em", color: TEXT.faint }, children: typeLabels[m.metric_type] || "\u539F\u5B50" })
                 ]
               }
@@ -22112,132 +22148,158 @@
       )
     ] });
   }
-  function FieldGroup({ index, title, fields }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "h5",
-        {
-          className: "mb-2 flex items-baseline gap-2 border-b pb-1",
-          style: { borderColor: "oklch(90% 0.02 265 / 0.14)", fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.16em", color: TEXT.muted },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "9px", color: "oklch(70% 0.12 250)" }, children: index }),
-            title
-          ]
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dl", { className: "space-y-1.5", children: fields })
-    ] });
+  function FieldGroup({ index, title, icon, fields, open, onToggle }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+      "section",
+      {
+        className: "overflow-hidden rounded-[6px]",
+        style: { border: "1px solid oklch(90% 0.02 265 / 0.12)", background: "oklch(90% 0.02 265 / 0.03)" },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+            "button",
+            {
+              type: "button",
+              onClick: onToggle,
+              "aria-expanded": open,
+              className: "flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left outline-none focus-visible:ring-2",
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                  "span",
+                  {
+                    className: "flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px]",
+                    style: { background: "oklch(90% 0.02 265 / 0.1)", color: "oklch(70% 0.12 250)", fontSize: "9px" },
+                    children: icon
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.1em", color: TEXT.muted }, children: title }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ml-auto", style: { fontSize: "9px", color: TEXT.faint, transform: open ? "rotate(90deg)" : "none", transition: "transform 0.2s" }, children: "\u25B6" })
+              ]
+            }
+          ),
+          open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "border-t px-2.5 py-2", style: { borderColor: "oklch(90% 0.02 265 / 0.1)" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dl", { className: "space-y-1.5", children: fields }) })
+        ]
+      }
+    );
   }
   function CardBack({ m, onFlip }) {
+    const [open, setOpen] = (0, import_react.useState)(null);
+    const groups = [
+      {
+        key: "01",
+        title: "\u6807\u8BC6\u4E0E\u5F52\u5C5E",
+        icon: "ID",
+        fields: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807ID", v: m.metric_id, mono: true }, "id"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u82F1\u6587\u540D", v: m.metric_en, mono: true }, "en"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E3B\u9898\u57DF", v: `${m.domain_code}${m.category_l1 ? " \xB7 " + m.category_l1 : ""}` }, "dom"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7C7B\u578B", v: typeLabels[m.metric_type] || m.metric_type }, "type"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u7C7B\u578B", v: m.data_type }, "dtype"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6784\u4EF6", v: m.root_ids, mono: true }, "roots"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6811\u8282\u70B9", v: m.tree_node_id, mono: true }, "tree"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E8C\u7EA7\u5206\u7C7B", v: m.category_l2 }, "c2")
+        ]
+      },
+      {
+        key: "02",
+        title: "\u53E3\u5F84\uFF08\u5B8C\u6574\uFF09",
+        icon: "\u53E3",
+        fields: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u63CF\u8FF0", v: m.caliber_desc }, "cd"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E1A\u52A1\u53E3\u5F84", v: m.caliber_business }, "cb"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u516C\u5F0F", v: m.caliber_formula }, "cf"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5468\u671F", v: m.caliber_period }, "cp"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u7C92\u5EA6", v: m.caliber_granularity }, "cg"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8FB9\u754C", v: m.caliber_boundary }, "cbd"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u6765\u6E90", v: m.caliber_source }, "cs")
+        ]
+      },
+      {
+        key: "03",
+        title: "\u516C\u5F0F\u4E0E\u5B9E\u73B0",
+        icon: "\u03A3",
+        fields: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(\u4E2D\u6587)", v: m.formula_cn }, "fc"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(SQL)", v: m.formula, mono: true }, "f"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6280\u672F\u53E3\u5F84", v: m.tech_caliber, mono: true }, "tc"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7269\u7406\u8868", v: m.source_table, mono: true }, "st"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u6765\u6E90", v: m.data_sources }, "ds")
+        ]
+      },
+      {
+        key: "04",
+        title: "\u6570\u503C\u4E0E\u5C5E\u6027",
+        icon: "\u6570",
+        fields: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8BA1\u91CF\u5355\u4F4D", v: m.unit }, "u"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u5468\u671F", v: m.frequency }, "fq"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7CBE\u5EA6", v: m.precision }, "p"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u7EF4\u5EA6", v: m.dimensions }, "d"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9002\u7528\u573A\u666F", v: m.scenario }, "s"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5173\u8054\u62A5\u8868", v: m.reports }, "r"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5206\u6790\u65B9\u6CD5", v: m.analysis_methods }, "am"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9884\u8B66\u89C4\u5219", v: m.alert_rules }, "ar")
+        ]
+      },
+      {
+        key: "05",
+        title: "\u6CBB\u7406\u4E0E\u7248\u672C",
+        icon: "\u7BA1",
+        fields: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5BA1\u6838\u72B6\u6001", v: m.review_status }, "rs"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6765\u6E90\u6A21\u578B", v: m.source_model }, "sm"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u72B6\u6001", v: m.objection_status }, "os"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u8BF4\u660E", v: m.objection_note || m.objection }, "on"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8D1F\u8D23\u4EBA", v: m.owner }, "ow"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8D1F\u8D23\u4EBA", v: m.caliber_owner }, "co"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u72B6\u6001", v: m.caliber_status }, "cst"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "AI\u751F\u6210", v: m.caliber_ai_by }, "ca"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u4EBA", v: m.caliber_checked_by }, "ccb"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u65F6\u95F4", v: m.caliber_checked_at }, "cca"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u9A73\u56DE", v: m.caliber_reject_reason }, "cr"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C", v: m.version, mono: true }, "ver"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C\u5386\u53F2", v: m.version_history, mono: true }, "vh"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u539F\u56E0", v: m.offline_reason }, "or"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u5907\u6CE8", v: m.offline_note }, "onn"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u521B\u5EFA\u65F6\u95F4", v: m.created_at, mono: true }, "ct"),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u66F4\u65B0\u65F6\u95F4", v: m.updated_at, mono: true }, "ut")
+        ]
+      }
+    ];
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col overflow-hidden", style: { background: `linear-gradient(168deg, ${SURFACE.rise}, ${SURFACE.base} 45%, ${SURFACE.deep})` }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between px-4 pb-2 pt-3.5", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { style: { fontSize: FS.lg, fontWeight: 900, color: TEXT.title }, children: [
-          m.metric_cn,
-          " \xB7 \u5B8C\u6574\u4FE1\u606F"
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { style: { fontSize: FS.lg, fontWeight: 900, color: TEXT.title }, children: [
+            m.metric_cn,
+            " \xB7 \u5B8C\u6574\u4FE1\u606F"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "truncate", style: { fontSize: "10px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: "0.04em", color: TEXT.faint }, children: [
+            m.metric_id || "",
+            m.metric_en ? " \xB7 " + m.metric_en : ""
+          ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "button",
           {
             type: "button",
             onClick: onFlip,
-            className: "rounded-[3px] px-1.5 py-0.5 outline-none focus-visible:ring-2",
+            className: "shrink-0 rounded-[3px] px-1.5 py-0.5 outline-none focus-visible:ring-2",
             style: { fontSize: "10.5px", fontWeight: 600, color: "oklch(80% 0.09 250)" },
             children: "\u21BB \u8FD4\u56DE\u6B63\u9762"
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "space-y-3.5 overflow-y-auto px-4 pb-4 pr-2", style: { maxHeight: "calc(100% - 46px)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          FieldGroup,
-          {
-            index: "01",
-            title: "\u6807\u8BC6\u4E0E\u5F52\u5C5E",
-            fields: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807ID", v: m.metric_id, mono: true }, "id"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u82F1\u6587\u540D", v: m.metric_en, mono: true }, "en"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E3B\u9898\u57DF", v: `${m.domain_code}${m.category_l1 ? " \xB7 " + m.category_l1 : ""}` }, "dom"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7C7B\u578B", v: typeLabels[m.metric_type] || m.metric_type }, "type"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u7C7B\u578B", v: m.data_type }, "dtype"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6784\u4EF6", v: m.root_ids, mono: true }, "roots"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6811\u8282\u70B9", v: m.tree_node_id, mono: true }, "tree"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E8C\u7EA7\u5206\u7C7B", v: m.category_l2 }, "c2")
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          FieldGroup,
-          {
-            index: "02",
-            title: "\u53E3\u5F84\uFF08\u5B8C\u6574\uFF09",
-            fields: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u63CF\u8FF0", v: m.caliber_desc }, "cd"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E1A\u52A1\u53E3\u5F84", v: m.caliber_business }, "cb"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u516C\u5F0F", v: m.caliber_formula }, "cf"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5468\u671F", v: m.caliber_period }, "cp"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u7C92\u5EA6", v: m.caliber_granularity }, "cg"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8FB9\u754C", v: m.caliber_boundary }, "cbd"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u6765\u6E90", v: m.caliber_source }, "cs")
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          FieldGroup,
-          {
-            index: "03",
-            title: "\u516C\u5F0F\u4E0E\u5B9E\u73B0",
-            fields: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(\u4E2D\u6587)", v: m.formula_cn }, "fc"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(SQL)", v: m.formula, mono: true }, "f"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6280\u672F\u53E3\u5F84", v: m.tech_caliber, mono: true }, "tc"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7269\u7406\u8868", v: m.source_table, mono: true }, "st"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u6765\u6E90", v: m.data_sources }, "ds")
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          FieldGroup,
-          {
-            index: "04",
-            title: "\u6570\u503C\u4E0E\u5C5E\u6027",
-            fields: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8BA1\u91CF\u5355\u4F4D", v: m.unit }, "u"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u5468\u671F", v: m.frequency }, "fq"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7CBE\u5EA6", v: m.precision }, "p"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u7EF4\u5EA6", v: m.dimensions }, "d"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9002\u7528\u573A\u666F", v: m.scenario }, "s"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5173\u8054\u62A5\u8868", v: m.reports }, "r"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5206\u6790\u65B9\u6CD5", v: m.analysis_methods }, "am"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9884\u8B66\u89C4\u5219", v: m.alert_rules }, "ar")
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          FieldGroup,
-          {
-            index: "05",
-            title: "\u6CBB\u7406\u4E0E\u7248\u672C",
-            fields: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5BA1\u6838\u72B6\u6001", v: m.review_status }, "rs"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6765\u6E90\u6A21\u578B", v: m.source_model }, "sm"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u72B6\u6001", v: m.objection_status }, "os"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u8BF4\u660E", v: m.objection_note || m.objection }, "on"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8D1F\u8D23\u4EBA", v: m.owner }, "ow"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8D1F\u8D23\u4EBA", v: m.caliber_owner }, "co"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u72B6\u6001", v: m.caliber_status }, "cst"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "AI\u751F\u6210", v: m.caliber_ai_by }, "ca"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u4EBA", v: m.caliber_checked_by }, "ccb"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u65F6\u95F4", v: m.caliber_checked_at }, "cca"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u9A73\u56DE", v: m.caliber_reject_reason }, "cr"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C", v: m.version, mono: true }, "ver"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C\u5386\u53F2", v: m.version_history, mono: true }, "vh"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u539F\u56E0", v: m.offline_reason }, "or"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u5907\u6CE8", v: m.offline_note }, "onn"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u521B\u5EFA\u65F6\u95F4", v: m.created_at, mono: true }, "ct"),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u66F4\u65B0\u65F6\u95F4", v: m.updated_at, mono: true }, "ut")
-            ]
-          }
-        )
-      ] })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex flex-1 flex-col gap-1.5 overflow-y-auto px-2.5 pb-3", children: groups.map((g) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        FieldGroup,
+        {
+          index: g.key,
+          title: g.title,
+          icon: g.icon,
+          fields: g.fields,
+          open: open === g.key,
+          onToggle: () => setOpen((k) => k === g.key ? null : g.key)
+        },
+        g.key
+      )) })
     ] });
   }
   function MetricCardModal({ metric, onClose }) {
@@ -22673,13 +22735,14 @@
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
+        /* peek\uFF1A\u6240\u6709\u5361\u4E0D\u52A8\uFF0C\u4EC5 hover \u5361\u5411\u4E0A\u5E73\u79FB\u9732\u51FA\u5B8C\u6574\u540D\u79F0\u680F\uFF08\u6A21\u62DF\u62BD\u5361\u770B\u4E00\u773C\uFF0C\u4E0D\u62BD\u51FA\uFF09 */
         .rarity-pile-open-card:hover {
-          transform: translateY(-10px); /* peek\uFF1A\u53EA\u4E0A\u79FB\uFF0C\u4E0D\u653E\u5927\u4E0D\u6D6E\u73B0\uFF0C\u9732\u51FA\u540D\u79F0\u680F */
-          z-index: 99;
+          transform: translateY(-30px);
+          z-index: 2;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-4px); }
+          .rarity-pile-open-card:hover { transform: translateY(-10px); }
         }
       ` })
     ] });
