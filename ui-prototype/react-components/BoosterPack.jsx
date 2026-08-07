@@ -359,8 +359,8 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px]" style={{ color: "#b8c0cc" }}>
             {tier.label}摞 · {n} 张 · 点击卡查看完整信息，点击空白处收起
           </div>
-          {/* 卡片排开（负 margin 重叠） */}
-          <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-3">
+          {/* 卡片排开（负 margin 重叠）；pt-16 顶部留白，避免 hover 上浮被 overflow 裁掉名称 */}
+          <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-16">
             {cards.map((c, i) => {
               const cardR = rarityOf(c.score);
               // overlap 策略：露得足够宽才看得清卡名/构件/口径/评分
@@ -412,7 +412,7 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           z-index: 1;
         }
         .rarity-pile-open-card:hover {
-          transform: translateY(-40px) scale(1.1);
+          transform: translateY(-32px) scale(1.1);
           z-index: 99;
         }
         @media (prefers-reduced-motion: reduce) {

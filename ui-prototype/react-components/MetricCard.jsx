@@ -551,7 +551,7 @@ export function MetricCardModal({ metric, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[7vh]"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pt-[7vh]"
       onClick={onClose}
       aria-label="关闭弹窗"
       style={{ backgroundColor: "oklch(8% 0.02 265 / 0.72)" }}

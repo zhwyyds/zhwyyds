@@ -22279,7 +22279,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "div",
       {
-        className: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[7vh]",
+        className: "fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pt-[7vh]",
         onClick: onClose,
         "aria-label": "\u5173\u95ED\u5F39\u7A97",
         style: { backgroundColor: "oklch(8% 0.02 265 / 0.72)" },
@@ -22568,7 +22568,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
               n,
               " \u5F20 \xB7 \u70B9\u51FB\u5361\u67E5\u770B\u5B8C\u6574\u4FE1\u606F\uFF0C\u70B9\u51FB\u7A7A\u767D\u5904\u6536\u8D77"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-3", children: cards.map((c, i) => {
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-16", children: cards.map((c, i) => {
               const cardR = rarityOf(c.score);
               const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
               return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
@@ -22623,7 +22623,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
           z-index: 1;
         }
         .rarity-pile-open-card:hover {
-          transform: translateY(-40px) scale(1.1);
+          transform: translateY(-32px) scale(1.1);
           z-index: 99;
         }
         @media (prefers-reduced-motion: reduce) {
