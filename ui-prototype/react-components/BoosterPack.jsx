@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { MetricCardModal, CardFace, Gem, rarityOf } from "./MetricCard.jsx";
+import { MetricCardModal, CardFace, Gem, rarityOf, DOMAIN_STYLES, STATUS_STYLES, formatTime } from "./MetricCard.jsx";
 
 // 炉石实体卡比例 ≈ 1:1.4，放大到 320×448（大气）
 const CARD_W = 320;
@@ -205,7 +205,7 @@ export function HandFan({ cards, onSelect }) {
             role="listitem"
             className="card-slot shrink-0"
             style={{
-              marginLeft: i === 0 ? 0 : spread ? -20 : -80,
+              marginLeft: i === 0 ? 0 : spread ? -24 : -240,
               zIndex: i,
               transition: "margin 0.32s cubic-bezier(0.22,1,0.36,1)",
             }}
@@ -232,16 +232,125 @@ export function HandFan({ cards, onSelect }) {
       })}
 
       <style>{`
+        /* peek：平时叠紧（露 80px），hover 原位弹出放大，内容清晰可读 */
         .card-item:hover {
-          transform: translateY(-36px) scale(1.06) !important;
+          transform: translateY(-46px) scale(1.28) !important;
           z-index: 99;
         }
         .card-slot:hover { z-index: 50; position: relative; }
         @media (prefers-reduced-motion: reduce) {
           .card-item, .card-slot { transition: none; }
-          .card-item:hover { transform: translateY(-12px) !important; }
+          .card-item:hover { transform: translateY(-14px) scale(1.12) !important; }
         }
       `}</style>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * 卡册网格卡（一包 30 张的展示形态）—— 每张完全可见，hover 浮起放大
+ * ------------------------------------------------------------------------- */
+export function CardGridCard({ m, revealed, onSelect }) {
+  const [hovered, setHovered] = useState(false);
+  const r = rarityOf(m.score);
+  const domain = DOMAIN_STYLES[m.domain_code] || { label: "未知域" };
+  const status = STATUS_STYLES[m.review_status] || { label: "待审核", bg: "oklch(52% 0.11 75)" };
+  const hasObjection = Boolean(m.objection_status && m.objection_status !== "none") || Boolean(m.objection);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect && onSelect(m)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      aria-label={`指标 ${m.metric_cn}，稀有度 ${r.label}，评分 ${m.score ?? "—"}`}
+      className="relative w-full cursor-pointer rounded-[10px] p-0 text-left outline-none focus-visible:ring-2"
+      style={{
+        aspectRatio: "320 / 448",
+        boxShadow: hovered
+          ? `0 0 0 1px ${r.edge}, 0 0 0 2px oklch(12% 0.015 265), 0 16px 36px oklch(0% 0 0 / 0.55), ${r.glow}`
+          : `0 0 0 1px ${r.edge}, 0 0 0 2px oklch(12% 0.015 265), 0 5px 14px oklch(0% 0 0 / 0.45)`,
+        transform: hovered ? "translateY(-8px) scale(1.14)" : "translateY(0) scale(1)",
+        transition: "transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s cubic-bezier(0.16,1,0.3,1)",
+      }}
+    >
+      {!revealed ? (
+        // 未揭示：卡背（深色 + 稀有度宝石）
+        <div
+          className="flex h-full w-full items-center justify-center overflow-hidden rounded-[10px]"
+          style={{ background: "radial-gradient(circle at 50% 40%, oklch(28% 0.03 265), oklch(16% 0.02 265) 75%)" }}
+        >
+          <Gem color={r.gem} size={22} />
+        </div>
+      ) : (
+        // 已揭示：精简卡面
+        <div
+          className="flex h-full w-full flex-col overflow-hidden rounded-[10px] p-2.5"
+          style={{
+            background: `linear-gradient(168deg, oklch(28% 0.03 265) 0%, oklch(23% 0.026 265) 46%, oklch(19% 0.022 265) 100%)`,
+            boxShadow: `inset 0 0 0 1px oklch(95% 0.02 265 / 0.08)`,
+          }}
+        >
+          {/* 顶部：宝石 + 名称 + 状态 */}
+          <div className="flex items-center gap-1.5">
+            <Gem color={r.gem} size={12} />
+            <span className="min-w-0 flex-1 truncate" style={{ fontSize: "12.5px", fontWeight: 900, color: "oklch(97% 0.012 265)" }}>
+              {m.metric_cn || "—"}
+            </span>
+            {hasObjection && (
+              <span className="rounded-[3px] border px-0.5 text-[8px] font-bold" style={{ borderColor: "oklch(70% 0.13 25)", color: "oklch(86% 0.06 25)" }}>
+                异议
+              </span>
+            )}
+            <span className="rounded-[3px] px-1 text-[8px] font-bold" style={{ backgroundColor: status.bg, color: "oklch(98% 0.01 265)" }}>
+              {status.label}
+            </span>
+          </div>
+
+          {/* 英文 + 域 */}
+          <p className="mt-1 truncate" style={{ fontSize: "9px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: "0.04em", color: "oklch(77% 0.02 265)" }}>
+            {m.metric_en || "pending_naming"}
+          </p>
+          <p className="text-[8.5px]" style={{ color: "oklch(66% 0.02 265)" }}>
+            {domain.label} · {m.metric_type === "derived" ? "衍生" : m.metric_type === "composite" ? "复合" : "原子"}
+          </p>
+
+          {/* 口径摘要 2 行 */}
+          <p className="mt-1.5 line-clamp-2" style={{ fontSize: "10px", lineHeight: 1.5, color: "oklch(88% 0.016 265)" }}>
+            {m.caliber_desc || "暂无口径"}
+          </p>
+
+          {/* 底部：评分角标 + 更新时间 */}
+          <div className="mt-auto flex items-end justify-between pt-1">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full"
+              style={{ background: r.gem, border: "1.5px solid oklch(94% 0.015 265)", boxShadow: `0 2px 6px oklch(0% 0 0 / 0.5), ${r.glow}` }}
+              aria-label={`评分 ${m.score ?? "—"}，${r.label}`}
+            >
+              <span style={{ fontSize: "11px", fontWeight: 900, color: "oklch(16% 0.02 265)" }}>
+                {m.score ?? "—"}
+              </span>
+            </div>
+            <span style={{ fontSize: "8px", color: "oklch(66% 0.02 265)" }}>
+              {formatTime(m.updated_at || m.created_at)}
+            </span>
+          </div>
+        </div>
+      )}
+    </button>
+  );
+}
+
+/** 卡册网格：30 张紧凑排列，hover 浮起放大，点击弹窗 */
+export function CardGrid({ cards, revealedAll, onSelect }) {
+  if (!cards.length) return null;
+  return (
+    <div role="list" aria-label="指标卡册" className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3">
+      {cards.map((c, i) => (
+        <div key={c.metric_id || c.metric_cn} role="listitem">
+          <CardGridCard m={c} revealed={revealedAll ? true : c.__revealed} onSelect={onSelect} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -251,22 +360,23 @@ export function HandFan({ cards, onSelect }) {
  * ------------------------------------------------------------------------- */
 export function BoosterPackOpener({ pack, cards }) {
   const [phase, setPhase] = useState("fly"); // fly(卡片入场) | reveal(逐张翻面) | done
-  const [deck, setDeck] = useState([]);      // 手牌状态（含 __revealed 标记）
+  const [deck, setDeck] = useState([]);      // 网格状态（含 __revealed 标记）
   const [selected, setSelected] = useState(null);
   const timers = useRef([]);
 
-  // 挂载即开包：按稀有度排序（高的最后揭示，像炉石）→ 卡片入场 → 逐张翻面
+  // 挂载即开包：按稀有度排序（高的最后揭示，像炉石）→ 逐张翻面揭示
+  // 30 张节奏：入场 400ms 后每 110ms 揭示 1 张（约 3.7s 完成）
   useEffect(() => {
     const sorted = [...cards].sort((a, b) => (b.score || 0) - (a.score || 0));
     setDeck(sorted.map((c) => ({ ...c, __revealed: false })));
 
-    const revealAt = 600 + sorted.length * 130;
+    const revealAt = 400 + sorted.length * 60;
     sorted.forEach((_, i) => {
       timers.current.push(
         setTimeout(() => {
           setDeck((prev) => prev.map((c, ci) => (ci === i ? { ...c, __revealed: true } : c)));
           if (i === sorted.length - 1) setPhase("done");
-        }, revealAt + i * 420)
+        }, revealAt + i * 110)
       );
     });
     return () => timers.current.forEach(clearTimeout);
@@ -274,14 +384,14 @@ export function BoosterPackOpener({ pack, cards }) {
 
   return (
     <div className="w-full">
-      <div className="mb-2 text-center text-[12px]" style={{ color: "#8f98a8" }}>
+      <div className="mb-3 text-center text-[12px]" style={{ color: "#8f98a8" }}>
         {phase === "fly"
           ? `开包中 · ${pack.title}…`
           : phase === "reveal"
           ? "揭示中…"
-          : `开包完成 · ${deck.length} 张指标卡（hover 抽出，点击查看完整信息）`}
+          : `开包完成 · ${deck.length} 张指标卡（hover 浮起放大，点击查看完整信息）`}
       </div>
-      <HandFan cards={deck} onSelect={setSelected} />
+      <CardGrid cards={deck} revealedAll={phase === "done"} onSelect={setSelected} />
       <MetricCardModal metric={selected} onClose={() => setSelected(null)} />
     </div>
   );

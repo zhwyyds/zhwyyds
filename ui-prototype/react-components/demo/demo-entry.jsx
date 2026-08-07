@@ -27,26 +27,18 @@ function loadMetrics() {
     .catch(() => ({ list: snapshot, fromApi: false }));
 }
 
-/** 按主题域组装卡包（每包最多 5 张，评分高者视为高稀有度） */
+/** 单卡包：一包 30 张（对应批量导入"每组 30 条"切分），全部指标按稀有度排序 */
 function buildPacks(metrics) {
-  const byDomain = {};
-  metrics.forEach((m) => {
-    (byDomain[m.domain_code] = byDomain[m.domain_code] || []).push(m);
-  });
-  const packs = Object.keys(byDomain)
-    .sort()
-    .map((d) => ({
-      id: d,
-      title: `${DOMAIN_NAMES[d] || d} 卡包`,
-      sub: `${byDomain[d].length} 张指标`,
-      domain: d,
-      filter: (m) => m.domain_code === d,
-      max: 5,
-    }));
-  if (!packs.length) {
-    packs.push({ id: "all", title: "指标卡库", sub: "全部指标", domain: "default", filter: () => true, max: 5 });
-  }
-  return packs;
+  return [
+    {
+      id: "all",
+      title: "指标卡库",
+      sub: "一包 30 张 · 全部指标",
+      domain: "default",
+      filter: () => true,
+      max: 30,
+    },
+  ];
 }
 
 function App() {
@@ -88,7 +80,7 @@ function App() {
         </h1>
         <p style={{ fontSize: 12.5, color: "#8f98a8", margin: "6px 0 0" }}>
           数据源：{source === "api" ? "指标库 API" : "指标库快照"} · {metrics.length} 条指标 ·{" "}
-          开包 → 逐张翻面揭示（评分 = 稀有度）→ 手牌 hover 抽出 → 点击看全部 48 字段
+          一包 30 张（对应批量导入每组切分）· 开包逐张揭示（评分 = 稀有度）→ 卡册网格 → hover 浮起 → 点击看全部 48 字段
         </p>
       </header>
       <BoosterPackDemo metrics={metrics} packs={packs} />

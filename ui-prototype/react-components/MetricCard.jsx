@@ -77,7 +77,7 @@ export function rarityOf(score) {
 }
 
 /** 14 主题域角标（OKLCH 深色 + 白字 ≥4.5:1） */
-const DOMAIN_STYLES = {
+export const DOMAIN_STYLES = {
   sale:  { label: "交易",   bg: "oklch(40% 0.09 245)" },
   mall:  { label: "商场",   bg: "oklch(42% 0.09 150)" },
   base:  { label: "基础",   bg: "oklch(42% 0.02 265)" },
@@ -96,7 +96,7 @@ const DOMAIN_STYLES = {
 const DOMAIN_FALLBACK = { label: "未知域", bg: "oklch(42% 0.02 265)" };
 
 /** 状态徽章（白字 ≥4.5:1） */
-const STATUS_STYLES = {
+export const STATUS_STYLES = {
   approved: { label: "已审核", bg: "oklch(50% 0.13 150)" },
   pending:  { label: "待审核", bg: "oklch(52% 0.11 75)" },
   rejected: { label: "已打回", bg: "oklch(48% 0.19 25)" },
@@ -119,7 +119,7 @@ const FS = {
   xl: "21px",     // 名称栏主字（弹窗）
 };
 
-function formatTime(iso) {
+export function formatTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
