@@ -1,12 +1,16 @@
-"""API 安全中间件 — CORS 收敛 + API Key 认证。"""
+"""API 安全中间件 — CORS 收敛 + API Key 认证 + 请求日志。"""
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+
+logger = logging.getLogger(__name__)
 
 # 不需要认证的路径白名单
 PUBLIC_PATHS = frozenset(
@@ -70,6 +74,10 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
         path = request.url.path
 
+        # CORS 预检（OPTIONS）不应被认证拦截
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # 静态资源和白名单路径跳过
         if path in PUBLIC_PATHS or path.startswith("/ui") or path.startswith("/js") or path.startswith("/css"):
             return await call_next(request)
@@ -90,3 +98,30 @@ def setup_auth(app: FastAPI) -> None:
     """配置 API Key 认证中间件。"""
     api_key = os.environ.get("DATA_GOV_API_KEY") or None
     app.add_middleware(APIKeyMiddleware, api_key=api_key)
+
+
+class RequestLogMiddleware(BaseHTTPMiddleware):
+    """请求访问日志：method / path / status / 耗时（毫秒），响应头附 X-Request-Duration-Ms。"""
+
+    async def dispatch(self, request: Request, call_next):
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception("request failed: %s %s", request.method, request.url.path)
+            raise
+        duration_ms = (time.perf_counter() - start) * 1000
+        logger.info(
+            "api %s %s -> %d (%.1fms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        response.headers["X-Request-Duration-Ms"] = f"{duration_ms:.1f}"
+        return response
+
+
+def setup_request_logging(app: FastAPI) -> None:
+    """配置请求日志中间件（越靠近外层越好，包裹认证与路由）。"""
+    app.add_middleware(RequestLogMiddleware)

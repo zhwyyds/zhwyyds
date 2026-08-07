@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -18,7 +19,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from data_governance.api.middleware import setup_auth, setup_cors
+from data_governance.api.middleware import setup_auth, setup_cors, setup_request_logging
 from data_governance.api.schemas import (
     HealthResponse,
 )
@@ -35,6 +36,22 @@ from data_governance.scoring.store import (
 )
 from data_governance.services import MetricService
 
+# data_governance 应用日志（请求/业务日志可见；级别可用 DATA_GOV_LOG_LEVEL 覆盖）
+_LOGGING_CONFIGURED = False
+
+
+def setup_logging() -> None:
+    """配置 data_governance 命名空间日志输出到 stderr，避免 INFO 级请求日志被默认 WARNING 过滤。"""
+    global _LOGGING_CONFIGURED
+    if _LOGGING_CONFIGURED:
+        return
+    _LOGGING_CONFIGURED = True
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    root = logging.getLogger("data_governance")
+    root.addHandler(handler)
+    root.setLevel(os.environ.get("DATA_GOV_LOG_LEVEL", "INFO").strip().upper())
+
 
 def resolve_base_dir(explicit: Path | None = None) -> Path:
     """解析项目根目录：优先参数 > 环境变量 > 自动探测。"""
@@ -48,6 +65,7 @@ def resolve_base_dir(explicit: Path | None = None) -> Path:
 
 def create_app(base_dir: Path | None = None) -> FastAPI:
     """创建 FastAPI 应用实例。"""
+    setup_logging()
     base = resolve_base_dir(base_dir)
     bootstrap_llm_env(base)
 
@@ -57,9 +75,15 @@ def create_app(base_dir: Path | None = None) -> FastAPI:
         description="数据治理平台 — 词根驱动的指标管理体系",
     )
 
-    # 安全中间件
+    # 安全中间件（日志最外层 → CORS → 认证；Starlette add_middleware 后加者在外层）
     setup_cors(app)
     setup_auth(app)
+    setup_request_logging(app)
+
+    # 统一异常处理（业务错误码 + 500 兜底）
+    from data_governance.api.errors import register_error_handlers
+
+    register_error_handlers(app)
 
     # Service 层
     metric_svc = MetricService(base)

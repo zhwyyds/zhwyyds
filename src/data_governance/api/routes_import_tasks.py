@@ -91,8 +91,13 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
 
     @app.post("/api/import-tasks/{task_id}/process")
     def import_task_process(task_id: str, body: dict | None = None) -> dict:
-        """处理任务：去重比对 → 未通过项标记，新条目 AI 生成（存入 generated）。"""
+        """处理任务：去重比对 → 未通过项标记，新条目 AI 生成（存入 generated）。
+
+        幂等保护：已处于 reviewing/done 且已有生成结果的任务拒绝重复触发（409）。
+        """
         task = _safe_task(task_id)
+        if task.get("status") in ("reviewing", "done") and task.get("generated"):
+            raise HTTPException(409, "任务已处理（去重 + AI 生成已完成），请勿重复触发")
         rows = task.get("generated") or []
         if not rows:
             raise HTTPException(400, "任务无数据行")

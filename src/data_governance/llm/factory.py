@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Protocol
 
 from data_governance.config_loader import ModelConfig
@@ -9,6 +10,9 @@ from data_governance.llm.env import provider_api_key
 from data_governance.llm.openai_client import DEFAULT_QWEN_BASE, DEFAULT_ZHIPU_BASE, OpenAIChatClient
 
 logger = logging.getLogger(__name__)
+
+# LLM 单次请求超时（秒），可用 DATA_GOV_LLM_TIMEOUT 覆盖；默认 60s，避免上游慢响应长时间占用 worker
+LLM_TIMEOUT_S = max(5.0, float(os.environ.get("DATA_GOV_LLM_TIMEOUT", "60")))
 
 
 class PromptLLM(Protocol):
@@ -35,12 +39,13 @@ def build_live_client(cfg: ModelConfig) -> PromptLLM | None:
         return None
     p = cfg.provider.lower()
     if p == "anthropic":
-        return AnthropicMessagesClient(cfg.model_name, api_key=key)
+        return AnthropicMessagesClient(cfg.model_name, api_key=key, timeout_s=LLM_TIMEOUT_S)
     if p in ("openai", "zhipuai", "zhipu", "glm", "qwen", "dashscope", "alibaba", "tongyi") or cfg.api_endpoint:
         return OpenAIChatClient(
             cfg.model_name,
             api_key=key,
             base_url=_openai_base(cfg) or None,
+            timeout_s=LLM_TIMEOUT_S,
         )
     logger.warning("unknown provider %s for model %s", cfg.provider, cfg.model_name)
     return None
