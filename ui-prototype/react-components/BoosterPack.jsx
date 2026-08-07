@@ -428,11 +428,14 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
               const cardR = rarityOf(c.score);
               // overlap 策略：露得足够宽才看得清卡名/构件/口径/评分
               const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
+              // peek 上移量：按张数动态 —— 张数越多（露得越窄）上移越多，保证名称栏完整脱离邻卡
+              // 实测：普通摞(露70px)需 -130px，传说摞(露220px)需 -60px
+              const peekDy = n <= 3 ? -60 : n <= 5 ? -70 : n <= 8 ? -90 : n <= 14 ? -110 : -130;
               return (
                 <div
                   key={c.metric_id || c.metric_cn}
                   className="rarity-pile-open-card relative shrink-0 cursor-pointer"
-                  style={{ width: CARD_W, height: CARD_H, marginLeft: i === 0 ? 0 : -(CARD_W - overlap) }}
+                  style={{ width: CARD_W, height: CARD_H, marginLeft: i === 0 ? 0 : -(CARD_W - overlap), "--peek-dy": peekDy + "px" }}
                 >
                   <button
                     type="button"
@@ -474,13 +477,13 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
-        /* peek：仅 hover 卡向上平移露出名称；邻卡不动、压着关系不变、z 序不变（不盖邻卡） */
+        /* peek：hover 卡上移 var(--peek-dy)（按张数动态，保证名称栏完整脱离邻卡）；邻卡不动、z 序不变 */
         .rarity-pile-open-card:hover {
-          transform: translateY(-30px);
+          transform: translateY(var(--peek-dy, -70px));
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-10px); }
+          .rarity-pile-open-card:hover { transform: translateY(calc(var(--peek-dy, -70px) / 3)); }
         }
       `}</style>
     </div>

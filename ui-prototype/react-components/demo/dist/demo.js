@@ -22672,11 +22672,12 @@
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-16", children: cards.map((c, i) => {
               const cardR = rarityOf(c.score);
               const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
+              const peekDy = n <= 3 ? -60 : n <= 5 ? -70 : n <= 8 ? -90 : n <= 14 ? -110 : -130;
               return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                 "div",
                 {
                   className: "rarity-pile-open-card relative shrink-0 cursor-pointer",
-                  style: { width: CARD_W, height: CARD_H, marginLeft: i === 0 ? 0 : -(CARD_W - overlap) },
+                  style: { width: CARD_W, height: CARD_H, marginLeft: i === 0 ? 0 : -(CARD_W - overlap), "--peek-dy": peekDy + "px" },
                   children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                     "button",
                     {
@@ -22723,13 +22724,13 @@
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
-        /* peek\uFF1A\u4EC5 hover \u5361\u5411\u4E0A\u5E73\u79FB\u9732\u51FA\u540D\u79F0\uFF1B\u90BB\u5361\u4E0D\u52A8\u3001\u538B\u7740\u5173\u7CFB\u4E0D\u53D8\u3001z \u5E8F\u4E0D\u53D8\uFF08\u4E0D\u76D6\u90BB\u5361\uFF09 */
+        /* peek\uFF1Ahover \u5361\u4E0A\u79FB var(--peek-dy)\uFF08\u6309\u5F20\u6570\u52A8\u6001\uFF0C\u4FDD\u8BC1\u540D\u79F0\u680F\u5B8C\u6574\u8131\u79BB\u90BB\u5361\uFF09\uFF1B\u90BB\u5361\u4E0D\u52A8\u3001z \u5E8F\u4E0D\u53D8 */
         .rarity-pile-open-card:hover {
-          transform: translateY(-30px);
+          transform: translateY(var(--peek-dy, -70px));
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-10px); }
+          .rarity-pile-open-card:hover { transform: translateY(calc(var(--peek-dy, -70px) / 3)); }
         }
       ` })
     ] });
