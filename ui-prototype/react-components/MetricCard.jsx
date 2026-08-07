@@ -90,7 +90,15 @@ const CARD_BORDER = "#d0d7de";
 function CardFace({ m, rarity, onFlip, flipped }) {
   const domain = DOMAIN_STYLES[m.domain_code] || DOMAIN_FALLBACK;
   const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
-  const hasObjection = Boolean(m.objection);
+  const hasObjection = Boolean(m.objection_status && m.objection_status !== "none" && m.objection_status !== "") || Boolean(m.objection);
+
+  // 构件（词根）：root_ids 分号分隔 → 标签
+  const roots = String(m.root_ids || "")
+    .split(/[;,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const typeLabels = { atomic: "原子", derived: "衍生", composite: "复合" };
+  const dataTypeLabels = { amt: "金额", cnt: "数量", pct: "比率", rate: "比率", ratio: "比率", avg: "均值", idx: "指数" };
 
   return (
     <div className="relative flex h-full flex-col p-4">
@@ -121,14 +129,20 @@ function CardFace({ m, rarity, onFlip, flipped }) {
         </span>
       </div>
 
-      {/* 中部：稀有度（评分星级，克制的金色文字，不用发光效果） */}
-      <div className="mt-6 flex items-center gap-1" aria-label={`质量等级：${rarity.label}`}>
+      {/* 稀有度（评分星级）+ 指标类型/数据类型 */}
+      <div className="mt-6 flex items-center gap-2" aria-label={`质量等级：${rarity.label}`}>
         <span className="text-[11px] font-semibold" style={{ color: "#9a6700" }}>
           {"★".repeat(rarity.stars)}
           <span style={{ color: "#d4d9e0" }}>{"★".repeat(4 - rarity.stars)}</span>
         </span>
         <span className="text-[10px]" style={{ color: CARD_TEXT.faint }}>
           {rarity.label}
+        </span>
+        <span
+          className="rounded-sm bg-[#f0f3f6] px-1 py-px text-[9.5px] font-semibold"
+          style={{ color: "#3d444d" }}
+        >
+          {typeLabels[m.metric_type] || m.metric_type || "原子"} · {dataTypeLabels[m.data_type] || m.data_type || "—"}
         </span>
       </div>
 
@@ -146,9 +160,32 @@ function CardFace({ m, rarity, onFlip, flipped }) {
         {m.metric_en || "pending_naming"} · {m.metric_id || ""}
       </p>
 
+      {/* 构件（词根组合）+ 二级分类 */}
+      <div className="mt-2 flex flex-wrap items-center gap-1">
+        {roots.length > 0 ? (
+          roots.map((r) => (
+            <span
+              key={r}
+              className="rounded-sm border px-1 py-px text-[9.5px] font-medium"
+              style={{ borderColor: "#d0d7de", color: "#57606a" }}
+              title="构成该指标的词根构件"
+            >
+              {r}
+            </span>
+          ))
+        ) : (
+          <span className="text-[9.5px]" style={{ color: CARD_TEXT.faint }}>
+            无构件映射
+          </span>
+        )}
+        <span className="ml-auto text-[9.5px]" style={{ color: CARD_TEXT.faint }}>
+          {m.category_l2 || m.category_l1 || ""}
+        </span>
+      </div>
+
       {/* 口径摘要（3 行截断） */}
       <p
-        className="mt-3 line-clamp-3 text-[12.5px] leading-relaxed"
+        className="mt-2.5 line-clamp-3 text-[12.5px] leading-relaxed"
         style={{ color: CARD_TEXT.body }}
         title={m.caliber_desc}
       >
@@ -158,7 +195,7 @@ function CardFace({ m, rarity, onFlip, flipped }) {
       {/* 底部：更新时间 + 翻面入口 */}
       <div className="mt-auto flex items-center justify-between border-t pt-2.5" style={{ borderColor: CARD_BORDER }}>
         <span className="text-[10.5px]" style={{ color: CARD_TEXT.faint }}>
-          更新 {formatTime(m.updated_at)}
+          更新 {formatTime(m.updated_at || m.created_at)}
         </span>
         {onFlip && (
           <button
@@ -175,38 +212,45 @@ function CardFace({ m, rarity, onFlip, flipped }) {
   );
 }
 
-/** 卡背：完整口径（公式/粒度/边界/来源） */
-function CardBack({ m, rarity, onFlip }) {
-  const rows = [
-    ["计算公式", m.formula_cn || m.formula || "—"],
-    ["统计周期", m.frequency || "—"],
-    ["计量单位", m.unit || "—"],
-    ["统计维度", m.dimensions || "—"],
-    ["数据来源", m.data_sources || m.source_table || "—"],
-    ["负责人", m.owner || "—"],
-  ];
+/** 卡背：完整信息（指标库 48 字段全量分组展示，空值显示 —） */
+function FieldRow({ k, v, mono }) {
+  return (
+    <div className="flex gap-2 text-[11.5px] leading-relaxed">
+      <dt className="w-20 shrink-0 font-semibold" style={{ color: CARD_TEXT.faint }}>
+        {k}
+      </dt>
+      <dd
+        className={mono ? "font-mono break-all" : "break-words"}
+        style={{ color: CARD_TEXT.body }}
+      >
+        {v === undefined || v === null || v === "" ? "—" : v}
+      </dd>
+    </div>
+  );
+}
+
+function FieldGroup({ title, fields }) {
+  return (
+    <section>
+      <h5
+        className="mb-1.5 border-b pb-1 text-[10.5px] font-bold tracking-widest"
+        style={{ borderColor: "#e6e9ee", color: "#57606a" }}
+      >
+        {title}
+      </h5>
+      <dl className="space-y-1.5">{fields}</dl>
+    </section>
+  );
+}
+
+function CardBack({ m, onFlip }) {
+  const typeLabels = { atomic: "原子", derived: "衍生", composite: "复合" };
   return (
     <div className="flex h-full flex-col p-4">
-      <h4 className="text-sm font-bold" style={{ color: CARD_TEXT.title }}>
-        {m.metric_cn} · 完整口径
-      </h4>
-      <dl className="mt-3 space-y-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex gap-2 text-[11.5px] leading-relaxed">
-            <dt className="w-16 shrink-0 font-semibold" style={{ color: CARD_TEXT.faint }}>
-              {k}
-            </dt>
-            <dd style={{ color: CARD_TEXT.body }}>{v}</dd>
-          </div>
-        ))}
-        <div className="flex gap-2 text-[11.5px] leading-relaxed">
-          <dt className="w-16 shrink-0 font-semibold" style={{ color: CARD_TEXT.faint }}>
-            业务口径
-          </dt>
-          <dd style={{ color: CARD_TEXT.body }}>{m.caliber_desc || "—"}</dd>
-        </div>
-      </dl>
-      <div className="mt-auto flex justify-end pt-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold" style={{ color: CARD_TEXT.title }}>
+          {m.metric_cn} · 完整信息
+        </h4>
         <button
           type="button"
           onClick={onFlip}
@@ -215,6 +259,80 @@ function CardBack({ m, rarity, onFlip }) {
         >
           ↻ 返回正面
         </button>
+      </div>
+
+      <div className="mt-3 space-y-3 overflow-y-auto pr-1" style={{ maxHeight: "calc(100% - 32px)" }}>
+        <FieldGroup
+          title="标识与归属"
+          fields={[
+            <FieldRow key="id" k="指标ID" v={m.metric_id} mono />,
+            <FieldRow key="en" k="英文名" v={m.metric_en} mono />,
+            <FieldRow key="dom" k="主题域" v={`${m.domain_code}${m.category_l1 ? " · " + m.category_l1 : ""}`} />,
+            <FieldRow key="type" k="类型" v={typeLabels[m.metric_type] || m.metric_type} />,
+            <FieldRow key="dtype" k="数据类型" v={m.data_type} />,
+            <FieldRow key="roots" k="构件(词根)" v={m.root_ids} mono />,
+            <FieldRow key="tree" k="指标树节点" v={m.tree_node_id} mono />,
+            <FieldRow key="c2" k="二级分类" v={m.category_l2} />,
+            <FieldRow key="vt" k="值类型" v={m.value_type} />,
+          ]}
+        />
+        <FieldGroup
+          title="口径（完整）"
+          fields={[
+            <FieldRow key="cd" k="口径描述" v={m.caliber_desc} />,
+            <FieldRow key="cb" k="业务口径" v={m.caliber_business} />,
+            <FieldRow key="cf" k="口径公式" v={m.caliber_formula} />,
+            <FieldRow key="cp" k="口径周期" v={m.caliber_period} />,
+            <FieldRow key="cg" k="口径粒度" v={m.caliber_granularity} />,
+            <FieldRow key="cbd" k="口径边界" v={m.caliber_boundary} />,
+            <FieldRow key="cs" k="口径来源" v={m.caliber_source} />,
+          ]}
+        />
+        <FieldGroup
+          title="公式与实现"
+          fields={[
+            <FieldRow key="fc" k="公式(中文)" v={m.formula_cn} />,
+            <FieldRow key="f" k="公式(SQL)" v={m.formula} mono />,
+            <FieldRow key="tc" k="技术口径" v={m.tech_caliber} mono />,
+            <FieldRow key="st" k="物理表" v={m.source_table} mono />,
+            <FieldRow key="ds" k="数据来源" v={m.data_sources} />,
+          ]}
+        />
+        <FieldGroup
+          title="数值与属性"
+          fields={[
+            <FieldRow key="u" k="计量单位" v={m.unit} />,
+            <FieldRow key="fq" k="统计周期" v={m.frequency} />,
+            <FieldRow key="p" k="精度" v={m.precision} />,
+            <FieldRow key="d" k="统计维度" v={m.dimensions} />,
+            <FieldRow key="s" k="适用场景" v={m.scenario} />,
+            <FieldRow key="r" k="关联报表" v={m.reports} />,
+            <FieldRow key="am" k="分析方法" v={m.analysis_methods} />,
+            <FieldRow key="ar" k="预警规则" v={m.alert_rules} />,
+          ]}
+        />
+        <FieldGroup
+          title="治理与版本"
+          fields={[
+            <FieldRow key="rs" k="审核状态" v={m.review_status} />,
+            <FieldRow key="sm" k="来源模型" v={m.source_model} />,
+            <FieldRow key="os" k="异议状态" v={m.objection_status} />,
+            <FieldRow key="on" k="异议说明" v={m.objection_note || m.objection} />,
+            <FieldRow key="ow" k="负责人" v={m.owner} />,
+            <FieldRow key="co" k="口径负责人" v={m.caliber_owner} />,
+            <FieldRow key="cst" k="口径状态" v={m.caliber_status} />,
+            <FieldRow key="ca" k="口径AI生成" v={m.caliber_ai_by} />,
+            <FieldRow key="ccb" k="口径审核人" v={m.caliber_checked_by} />,
+            <FieldRow key="cca" k="口径审核时间" v={m.caliber_checked_at} />,
+            <FieldRow key="cr" k="口径驳回原因" v={m.caliber_reject_reason} />,
+            <FieldRow key="ver" k="版本" v={m.version} mono />,
+            <FieldRow key="vh" k="版本历史" v={m.version_history} mono />,
+            <FieldRow key="or" k="下线原因" v={m.offline_reason} />,
+            <FieldRow key="onn" k="下线备注" v={m.offline_note} />,
+            <FieldRow key="ct" k="创建时间" v={m.created_at} mono />,
+            <FieldRow key="ut" k="更新时间" v={m.updated_at} mono />,
+          ]}
+        />
       </div>
     </div>
   );
@@ -382,14 +500,14 @@ export function MetricCardModal({ metric, onClose }) {
           ✕
         </button>
 
-        {/* 3D 翻面容器：正面 = 卡面信息；背面 = 完整口径 */}
-        <div className="mc-flip-scene h-[320px]">
+        {/* 3D 翻面容器：正面 = 卡面摘要；背面 = 完整信息（48 字段，滚动） */}
+        <div className="mc-flip-scene h-[340px]">
           <div className={`mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`}>
-            <div className="mc-flip-face absolute inset-0">
+            <div className="mc-flip-face absolute inset-0 overflow-hidden">
               <CardFace m={metric} rarity={rarity} flipped={flipped} onFlip={() => setFlipped((v) => !v)} />
             </div>
-            <div className="mc-flip-face mc-flip-back absolute inset-0">
-              <CardBack m={metric} rarity={rarity} onFlip={() => setFlipped((v) => !v)} />
+            <div className="mc-flip-face mc-flip-back absolute inset-0 overflow-hidden">
+              <CardBack m={metric} onFlip={() => setFlipped((v) => !v)} />
             </div>
           </div>
         </div>

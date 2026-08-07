@@ -21724,6 +21724,7 @@
 
   // demo-entry.jsx
   var import_client = __toESM(require_client());
+  var import_react2 = __toESM(require_react());
 
   // ../MetricCard.jsx
   var import_react = __toESM(require_react());
@@ -21786,7 +21787,10 @@
   function CardFace({ m, rarity, onFlip, flipped }) {
     const domain = DOMAIN_STYLES[m.domain_code] || DOMAIN_FALLBACK;
     const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
-    const hasObjection = Boolean(m.objection);
+    const hasObjection = Boolean(m.objection_status && m.objection_status !== "none" && m.objection_status !== "") || Boolean(m.objection);
+    const roots = String(m.root_ids || "").split(/[;,]/).map((s) => s.trim()).filter(Boolean);
+    const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
+    const dataTypeLabels = { amt: "\u91D1\u989D", cnt: "\u6570\u91CF", pct: "\u6BD4\u7387", rate: "\u6BD4\u7387", ratio: "\u6BD4\u7387", avg: "\u5747\u503C", idx: "\u6307\u6570" };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex h-full flex-col p-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "div",
@@ -21815,12 +21819,24 @@
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-6 flex items-center gap-1", "aria-label": `\u8D28\u91CF\u7B49\u7EA7\uFF1A${rarity.label}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-6 flex items-center gap-2", "aria-label": `\u8D28\u91CF\u7B49\u7EA7\uFF1A${rarity.label}`, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[11px] font-semibold", style: { color: "#9a6700" }, children: [
           "\u2605".repeat(rarity.stars),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#d4d9e0" }, children: "\u2605".repeat(4 - rarity.stars) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px]", style: { color: CARD_TEXT.faint }, children: rarity.label })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px]", style: { color: CARD_TEXT.faint }, children: rarity.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "span",
+          {
+            className: "rounded-sm bg-[#f0f3f6] px-1 py-px text-[9.5px] font-semibold",
+            style: { color: "#3d444d" },
+            children: [
+              typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50",
+              " \xB7 ",
+              dataTypeLabels[m.data_type] || m.data_type || "\u2014"
+            ]
+          }
+        )
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "h3",
@@ -21842,10 +21858,23 @@
           ]
         }
       ),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-2 flex flex-wrap items-center gap-1", children: [
+        roots.length > 0 ? roots.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "span",
+          {
+            className: "rounded-sm border px-1 py-px text-[9.5px] font-medium",
+            style: { borderColor: "#d0d7de", color: "#57606a" },
+            title: "\u6784\u6210\u8BE5\u6307\u6807\u7684\u8BCD\u6839\u6784\u4EF6",
+            children: r
+          },
+          r
+        )) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[9.5px]", style: { color: CARD_TEXT.faint }, children: "\u65E0\u6784\u4EF6\u6620\u5C04" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ml-auto text-[9.5px]", style: { color: CARD_TEXT.faint }, children: m.category_l2 || m.category_l1 || "" })
+      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "p",
         {
-          className: "mt-3 line-clamp-3 text-[12.5px] leading-relaxed",
+          className: "mt-2.5 line-clamp-3 text-[12.5px] leading-relaxed",
           style: { color: CARD_TEXT.body },
           title: m.caliber_desc,
           children: m.caliber_desc || "\u6682\u65E0\u53E3\u5F84\u63CF\u8FF0"
@@ -21854,7 +21883,7 @@
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-auto flex items-center justify-between border-t pt-2.5", style: { borderColor: CARD_BORDER }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10.5px]", style: { color: CARD_TEXT.faint }, children: [
           "\u66F4\u65B0 ",
-          formatTime(m.updated_at)
+          formatTime(m.updated_at || m.created_at)
         ] }),
         onFlip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "button",
@@ -21869,40 +21898,139 @@
       ] })
     ] });
   }
-  function CardBack({ m, rarity, onFlip }) {
-    const rows = [
-      ["\u8BA1\u7B97\u516C\u5F0F", m.formula_cn || m.formula || "\u2014"],
-      ["\u7EDF\u8BA1\u5468\u671F", m.frequency || "\u2014"],
-      ["\u8BA1\u91CF\u5355\u4F4D", m.unit || "\u2014"],
-      ["\u7EDF\u8BA1\u7EF4\u5EA6", m.dimensions || "\u2014"],
-      ["\u6570\u636E\u6765\u6E90", m.data_sources || m.source_table || "\u2014"],
-      ["\u8D1F\u8D23\u4EBA", m.owner || "\u2014"]
-    ];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col p-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { className: "text-sm font-bold", style: { color: CARD_TEXT.title }, children: [
-        m.metric_cn,
-        " \xB7 \u5B8C\u6574\u53E3\u5F84"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dl", { className: "mt-3 space-y-2", children: [
-        rows.map(([k, v]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 text-[11.5px] leading-relaxed", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { className: "w-16 shrink-0 font-semibold", style: { color: CARD_TEXT.faint }, children: k }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { style: { color: CARD_TEXT.body }, children: v })
-        ] }, k)),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 text-[11.5px] leading-relaxed", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { className: "w-16 shrink-0 font-semibold", style: { color: CARD_TEXT.faint }, children: "\u4E1A\u52A1\u53E3\u5F84" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dd", { style: { color: CARD_TEXT.body }, children: m.caliber_desc || "\u2014" })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-auto flex justify-end pt-3", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        "button",
+  function FieldRow({ k, v, mono }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 text-[11.5px] leading-relaxed", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", { className: "w-20 shrink-0 font-semibold", style: { color: CARD_TEXT.faint }, children: k }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "dd",
         {
-          type: "button",
-          onClick: onFlip,
-          className: "rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none focus-visible:ring-2",
-          style: { color: "#0b4f6c" },
-          children: "\u21BB \u8FD4\u56DE\u6B63\u9762"
+          className: mono ? "font-mono break-all" : "break-words",
+          style: { color: CARD_TEXT.body },
+          children: v === void 0 || v === null || v === "" ? "\u2014" : v
         }
-      ) })
+      )
+    ] });
+  }
+  function FieldGroup({ title, fields }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "h5",
+        {
+          className: "mb-1.5 border-b pb-1 text-[10.5px] font-bold tracking-widest",
+          style: { borderColor: "#e6e9ee", color: "#57606a" },
+          children: title
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("dl", { className: "space-y-1.5", children: fields })
+    ] });
+  }
+  function CardBack({ m, onFlip }) {
+    const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col p-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { className: "text-sm font-bold", style: { color: CARD_TEXT.title }, children: [
+          m.metric_cn,
+          " \xB7 \u5B8C\u6574\u4FE1\u606F"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: onFlip,
+            className: "rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none focus-visible:ring-2",
+            style: { color: "#0b4f6c" },
+            children: "\u21BB \u8FD4\u56DE\u6B63\u9762"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-3 space-y-3 overflow-y-auto pr-1", style: { maxHeight: "calc(100% - 32px)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          FieldGroup,
+          {
+            title: "\u6807\u8BC6\u4E0E\u5F52\u5C5E",
+            fields: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807ID", v: m.metric_id, mono: true }, "id"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u82F1\u6587\u540D", v: m.metric_en, mono: true }, "en"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E3B\u9898\u57DF", v: `${m.domain_code}${m.category_l1 ? " \xB7 " + m.category_l1 : ""}` }, "dom"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7C7B\u578B", v: typeLabels[m.metric_type] || m.metric_type }, "type"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u7C7B\u578B", v: m.data_type }, "dtype"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6784\u4EF6(\u8BCD\u6839)", v: m.root_ids, mono: true }, "roots"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6307\u6807\u6811\u8282\u70B9", v: m.tree_node_id, mono: true }, "tree"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E8C\u7EA7\u5206\u7C7B", v: m.category_l2 }, "c2"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u503C\u7C7B\u578B", v: m.value_type }, "vt")
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          FieldGroup,
+          {
+            title: "\u53E3\u5F84\uFF08\u5B8C\u6574\uFF09",
+            fields: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u63CF\u8FF0", v: m.caliber_desc }, "cd"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E1A\u52A1\u53E3\u5F84", v: m.caliber_business }, "cb"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u516C\u5F0F", v: m.caliber_formula }, "cf"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5468\u671F", v: m.caliber_period }, "cp"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u7C92\u5EA6", v: m.caliber_granularity }, "cg"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8FB9\u754C", v: m.caliber_boundary }, "cbd"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u6765\u6E90", v: m.caliber_source }, "cs")
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          FieldGroup,
+          {
+            title: "\u516C\u5F0F\u4E0E\u5B9E\u73B0",
+            fields: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(\u4E2D\u6587)", v: m.formula_cn }, "fc"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u516C\u5F0F(SQL)", v: m.formula, mono: true }, "f"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6280\u672F\u53E3\u5F84", v: m.tech_caliber, mono: true }, "tc"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7269\u7406\u8868", v: m.source_table, mono: true }, "st"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6570\u636E\u6765\u6E90", v: m.data_sources }, "ds")
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          FieldGroup,
+          {
+            title: "\u6570\u503C\u4E0E\u5C5E\u6027",
+            fields: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8BA1\u91CF\u5355\u4F4D", v: m.unit }, "u"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u5468\u671F", v: m.frequency }, "fq"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7CBE\u5EA6", v: m.precision }, "p"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7EDF\u8BA1\u7EF4\u5EA6", v: m.dimensions }, "d"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9002\u7528\u573A\u666F", v: m.scenario }, "s"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5173\u8054\u62A5\u8868", v: m.reports }, "r"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5206\u6790\u65B9\u6CD5", v: m.analysis_methods }, "am"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u9884\u8B66\u89C4\u5219", v: m.alert_rules }, "ar")
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          FieldGroup,
+          {
+            title: "\u6CBB\u7406\u4E0E\u7248\u672C",
+            fields: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5BA1\u6838\u72B6\u6001", v: m.review_status }, "rs"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u6765\u6E90\u6A21\u578B", v: m.source_model }, "sm"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u72B6\u6001", v: m.objection_status }, "os"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u5F02\u8BAE\u8BF4\u660E", v: m.objection_note || m.objection }, "on"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u8D1F\u8D23\u4EBA", v: m.owner }, "ow"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u8D1F\u8D23\u4EBA", v: m.caliber_owner }, "co"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u72B6\u6001", v: m.caliber_status }, "cst"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84AI\u751F\u6210", v: m.caliber_ai_by }, "ca"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u4EBA", v: m.caliber_checked_by }, "ccb"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u5BA1\u6838\u65F6\u95F4", v: m.caliber_checked_at }, "cca"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u53E3\u5F84\u9A73\u56DE\u539F\u56E0", v: m.caliber_reject_reason }, "cr"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C", v: m.version, mono: true }, "ver"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u7248\u672C\u5386\u53F2", v: m.version_history, mono: true }, "vh"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u539F\u56E0", v: m.offline_reason }, "or"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u4E0B\u7EBF\u5907\u6CE8", v: m.offline_note }, "onn"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u521B\u5EFA\u65F6\u95F4", v: m.created_at, mono: true }, "ct"),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FieldRow, { k: "\u66F4\u65B0\u65F6\u95F4", v: m.updated_at, mono: true }, "ut")
+            ]
+          }
+        )
+      ] })
     ] });
   }
   function MetricCard({ metric, onOpen }) {
@@ -22030,9 +22158,9 @@
                   children: "\u2715"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[320px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, rarity, onFlip: () => setFlipped((v) => !v) }) })
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[340px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
               ] }) })
             ]
           }
@@ -22051,114 +22179,71 @@
 
   // demo-entry.jsx
   var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-  var SAMPLE_METRICS = [
-    {
-      metric_id: "M_SALE_001",
-      metric_cn: "\u6708\u5EA6\u9500\u552E\u989D",
-      metric_en: "monthly_sales_amount",
-      domain_code: "sale",
-      review_status: "approved",
-      score: 92,
-      updated_at: "2026-08-06 14:30",
-      caliber_desc: "\u81EA\u7136\u6708\u5185\u5DF2\u5B8C\u6210\u8BA2\u5355\u7684\u9500\u552E\u603B\u91D1\u989D\uFF08\u542B\u7A0E\uFF09\uFF0C\u5254\u9664\u9000\u8D27\u4E0E\u4F5C\u5E9F\u8BA2\u5355\uFF1B\u542B\u7EBF\u4E0A\u4E0E\u7EBF\u4E0B\u6E20\u9053\u3002",
-      formula_cn: "\u03A3(\u8BA2\u5355\u91D1\u989D) \u2212 \u9000\u8D27\u91D1\u989D",
-      frequency: "\u6708\u5EA6",
-      unit: "\u5143",
-      dimensions: "\u6E20\u9053\u3001\u95E8\u5E97\u3001\u54C1\u7C7B",
-      data_sources: "dwd_sale_order_df",
-      owner: "\u6570\u636E\u7EC4"
-    },
-    {
-      metric_id: "M_CUST_007",
-      metric_cn: "\u4F1A\u5458\u590D\u8D2D\u7387",
-      metric_en: "member_repurchase_rate",
-      domain_code: "cust",
-      review_status: "pending",
-      score: 80,
-      updated_at: "2026-08-05 09:12",
-      caliber_desc: "\u7EDF\u8BA1\u5468\u671F\u5185\uFF0C\u6709\u22652\u6B21\u6709\u6548\u8BA2\u5355\u7684\u4F1A\u5458\u6570\u5360\u5168\u90E8\u6709\u6548\u4F1A\u5458\u6570\u7684\u6BD4\u4F8B\uFF1B\u5254\u9664\u5185\u90E8\u5458\u5DE5\u4E0E\u6D4B\u8BD5\u8D26\u53F7\u3002",
-      formula_cn: "\u590D\u8D2D\u4F1A\u5458\u6570 \xF7 \u6709\u6548\u4F1A\u5458\u6570",
-      frequency: "\u6708\u5EA6",
-      unit: "%",
-      dimensions: "\u4F1A\u5458\u7B49\u7EA7\u3001\u6E20\u9053",
-      data_sources: "dwd_cust_member_df",
-      owner: "\u5F85\u8BA4\u9886",
-      objection: "\u53E3\u5F84\u5B58\u5728\u4E89\u8BAE\uFF1A\u590D\u8D2D\u7A97\u53E3\u671F\u672A\u5B9A\u4E49\uFF0C\u5EFA\u8BAE\u660E\u786E\u4E3A\u6EDA\u52A8 90 \u5929\u3002"
-    },
-    {
-      metric_id: "M_FIN_003",
-      metric_cn: "\u51C0\u5229\u7387",
-      metric_en: "net_profit_margin",
-      domain_code: "fin",
-      review_status: "approved",
-      score: 75,
-      updated_at: "2026-08-04 17:45",
-      caliber_desc: "\u51C0\u5229\u6DA6\u5360\u8425\u4E1A\u6536\u5165\u7684\u6BD4\u4F8B\uFF1B\u51C0\u5229\u6DA6=\u8425\u4E1A\u6536\u5165\u2212\u8425\u4E1A\u6210\u672C\u2212\u7A0E\u8D39\u2212\u671F\u95F4\u8D39\u7528\uFF0C\u4E0D\u542B\u8425\u4E1A\u5916\u6536\u652F\u3002",
-      formula_cn: "\u51C0\u5229\u6DA6 \xF7 \u8425\u4E1A\u6536\u5165",
-      frequency: "\u5B63\u5EA6",
-      unit: "%",
-      dimensions: "\u4E1A\u6001\u3001\u533A\u57DF",
-      data_sources: "dws_fin_income_statement",
-      owner: "\u8D22\u52A1\u6570\u636E\u7EC4"
-    },
-    {
-      metric_id: "M_MALL_012",
-      metric_cn: "\u5BA2\u6D41\u91CF",
-      metric_en: "visitor_count",
-      domain_code: "mall",
-      review_status: "rejected",
-      score: 45,
-      updated_at: "2026-08-03 11:20",
-      caliber_desc: "\u7EDF\u8BA1\u5468\u671F\u5185\u8FDB\u5165\u5546\u573A\u8303\u56F4\u7684\u53BB\u91CD\u5BA2\u6D41\u6570\uFF1B\u53E3\u5F84\u5F85\u5B9A\uFF08\u51FA\u5165\u53E3\u7EDF\u8BA1\u53E3\u5F84\u4E0E\u753B\u50CF\u53E3\u5F84\u5B58\u5728\u51B2\u7A81\uFF09\u3002",
-      formula_cn: "\u2014",
-      frequency: "\u65E5\u5EA6",
-      unit: "\u4EBA\u6B21",
-      dimensions: "\u5165\u53E3\u3001\u697C\u5C42",
-      data_sources: "ods_mall_traffic",
-      owner: "\u5F85\u8BA4\u9886",
-      objection: "\u5BA2\u6D41\u53BB\u91CD\u903B\u8F91\u672A\u5B9A\u4E49\uFF1A\u6309\u5929\u53BB\u91CD\u8FD8\u662F\u6309\u5165\u573A\u4F1A\u8BDD\u53BB\u91CD\uFF0C\u9700\u4E1A\u52A1\u786E\u8BA4\u3002"
-    },
-    {
-      metric_id: "M_HR_021",
-      metric_cn: "\u5458\u5DE5\u79BB\u804C\u7387",
-      metric_en: "employee_turnover_rate",
-      domain_code: "hr",
-      review_status: "pending",
-      score: 62,
-      updated_at: "2026-08-02 16:08",
-      caliber_desc: "\u7EDF\u8BA1\u5468\u671F\u5185\u79BB\u804C\u4EBA\u6570\u5360\u671F\u521D\u5728\u518C\u4EBA\u6570\u7684\u6BD4\u4F8B\uFF1B\u542B\u4E3B\u52A8\u79BB\u804C\u4E0E\u88AB\u52A8\u8F9E\u9000\uFF0C\u4E0D\u542B\u8F6C\u5C97\u4E0E\u9000\u4F11\u3002",
-      formula_cn: "\u79BB\u804C\u4EBA\u6570 \xF7 \u671F\u521D\u5728\u518C\u4EBA\u6570",
-      frequency: "\u6708\u5EA6",
-      unit: "%",
-      dimensions: "\u90E8\u95E8\u3001\u804C\u7EA7",
-      data_sources: "dwd_hr_employee_df",
-      owner: "\u4EBA\u529B\u6570\u636E\u7EC4"
-    },
-    {
-      metric_id: "M_MKT_005",
-      metric_cn: "\u6D3B\u52A8\u53C2\u4E0E\u4EBA\u6570",
-      metric_en: "campaign_participants",
-      domain_code: "mkt",
-      review_status: "approved",
-      score: 88,
-      updated_at: "2026-07-30 10:00",
-      caliber_desc: "\u7EDF\u8BA1\u5468\u671F\u5185\u62A5\u540D\u4E14\u5B9E\u9645\u53C2\u4E0E\u6D3B\u52A8\u7684\u53BB\u91CD\u7528\u6237\u6570\uFF1B\u542B\u7EBF\u4E0A\u62A5\u540D\u7EBF\u4E0B\u5230\u5E97\uFF0C\u4E0D\u542B\u4EC5\u6D4F\u89C8\u672A\u62A5\u540D\u7528\u6237\u3002",
-      formula_cn: "COUNT(DISTINCT user_id)",
-      frequency: "\u6D3B\u52A8\u5468\u671F",
-      unit: "\u4EBA",
-      dimensions: "\u6D3B\u52A8\u7C7B\u578B\u3001\u6E20\u9053",
-      data_sources: "dwd_mkt_campaign_df",
-      owner: "\u8425\u9500\u6570\u636E\u7EC4"
-    }
-  ];
+  function loadMetrics() {
+    return fetch("/api/metrics", { headers: { Accept: "application/json" } }).then((r) => {
+      if (!r.ok) throw new Error("api unavailable");
+      return r.json();
+    }).then((data) => {
+      const list = Array.isArray(data) ? data : data.metrics || data.items || [];
+      if (!list.length) throw new Error("empty api data");
+      return list;
+    }).catch(
+      () => fetch("./metrics-data.json").then((r) => r.json()).then((list) => {
+        if (!list || !list.length) throw new Error("snapshot empty");
+        return list;
+      })
+    );
+  }
   function App() {
+    const [metrics, setMetrics] = (0, import_react2.useState)(null);
+    const [source, setSource] = (0, import_react2.useState)("");
+    const [error, setError] = (0, import_react2.useState)("");
+    (0, import_react2.useEffect)(() => {
+      loadMetrics().then((list) => {
+        setMetrics(list);
+        setSource("api");
+      }).catch((e) => {
+        setError(String(e.message || e));
+        setSource("error");
+      });
+    }, []);
+    if (error) {
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#a40e26" }, children: [
+        "\u52A0\u8F7D\u6307\u6807\u5E93\u6570\u636E\u5931\u8D25\uFF1A",
+        error,
+        "\uFF08\u8BF7\u786E\u8BA4\u672C\u5730\u670D\u52A1\u5DF2\u542F\u52A8\uFF0C\u6216\u68C0\u67E5 metrics-data.json\uFF09"
+      ] });
+    }
+    if (!metrics) {
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#57606a" }, children: "\u6B63\u5728\u4ECE\u6307\u6807\u5E93\u52A0\u8F7D\u6570\u636E\u2026" });
+    }
+    const counts = {
+      \u5DF2\u5BA1\u6838: metrics.filter((m) => m.review_status === "approved").length,
+      \u5F85\u5BA1\u6838: metrics.filter((m) => m.review_status === "pending" || m.review_status === "draft").length,
+      \u5F02\u8BAE: metrics.filter(
+        (m) => m.objection_status && m.objection_status !== "none" && m.objection_status !== ""
+      ).length
+    };
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("header", { style: { marginBottom: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h1", { style: { fontSize: 18, fontWeight: 700, margin: "0 0 4px" }, children: "\u6307\u6807\u5361 \xB7 TCG \u8D28\u611F \xD7 \u4F01\u4E1A\u53EF\u8BFB\u6027" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { fontSize: 12.5, color: "#57606a", margin: 0 }, children: "\u8BBE\u8BA1\u53C2\u6570\uFF1ADESIGN_VARIANCE=5 / MOTION_INTENSITY=4 / VISUAL_DENSITY=7 \xB7 \u70B9\u51FB\u5361\u7247\u67E5\u770B\u5B8C\u6574\u53E3\u5F84\uFF08\u53EF\u7FFB\u9762\uFF09" })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h1", { style: { fontSize: 18, fontWeight: 700, margin: "0 0 4px" }, children: "\u6307\u6807\u5361 \xB7 TCG \u8D28\u611F \xD7 \u4F01\u4E1A\u53EF\u8BFB\u6027\uFF08\u6307\u6807\u5E93\u771F\u5B9E\u6570\u636E\uFF09" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { style: { fontSize: 12.5, color: "#57606a", margin: 0 }, children: [
+          "\u6570\u636E\u6E90\uFF1A",
+          source === "api" ? "\u6307\u6807\u5E93 API\uFF08/api/metrics\uFF09" : "\u6307\u6807\u5E93\u5FEB\u7167\uFF08metrics-data.json\uFF09",
+          " \xB7",
+          metrics.length,
+          " \u6761\u6307\u6807 \xB7 \u5DF2\u5BA1\u6838 ",
+          counts.\u5DF2\u5BA1\u6838,
+          " / \u5F85\u5BA1\u6838 ",
+          counts.\u5F85\u5BA1\u6838,
+          " / \u5F02\u8BAE ",
+          counts.\u5F02\u8BAE,
+          "  ",
+          "\xB7 \u70B9\u51FB\u5361\u7247\u67E5\u770B\u5168\u90E8 48 \u5B57\u6BB5\uFF08\u53EF\u7FFB\u9762\uFF09"
+        ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(MetricCard_default, { metrics: SAMPLE_METRICS }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("footer", { style: { marginTop: 20, fontSize: 11.5, color: "#6e7781" }, children: "\u7EC4\u4EF6\uFF1AMetricCard.jsx\uFF08React + Tailwind\uFF09\xB7 \u65E0\u969C\u788D\uFF1AWCAG AA \xB7 \u65E0\u7C92\u5B50\u7279\u6548 / \u65E0\u70AB\u4E3D\u6E10\u53D8" })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(MetricCard_default, { metrics }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("footer", { style: { marginTop: 20, fontSize: 11.5, color: "#6e7781" }, children: "\u7EC4\u4EF6\uFF1AMetricCard.jsx\uFF08React + Tailwind\uFF09\xB7 \u65E0\u969C\u788D\uFF1AWCAG AA \xB7 \u65E0\u7C92\u5B50\u7279\u6548 / \u65E0\u70AB\u4E3D\u6E10\u53D8 \xB7 \u5B8C\u6574\u5B57\u6BB5\u89C1\u7FFB\u9762\u8BE6\u60C5" })
     ] });
   }
   (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, {}));
