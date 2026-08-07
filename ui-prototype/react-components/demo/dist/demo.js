@@ -21763,10 +21763,10 @@
     bg: "rgba(165,14,38,0.25)"
   };
   function rarityOf(score) {
-    if (score >= 90) return { stars: 4, label: "\u4F20\u8BF4", gem: "#c76f00", glow: "0 0 18px rgba(199,111,0,0.45)" };
-    if (score >= 75) return { stars: 3, label: "\u53F2\u8BD7", gem: "#7c3aed", glow: "0 0 18px rgba(124,58,237,0.45)" };
-    if (score >= 60) return { stars: 2, label: "\u7A00\u6709", gem: "#2563eb", glow: "0 0 16px rgba(37,99,235,0.40)" };
-    return { stars: 1, label: "\u666E\u901A", gem: "#6b7280", glow: "0 0 12px rgba(107,114,128,0.30)" };
+    if (score >= 90) return { stars: 4, label: "\u4F20\u8BF4", gem: "#f5a623", glow: "0 0 22px rgba(245,166,35,0.55)" };
+    if (score >= 75) return { stars: 3, label: "\u53F2\u8BD7", gem: "#a335ee", glow: "0 0 22px rgba(163,53,238,0.55)" };
+    if (score >= 60) return { stars: 2, label: "\u7A00\u6709", gem: "#0070dd", glow: "0 0 18px rgba(0,112,221,0.5)" };
+    return { stars: 1, label: "\u666E\u901A", gem: "#8a919e", glow: "0 0 12px rgba(138,145,158,0.35)" };
   }
   function formatTime(iso) {
     if (!iso) return "\u2014";
@@ -21785,9 +21785,9 @@
     faint: "#8f98a8"
     // 辅助标签/时间，≈ 4.9:1
   };
-  var CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%)";
-  var NAME_BAR_BG = "linear-gradient(180deg, #383f55 0%, #2a3040 100%)";
-  var GEM_BORDER = "#c9ced8";
+  var CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%),repeating-linear-gradient(45deg, rgba(255,255,255,0.028) 0 2px, transparent 2px 6px)";
+  var NAME_BAR_BG = "linear-gradient(180deg, #3b4359 0%, #2a3040 100%)";
+  var GEM_BORDER = "#e8eaf0";
   function Gem({ color, size = 14 }) {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "span",
@@ -21821,15 +21821,15 @@
           style: {
             background: NAME_BAR_BG,
             borderBottom: `2px solid ${rarity.gem}`,
-            boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.4)`
+            boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -8px 16px -8px ${rarity.gem}, 0 1px 0 rgba(0,0,0,0.4)`
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem, size: 15 }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
               "h3",
               {
-                className: "min-w-0 flex-1 truncate text-[15px] font-extrabold leading-tight tracking-wide",
-                style: { color: CARD_TEXT.title, textShadow: "0 1px 2px rgba(0,0,0,0.6)" },
+                className: "min-w-0 flex-1 truncate text-[16px] font-black leading-tight tracking-wide",
+                style: { color: CARD_TEXT.title, textShadow: `0 0 8px ${rarity.gem}, 0 2px 3px rgba(0,0,0,0.8)` },
                 children: m.metric_cn || "\u2014"
               }
             ),
@@ -21897,14 +21897,14 @@
           {
             className: "absolute bottom-2.5 left-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
             style: {
-              background: rarity.gem,
-              border: "2px solid " + GEM_BORDER,
-              boxShadow: `0 2px 6px rgba(0,0,0,0.5), ${rarity.glow}`
+              background: `radial-gradient(circle at 35% 30%, ${rarity.gem}, ${rarity.gem})`,
+              border: "2px solid #f2f4f8",
+              boxShadow: `0 3px 8px rgba(0,0,0,0.55), ${rarity.glow}`
             },
             "aria-label": `\u8D28\u91CF\u8BC4\u5206 ${m.score ?? "\u2014"}\uFF0C${rarity.label}`,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[15px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }, children: m.score ?? "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-bold tracking-wide", style: { color: "rgba(255,255,255,0.92)" }, children: rarity.label })
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[16px] font-black leading-none", style: { color: "#14181f", textShadow: "0 0 3px rgba(255,255,255,0.45)" }, children: m.score ?? "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-black tracking-wide", style: { color: "#14181f" }, children: rarity.label })
             ]
           }
         ),
@@ -21913,13 +21913,13 @@
           {
             className: "absolute bottom-2.5 right-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
             style: {
-              background: "#2c3345",
-              border: "2px solid " + GEM_BORDER,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.5)"
+              background: "radial-gradient(circle at 35% 30%, #3a4258, #262c3c)",
+              border: "2px solid #f2f4f8",
+              boxShadow: "0 3px 8px rgba(0,0,0,0.55)"
             },
             "aria-label": `\u7248\u672C ${m.version || "\u2014"}\uFF0C${typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50"}\u6307\u6807`,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-mono text-[13px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }, children: m.version || "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-mono text-[14px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.6)" }, children: m.version || "\u2014" }),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-bold tracking-wide", style: { color: "rgba(255,255,255,0.85)" }, children: typeLabels[m.metric_type] || "\u539F\u5B50" })
             ]
           }
@@ -21927,14 +21927,19 @@
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
           "div",
           {
-            className: "mt-1 flex items-center justify-between rounded-sm px-2 py-1",
-            style: { backgroundColor: "rgba(255,255,255,0.05)", borderTop: "1px solid rgba(255,255,255,0.08)" },
+            className: "mt-1 flex items-center gap-2 rounded-sm px-2 py-1",
+            style: {
+              backgroundColor: "rgba(255,255,255,0.05)",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              paddingRight: 58
+              // 避开右下"版本"角标（absolute 覆盖区）
+            },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10px] font-semibold", style: { color: rarity.gem === "#c76f00" ? "#f5b24c" : rarity.gem }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10px] font-semibold", style: { color: rarity.gem === "#f5a623" ? "#f5b24c" : rarity.gem }, children: [
                 "\u2605".repeat(rarity.stars),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "rgba(255,255,255,0.25)" }, children: "\u2605".repeat(4 - rarity.stars) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[9px]", style: { color: CARD_TEXT.faint }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "ml-auto text-[9px]", style: { color: CARD_TEXT.faint }, children: [
                 "\u66F4\u65B0 ",
                 formatTime(m.updated_at || m.created_at)
               ] }),
@@ -21943,7 +21948,7 @@
                 {
                   type: "button",
                   onClick: onFlip,
-                  className: "rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2",
+                  className: "shrink-0 rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2",
                   style: { color: "#a8c7ff", "--tw-ring-color": "#58a6ff" },
                   children: flipped ? "\u8FD4\u56DE\u6B63\u9762" : "\u5B8C\u6574\u53E3\u5F84 \u21BB"
                 }
@@ -22095,12 +22100,12 @@
     const baseShadow = [
       `0 0 0 1px #ffffff`,
       `0 0 0 2px ${rarity.gem}`,
-      "0 3px 8px rgba(0,0,0,0.45)"
+      "0 3px 8px rgba(0,0,0,0.5)"
     ].join(",");
     const hoverShadow = [
       `0 0 0 1px #ffffff`,
       `0 0 0 2px ${rarity.gem}`,
-      `0 12px 24px rgba(0,0,0,0.5)`,
+      `0 14px 28px rgba(0,0,0,0.6)`,
       rarity.glow
     ].join(",");
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
@@ -22113,14 +22118,14 @@
         "aria-label": `\u6307\u6807 ${metric.metric_cn || metric.metric_id || ""}\uFF0C${DOMAIN_STYLES[metric.domain_code]?.label || "\u672A\u77E5\u57DF"}\uFF0C${STATUS_STYLES[metric.review_status]?.label || "\u5F85\u5BA1\u6838"}\uFF0C\u8BC4\u5206 ${metric.score ?? "\u2014"}`,
         className: [
           "group relative w-full cursor-pointer rounded-[10px] bg-transparent text-left outline-none",
-          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1f2c]",
-          // 动效强度 4/7：轻抬升 + 稀有度发光，180ms 指数缓出，无粒子
-          "transition-[transform,box-shadow] duration-180 ease-out",
+          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#12161f]",
+          // 动效强度 4/7：抬升 + 稀有度发光 + 轻微放大
+          "transition-[transform,box-shadow] duration-200 ease-out",
           "motion-reduce:transition-none motion-reduce:hover:transform-none"
         ].join(" "),
         style: {
           boxShadow: hovered ? hoverShadow : baseShadow,
-          transform: hovered ? "translateY(-5px) scale(1.015)" : "translateY(0) scale(1)"
+          transform: hovered ? "translateY(-6px) scale(1.02)" : "translateY(0) scale(1)"
         },
         children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity })
       }

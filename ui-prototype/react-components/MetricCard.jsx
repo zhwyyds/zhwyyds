@@ -63,15 +63,15 @@ const OBJECTION_STYLE = {
 };
 
 /**
- * 稀有度（评分 → 炉石宝石体系）：
- *   ≥90 橙金（传说）/ ≥75 紫（史诗）/ ≥60 蓝（稀有）/ <60 灰（普通）
- * 宝石色均取"深色变体"，保证白字对比 ≥ 4.5:1
+ * 稀有度（评分 → 炉石宝石体系，原味亮色 + 深色数字保证对比）：
+ *   ≥90 亮橙金（传说）/ ≥75 亮紫（史诗）/ ≥60 亮蓝（稀有）/ <60 银灰（普通）
+ * 角标/宝石用亮色，数字用深色 #14181f（对比均 ≥ 4.5:1）
  */
 function rarityOf(score) {
-  if (score >= 90) return { stars: 4, label: "传说",  gem: "#c76f00", glow: "0 0 18px rgba(199,111,0,0.45)" };
-  if (score >= 75) return { stars: 3, label: "史诗",  gem: "#7c3aed", glow: "0 0 18px rgba(124,58,237,0.45)" };
-  if (score >= 60) return { stars: 2, label: "稀有",  gem: "#2563eb", glow: "0 0 16px rgba(37,99,235,0.40)" };
-  return          { stars: 1, label: "普通",  gem: "#6b7280", glow: "0 0 12px rgba(107,114,128,0.30)" };
+  if (score >= 90) return { stars: 4, label: "传说",  gem: "#f5a623", glow: "0 0 22px rgba(245,166,35,0.55)" };
+  if (score >= 75) return { stars: 3, label: "史诗",  gem: "#a335ee", glow: "0 0 22px rgba(163,53,238,0.55)" };
+  if (score >= 60) return { stars: 2, label: "稀有",  gem: "#0070dd", glow: "0 0 18px rgba(0,112,221,0.5)" };
+  return          { stars: 1, label: "普通",  gem: "#8a919e", glow: "0 0 12px rgba(138,145,158,0.35)" };
 }
 
 /** 展示时间 */
@@ -90,9 +90,12 @@ const CARD_TEXT = {
   muted: "#b8c0cc",   // 英文名/ID，≈ 7.3:1
   faint: "#8f98a8",   // 辅助标签/时间，≈ 4.9:1
 };
-const CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%)";
-const NAME_BAR_BG = "linear-gradient(180deg, #383f55 0%, #2a3040 100%)";
-const GEM_BORDER = "#c9ced8";
+// 卡面：深色渐变 + 半透明斜纹纹理（模拟卡面插画质感，无外链图片）
+const CARD_BG =
+  "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%)," +
+  "repeating-linear-gradient(45deg, rgba(255,255,255,0.028) 0 2px, transparent 2px 6px)";
+const NAME_BAR_BG = "linear-gradient(180deg, #3b4359 0%, #2a3040 100%)";
+const GEM_BORDER = "#e8eaf0";
 
 /* ---------------------------------------------------------------------------
  * 子组件
@@ -138,13 +141,13 @@ function CardFace({ m, rarity, onFlip, flipped }) {
         style={{
           background: NAME_BAR_BG,
           borderBottom: `2px solid ${rarity.gem}`,
-          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.4)`,
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -8px 16px -8px ${rarity.gem}, 0 1px 0 rgba(0,0,0,0.4)`,
         }}
       >
-        <Gem color={rarity.gem} />
+        <Gem color={rarity.gem} size={15} />
         <h3
-          className="min-w-0 flex-1 truncate text-[15px] font-extrabold leading-tight tracking-wide"
-          style={{ color: CARD_TEXT.title, textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
+          className="min-w-0 flex-1 truncate text-[16px] font-black leading-tight tracking-wide"
+          style={{ color: CARD_TEXT.title, textShadow: `0 0 8px ${rarity.gem}, 0 2px 3px rgba(0,0,0,0.8)` }}
         >
           {m.metric_cn || "—"}
         </h3>
@@ -218,20 +221,20 @@ function CardFace({ m, rarity, onFlip, flipped }) {
 
       {/* ── 底部：攻·血式角标（评分 / 版本）+ 时间条 ── */}
       <div className="relative px-3 pb-2.5 pt-1">
-        {/* 左下：质量评分（对应攻击力） */}
+        {/* 左下：质量评分（对应攻击力）—— 亮稀有度色 + 深数字 + 白描边 */}
         <div
           className="absolute bottom-2.5 left-3 flex h-11 w-11 flex-col items-center justify-center rounded-full"
           style={{
-            background: rarity.gem,
-            border: "2px solid " + GEM_BORDER,
-            boxShadow: `0 2px 6px rgba(0,0,0,0.5), ${rarity.glow}`,
+            background: `radial-gradient(circle at 35% 30%, ${rarity.gem}, ${rarity.gem})`,
+            border: "2px solid #f2f4f8",
+            boxShadow: `0 3px 8px rgba(0,0,0,0.55), ${rarity.glow}`,
           }}
           aria-label={`质量评分 ${m.score ?? "—"}，${rarity.label}`}
         >
-          <span className="text-[15px] font-black leading-none" style={{ color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }}>
+          <span className="text-[16px] font-black leading-none" style={{ color: "#14181f", textShadow: "0 0 3px rgba(255,255,255,0.45)" }}>
             {m.score ?? "—"}
           </span>
-          <span className="mt-0.5 text-[7.5px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.92)" }}>
+          <span className="mt-0.5 text-[7.5px] font-black tracking-wide" style={{ color: "#14181f" }}>
             {rarity.label}
           </span>
         </div>
@@ -240,13 +243,13 @@ function CardFace({ m, rarity, onFlip, flipped }) {
         <div
           className="absolute bottom-2.5 right-3 flex h-11 w-11 flex-col items-center justify-center rounded-full"
           style={{
-            background: "#2c3345",
-            border: "2px solid " + GEM_BORDER,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+            background: "radial-gradient(circle at 35% 30%, #3a4258, #262c3c)",
+            border: "2px solid #f2f4f8",
+            boxShadow: "0 3px 8px rgba(0,0,0,0.55)",
           }}
           aria-label={`版本 ${m.version || "—"}，${typeLabels[m.metric_type] || m.metric_type || "原子"}指标`}
         >
-          <span className="font-mono text-[13px] font-black leading-none" style={{ color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }}>
+          <span className="font-mono text-[14px] font-black leading-none" style={{ color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.6)" }}>
             {m.version || "—"}
           </span>
           <span className="mt-0.5 text-[7.5px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -254,23 +257,27 @@ function CardFace({ m, rarity, onFlip, flipped }) {
           </span>
         </div>
 
-        {/* 底部信息条：稀有度星级 + 更新时间 + 翻面入口 */}
+        {/* 底部信息条：稀有度星级 + 更新时间 + 翻面入口（右侧留角标空间） */}
         <div
-          className="mt-1 flex items-center justify-between rounded-sm px-2 py-1"
-          style={{ backgroundColor: "rgba(255,255,255,0.05)", borderTop: "1px solid rgba(255,255,255,0.08)" }}
+          className="mt-1 flex items-center gap-2 rounded-sm px-2 py-1"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.05)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            paddingRight: 58, // 避开右下"版本"角标（absolute 覆盖区）
+          }}
         >
-          <span className="text-[10px] font-semibold" style={{ color: rarity.gem === "#c76f00" ? "#f5b24c" : rarity.gem }}>
+          <span className="text-[10px] font-semibold" style={{ color: rarity.gem === "#f5a623" ? "#f5b24c" : rarity.gem }}>
             {"★".repeat(rarity.stars)}
             <span style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(4 - rarity.stars)}</span>
           </span>
-          <span className="text-[9px]" style={{ color: CARD_TEXT.faint }}>
+          <span className="ml-auto text-[9px]" style={{ color: CARD_TEXT.faint }}>
             更新 {formatTime(m.updated_at || m.created_at)}
           </span>
           {onFlip && (
             <button
               type="button"
               onClick={onFlip}
-              className="rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2"
+              className="shrink-0 rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2"
               style={{ color: "#a8c7ff", "--tw-ring-color": "#58a6ff" }}
             >
               {flipped ? "返回正面" : "完整口径 ↻"}
@@ -420,16 +427,16 @@ export function MetricCard({ metric, onOpen }) {
   const [hovered, setHovered] = useState(false);
   const rarity = rarityOf(metric.score);
 
-  // 炉石式卡框：稀有度色描边（双层：白内圈 + 稀有度外圈）+ hover 稀有度发光抬升
+  // 炉石式卡框：稀有度亮色描边 + hover 稀有度发光抬升
   const baseShadow = [
     `0 0 0 1px #ffffff`,
     `0 0 0 2px ${rarity.gem}`,
-    "0 3px 8px rgba(0,0,0,0.45)",
+    "0 3px 8px rgba(0,0,0,0.5)",
   ].join(",");
   const hoverShadow = [
     `0 0 0 1px #ffffff`,
     `0 0 0 2px ${rarity.gem}`,
-    `0 12px 24px rgba(0,0,0,0.5)`,
+    `0 14px 28px rgba(0,0,0,0.6)`,
     rarity.glow,
   ].join(",");
 
@@ -442,14 +449,14 @@ export function MetricCard({ metric, onOpen }) {
       aria-label={`指标 ${metric.metric_cn || metric.metric_id || ""}，${DOMAIN_STYLES[metric.domain_code]?.label || "未知域"}，${STATUS_STYLES[metric.review_status]?.label || "待审核"}，评分 ${metric.score ?? "—"}`}
       className={[
         "group relative w-full cursor-pointer rounded-[10px] bg-transparent text-left outline-none",
-        "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1f2c]",
-        // 动效强度 4/7：轻抬升 + 稀有度发光，180ms 指数缓出，无粒子
-        "transition-[transform,box-shadow] duration-180 ease-out",
+        "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#12161f]",
+        // 动效强度 4/7：抬升 + 稀有度发光 + 轻微放大
+        "transition-[transform,box-shadow] duration-200 ease-out",
         "motion-reduce:transition-none motion-reduce:hover:transform-none",
       ].join(" ")}
       style={{
         boxShadow: hovered ? hoverShadow : baseShadow,
-        transform: hovered ? "translateY(-5px) scale(1.015)" : "translateY(0) scale(1)",
+        transform: hovered ? "translateY(-6px) scale(1.02)" : "translateY(0) scale(1)",
       }}
     >
       <CardFace m={metric} rarity={rarity} />
