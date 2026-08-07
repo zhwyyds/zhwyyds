@@ -22247,6 +22247,8 @@
 
   // ../BoosterPack.jsx
   var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+  var CARD_W = 320;
+  var CARD_H = 448;
   var PACK_COLORS = {
     default: { from: "#4b3b8c", to: "#241c4d", seal: "#c9b458" },
     sale: { from: "#0f5e8c", to: "#0a2e4a", seal: "#58a6c9" },
@@ -22376,6 +22378,146 @@
       ` })
     ] });
   }
+  var RARITY_TIERS = [
+    { key: "legendary", label: "\u4F20\u8BF4", min: 90, order: 0 },
+    { key: "epic", label: "\u53F2\u8BD7", min: 75, order: 1 },
+    { key: "rare", label: "\u7A00\u6709", min: 60, order: 2 },
+    { key: "common", label: "\u666E\u901A", min: 0, order: 3 }
+  ];
+  function groupByRarity(cards) {
+    const groups = RARITY_TIERS.map((t) => ({ ...t, cards: [] }));
+    cards.forEach((c) => {
+      const s = c.score ?? 0;
+      const tier = RARITY_TIERS.find((t) => s >= t.min) || RARITY_TIERS[RARITY_TIERS.length - 1];
+      groups.find((g) => g.key === tier.key).cards.push(c);
+    });
+    return groups.filter((g) => g.cards.length);
+  }
+  function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
+    const r = rarityOf(cards[0].score);
+    const n = cards.length;
+    const STACK_STEP = 26;
+    const pileH = CARD_H + (n - 1) * STACK_STEP;
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "relative shrink-0", style: { width: CARD_W, height: pileH }, children: [
+      [...cards].reverse().map((c, i) => {
+        const cardR = rarityOf(c.score);
+        return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "div",
+          {
+            className: "absolute left-0 overflow-hidden rounded-[10px]",
+            style: {
+              top: i * STACK_STEP,
+              zIndex: i + 1,
+              width: CARD_W,
+              height: CARD_H,
+              boxShadow: `0 0 0 1px ${cardR.edge}, 0 3px 8px oklch(0% 0 0 / 0.4)`
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardFace, { m: c, rarity: cardR })
+          },
+          c.metric_id || c.metric_cn
+        );
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          className: "absolute right-[-8px] top-0 z-[60] flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-black",
+          style: { background: r.gem, color: "oklch(16% 0.02 265)", border: "2px solid #fff", boxShadow: "0 2px 8px oklch(0% 0 0 / 0.5)" },
+          children: n
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "button",
+        {
+          type: "button",
+          role: "button",
+          tabIndex: 0,
+          "aria-label": `${tier.label}\u645E ${n} \u5F20\uFF0C\u70B9\u51FB${expanded ? "\u6536\u8D77" : "\u5C55\u5F00"}`,
+          onClick: onToggle,
+          onKeyDown: (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggle();
+            }
+          },
+          className: "absolute inset-0 z-[70] cursor-pointer rounded-[10px] border-2 border-transparent bg-transparent p-0 text-left outline-none focus-visible:border-white/60 focus-visible:ring-2"
+        }
+      ),
+      expanded && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          className: "absolute left-0 top-0 z-[80] flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-2",
+          style: { background: "oklch(15% 0.02 265 / 0.85)", backdropFilter: "blur(6px)", gap: -CARD_W + 88 },
+          onClick: (e) => e.stopPropagation(),
+          children: cards.map((c) => {
+            const cardR = rarityOf(c.score);
+            return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "div",
+              {
+                className: "rarity-pile-open-card relative shrink-0 cursor-pointer",
+                style: { width: CARD_W, height: CARD_H },
+                children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      onSelect && onSelect(c);
+                    },
+                    "aria-label": `\u6307\u6807 ${c.metric_cn}\uFF0C\u7A00\u6709\u5EA6 ${cardR.label}\uFF0C\u8BC4\u5206 ${c.score ?? "\u2014"}`,
+                    className: "block h-full w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-left outline-none focus-visible:ring-2",
+                    children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "h-full w-full overflow-hidden rounded-[10px]", style: { boxShadow: `0 0 0 2px ${cardR.gem}, 0 0 0 3px #fff, 0 18px 36px oklch(0% 0 0 / 0.55), ${cardR.glow}` }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardFace, { m: c, rarity: cardR }) })
+                  }
+                )
+              },
+              c.metric_id || c.metric_cn
+            );
+          })
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+        "div",
+        {
+          className: "absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] font-bold",
+          style: { color: r.gem },
+          children: [
+            tier.label,
+            " \xB7 ",
+            n,
+            " \u5F20"
+          ]
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
+        .rarity-pile-open-card {
+          transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
+          z-index: 1;
+        }
+        .rarity-pile-open-card:hover {
+          transform: translateY(-40px) scale(1.1);
+          z-index: 99;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .rarity-pile-open-card { transition: none; }
+          .rarity-pile-open-card:hover { transform: translateY(-14px) scale(1.06); }
+        }
+      ` })
+    ] });
+  }
+  function RarityPiles({ cards, onSelect }) {
+    const [expandedKey, setExpandedKey] = (0, import_react2.useState)(null);
+    const groups = groupByRarity(cards);
+    if (!groups.length) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { role: "list", "aria-label": "\u6309\u7A00\u6709\u5EA6\u5206\u645E\u7684\u6307\u6807\u5361", className: "flex items-end justify-center gap-10 pt-8 pb-10", children: groups.map((g) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { role: "listitem", style: { paddingBottom: 32 }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      RarityPile,
+      {
+        tier: g,
+        cards: g.cards,
+        expanded: expandedKey === g.key,
+        onToggle: () => setExpandedKey((k) => k === g.key ? null : g.key),
+        onSelect
+      }
+    ) }, g.key)) });
+  }
   function CardGridCard({ m, revealed, onSelect }) {
     const [hovered, setHovered] = (0, import_react2.useState)(false);
     const r = rarityOf(m.score);
@@ -22474,8 +22616,8 @@
       return () => timers.current.forEach(clearTimeout);
     }, [cards]);
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "w-full", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "mb-3 text-center text-[12px]", style: { color: "#8f98a8" }, children: phase === "fly" ? `\u5F00\u5305\u4E2D \xB7 ${pack.title}\u2026` : phase === "reveal" ? "\u63ED\u793A\u4E2D\u2026" : `\u5F00\u5305\u5B8C\u6210 \xB7 ${deck.length} \u5F20\u6307\u6807\u5361\uFF08hover \u6D6E\u8D77\u653E\u5927\uFF0C\u70B9\u51FB\u67E5\u770B\u5B8C\u6574\u4FE1\u606F\uFF09` }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardGrid, { cards: deck, revealedAll: phase === "done", onSelect: setSelected }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "mb-3 text-center text-[12px]", style: { color: "#8f98a8" }, children: phase === "fly" ? `\u5F00\u5305\u4E2D \xB7 ${pack.title}\u2026` : phase === "reveal" ? "\u63ED\u793A\u4E2D\u2026" : `\u5F00\u5305\u5B8C\u6210 \xB7 ${deck.length} \u5F20\u6309\u7A00\u6709\u5EA6\u5206\u645E\uFF08\u70B9\u4E00\u645E\u5C55\u5F00\uFF0Chover \u653E\u5927\uFF0C\u70B9\u51FB\u67E5\u770B\u5B8C\u6574\u4FE1\u606F\uFF09` }),
+      phase === "done" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(RarityPiles, { cards: deck, onSelect: setSelected }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardGrid, { cards: deck, revealedAll: phase === "done", onSelect: setSelected }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(MetricCardModal, { metric: selected, onClose: () => setSelected(null) })
     ] });
   }
@@ -24085,7 +24227,7 @@
           metrics.length,
           " \u6761\u6307\u6807 \xB7",
           " ",
-          "\u4E00\u5305 30 \u5F20\uFF08\u5BF9\u5E94\u6279\u91CF\u5BFC\u5165\u6BCF\u7EC4\u5207\u5206\uFF09\xB7 \u5F00\u5305\u9010\u5F20\u63ED\u793A\uFF08\u8BC4\u5206 = \u7A00\u6709\u5EA6\uFF09\u2192 \u5361\u518C\u7F51\u683C \u2192 hover \u6D6E\u8D77 \u2192 \u70B9\u51FB\u770B\u5168\u90E8 48 \u5B57\u6BB5"
+          "\u4E00\u5305 30 \u5F20\uFF08\u5BF9\u5E94\u6279\u91CF\u5BFC\u5165\u6BCF\u7EC4\u5207\u5206\uFF09\xB7 \u5F00\u5305\u9010\u5F20\u63ED\u793A\uFF08\u8BC4\u5206 = \u7A00\u6709\u5EA6\uFF09\u2192 \u6309\u7A00\u6709\u5EA6\u5206\u645E \u2192 \u70B9\u645E\u5C55\u5F00 \u2192 \u70B9\u51FB\u770B\u5168\u90E8 48 \u5B57\u6BB5"
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(BoosterPack_default, { metrics, packs })

@@ -80,7 +80,7 @@ function App() {
         </h1>
         <p style={{ fontSize: 12.5, color: "#8f98a8", margin: "6px 0 0" }}>
           数据源：{source === "api" ? "指标库 API" : "指标库快照"} · {metrics.length} 条指标 ·{" "}
-          一包 30 张（对应批量导入每组切分）· 开包逐张揭示（评分 = 稀有度）→ 卡册网格 → hover 浮起 → 点击看全部 48 字段
+          一包 30 张（对应批量导入每组切分）· 开包逐张揭示（评分 = 稀有度）→ 按稀有度分摞 → 点摞展开 → 点击看全部 48 字段
         </p>
       </header>
       <BoosterPackDemo metrics={metrics} packs={packs} />

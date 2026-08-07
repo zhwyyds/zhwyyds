@@ -248,6 +248,165 @@ export function HandFan({ cards, onSelect }) {
 }
 
 /* ---------------------------------------------------------------------------
+ * 按稀有度分摞：传说/史诗/稀有/普通 各成一摞，紧密堆叠露色边，
+ * 点击展开该摞（横向排开），hover 单卡原位放大，点击进详情。
+ * ------------------------------------------------------------------------- */
+const RARITY_TIERS = [
+  { key: "legendary", label: "传说", min: 90, order: 0 },
+  { key: "epic", label: "史诗", min: 75, order: 1 },
+  { key: "rare", label: "稀有", min: 60, order: 2 },
+  { key: "common", label: "普通", min: 0, order: 3 },
+];
+
+/** 将卡按稀有度分摞（无评分归普通） */
+function groupByRarity(cards) {
+  const groups = RARITY_TIERS.map((t) => ({ ...t, cards: [] }));
+  cards.forEach((c) => {
+    const s = c.score ?? 0;
+    const tier = RARITY_TIERS.find((t) => s >= t.min) || RARITY_TIERS[RARITY_TIERS.length - 1];
+    groups.find((g) => g.key === tier.key).cards.push(c);
+  });
+  return groups.filter((g) => g.cards.length);
+}
+
+/** 单摞：紧密堆叠（每张完整卡面向上错开，露出顶部名称栏），点击展开成排 */
+function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
+  const r = rarityOf(cards[0].score); // 摞的稀有度色
+  const n = cards.length;
+  const STACK_STEP = 26; // 错开间距：露出名称栏
+  const pileH = CARD_H + (n - 1) * STACK_STEP;
+
+  return (
+    <div className="relative shrink-0" style={{ width: CARD_W, height: pileH }}>
+      {/* 堆叠：每张完整卡面向下错开、zIndex 递增，最上层完整可见
+         cards 已按评分降序传入，反转后让评分最高的渲染在 i 最大（z 最高、最显眼） */}
+      {[...cards].reverse().map((c, i) => {
+        const cardR = rarityOf(c.score);
+        return (
+          <div
+            key={c.metric_id || c.metric_cn}
+            className="absolute left-0 overflow-hidden rounded-[10px]"
+            style={{
+              top: i * STACK_STEP,
+              zIndex: i + 1,
+              width: CARD_W,
+              height: CARD_H,
+              boxShadow: `0 0 0 1px ${cardR.edge}, 0 3px 8px oklch(0% 0 0 / 0.4)`,
+            }}
+          >
+            <CardFace m={c} rarity={cardR} />
+          </div>
+        );
+      })}
+
+      {/* 摞角标：张数（贴最上层） */}
+      <div
+        className="absolute right-[-8px] top-0 z-[60] flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-black"
+        style={{ background: r.gem, color: "oklch(16% 0.02 265)", border: "2px solid #fff", boxShadow: "0 2px 8px oklch(0% 0 0 / 0.5)" }}
+      >
+        {n}
+      </div>
+
+      {/* 点击层：整摞可点（展开/收起） */}
+      <button
+        type="button"
+        role="button"
+        tabIndex={0}
+        aria-label={`${tier.label}摞 ${n} 张，点击${expanded ? "收起" : "展开"}`}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+        className="absolute inset-0 z-[70] cursor-pointer rounded-[10px] border-2 border-transparent bg-transparent p-0 text-left outline-none focus-visible:border-white/60 focus-visible:ring-2"
+      />
+
+      {/* 展开态：整摞横向排开（覆盖在堆叠上方，z 最高） */}
+      {expanded && (
+        <div
+          className="absolute left-0 top-0 z-[80] flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-2"
+          style={{ background: "oklch(15% 0.02 265 / 0.85)", backdropFilter: "blur(6px)", gap: -CARD_W + 88 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {cards.map((c) => {
+            const cardR = rarityOf(c.score);
+            return (
+              <div
+                key={c.metric_id || c.metric_cn}
+                className="rarity-pile-open-card relative shrink-0 cursor-pointer"
+                style={{ width: CARD_W, height: CARD_H }}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect && onSelect(c);
+                  }}
+                  aria-label={`指标 ${c.metric_cn}，稀有度 ${cardR.label}，评分 ${c.score ?? "—"}`}
+                  className="block h-full w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-left outline-none focus-visible:ring-2"
+                >
+                  <div className="h-full w-full overflow-hidden rounded-[10px]" style={{ boxShadow: `0 0 0 2px ${cardR.gem}, 0 0 0 3px #fff, 0 18px 36px oklch(0% 0 0 / 0.55), ${cardR.glow}` }}>
+                    <CardFace m={c} rarity={cardR} />
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 摞名 */}
+      <div
+        className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] font-bold"
+        style={{ color: r.gem }}
+      >
+        {tier.label} · {n} 张
+      </div>
+
+      <style>{`
+        .rarity-pile-open-card {
+          transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
+          z-index: 1;
+        }
+        .rarity-pile-open-card:hover {
+          transform: translateY(-40px) scale(1.1);
+          z-index: 99;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .rarity-pile-open-card { transition: none; }
+          .rarity-pile-open-card:hover { transform: translateY(-14px) scale(1.06); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/** 分摞陈列：30 张 → 4 摞（传说/史诗/稀有/普通），点摞展开 */
+export function RarityPiles({ cards, onSelect }) {
+  const [expandedKey, setExpandedKey] = useState(null);
+  const groups = groupByRarity(cards);
+  if (!groups.length) return null;
+
+  return (
+    <div role="list" aria-label="按稀有度分摞的指标卡" className="flex items-end justify-center gap-10 pt-8 pb-10">
+      {groups.map((g) => (
+        <div key={g.key} role="listitem" style={{ paddingBottom: 32 }}>
+          <RarityPile
+            tier={g}
+            cards={g.cards}
+            expanded={expandedKey === g.key}
+            onToggle={() => setExpandedKey((k) => (k === g.key ? null : g.key))}
+            onSelect={onSelect}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
  * 卡册网格卡（一包 30 张的展示形态）—— 每张完全可见，hover 浮起放大
  * ------------------------------------------------------------------------- */
 export function CardGridCard({ m, revealed, onSelect }) {
@@ -360,7 +519,7 @@ export function CardGrid({ cards, revealedAll, onSelect }) {
  * ------------------------------------------------------------------------- */
 export function BoosterPackOpener({ pack, cards }) {
   const [phase, setPhase] = useState("fly"); // fly(卡片入场) | reveal(逐张翻面) | done
-  const [deck, setDeck] = useState([]);      // 网格状态（含 __revealed 标记）
+  const [deck, setDeck] = useState([]);      // 揭示网格状态（含 __revealed 标记）
   const [selected, setSelected] = useState(null);
   const timers = useRef([]);
 
@@ -389,9 +548,13 @@ export function BoosterPackOpener({ pack, cards }) {
           ? `开包中 · ${pack.title}…`
           : phase === "reveal"
           ? "揭示中…"
-          : `开包完成 · ${deck.length} 张指标卡（hover 浮起放大，点击查看完整信息）`}
+          : `开包完成 · ${deck.length} 张按稀有度分摞（点一摞展开，hover 放大，点击查看完整信息）`}
       </div>
-      <CardGrid cards={deck} revealedAll={phase === "done"} onSelect={setSelected} />
+      {phase === "done" ? (
+        <RarityPiles cards={deck} onSelect={setSelected} />
+      ) : (
+        <CardGrid cards={deck} revealedAll={phase === "done"} onSelect={setSelected} />
+      )}
       <MetricCardModal metric={selected} onClose={() => setSelected(null)} />
     </div>
   );
