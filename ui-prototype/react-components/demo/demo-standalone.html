@@ -22320,7 +22320,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
                   children: "\u2715"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[360px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[392px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
               ] }) })
@@ -22333,8 +22333,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
   // ../BoosterPack.jsx
   var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-  var CARD_W = 280;
-  var CARD_H = 392;
+  var CARD_W = 320;
+  var CARD_H = 448;
   var PACK_COLORS = {
     default: { from: "#4b3b8c", to: "#241c4d", seal: "#c9b458" },
     sale: { from: "#0f5e8c", to: "#0a2e4a", seal: "#58a6c9" },
@@ -22402,8 +22402,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
             state === "gone" ? "pointer-events-none opacity-0 scale-0" : ""
           ].join(" "),
           style: {
-            width: 168,
-            height: 232,
+            width: 208,
+            height: 288,
             transform: state === "idle" ? "translateY(0)" : void 0
           },
           children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
@@ -22428,19 +22428,19 @@ Check your Browserslist config to be sure that your targets are set up correctly
                     "div",
                     {
                       style: {
-                        width: 64,
-                        height: 64,
+                        width: 78,
+                        height: 78,
                         transform: "rotate(45deg)",
                         background: `radial-gradient(circle at 35% 30%, ${colors.seal}, #7a5c1e)`,
                         border: "3px solid #f0e6c8",
-                        boxShadow: `0 0 24px ${colors.seal}`
+                        boxShadow: `0 0 30px ${colors.seal}`
                       }
                     }
                   ),
                   /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                     "span",
                     {
-                      className: "absolute text-[13px] font-black tracking-widest",
+                      className: "absolute text-[15px] font-black tracking-widest",
                       style: { color: "#f7efd6", textShadow: "0 1px 2px rgba(0,0,0,0.7)" },
                       children: "DG"
                     }
@@ -22509,7 +22509,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
                 role: "listitem",
                 className: "card-slot shrink-0",
                 style: {
-                  marginLeft: i === 0 ? 0 : spread ? -56 : -168,
+                  marginLeft: i === 0 ? 0 : spread ? -64 : -192,
                   zIndex: i,
                   transition: "margin 0.32s cubic-bezier(0.22,1,0.36,1)"
                 },

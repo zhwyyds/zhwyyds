@@ -17,8 +17,9 @@
 import { useEffect, useRef, useState } from "react";
 import { MetricCardModal, CardFace, Gem, rarityOf } from "./MetricCard.jsx";
 
-const CARD_W = 280;
-const CARD_H = 392;
+// 炉石实体卡比例 ≈ 1:1.4，放大到 320×448（大气）
+const CARD_W = 320;
+const CARD_H = 448;
 
 /** 卡包配色（按主题域） */
 const PACK_COLORS = {
@@ -94,8 +95,8 @@ export function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled
           state === "gone" ? "pointer-events-none opacity-0 scale-0" : "",
         ].join(" ")}
         style={{
-          width: 168,
-          height: 232,
+          width: 208,
+          height: 288,
           transform: state === "idle" ? "translateY(0)" : undefined,
         }}
       >
@@ -118,16 +119,16 @@ export function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled
           <div className="absolute inset-0 flex items-center justify-center">
             <div
               style={{
-                width: 64,
-                height: 64,
+                width: 78,
+                height: 78,
                 transform: "rotate(45deg)",
                 background: `radial-gradient(circle at 35% 30%, ${colors.seal}, #7a5c1e)`,
                 border: "3px solid #f0e6c8",
-                boxShadow: `0 0 24px ${colors.seal}`,
+                boxShadow: `0 0 30px ${colors.seal}`,
               }}
             />
             <span
-              className="absolute text-[13px] font-black tracking-widest"
+              className="absolute text-[15px] font-black tracking-widest"
               style={{ color: "#f7efd6", textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}
             >
               DG
@@ -204,7 +205,7 @@ export function HandFan({ cards, onSelect }) {
             role="listitem"
             className="card-slot shrink-0"
             style={{
-              marginLeft: i === 0 ? 0 : spread ? -56 : -168,
+              marginLeft: i === 0 ? 0 : spread ? -64 : -192,
               zIndex: i,
               transition: "margin 0.32s cubic-bezier(0.22,1,0.36,1)",
             }}

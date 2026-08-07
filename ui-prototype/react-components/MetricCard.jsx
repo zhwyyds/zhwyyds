@@ -518,7 +518,7 @@ export function MetricCardGrid({ metrics = [], onOpenCard }) {
     );
   }
   return (
-    <div role="list" aria-label="指标卡库" className="grid grid-cols-[repeat(auto-fill,minmax(252px,1fr))] gap-4">
+    <div role="list" aria-label="指标卡库" className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
       {metrics.map((m) => (
         <div key={m.metric_id || m.metric_cn} role="listitem">
           <MetricCard metric={m} onOpen={onOpenCard} />
@@ -591,7 +591,7 @@ export function MetricCardModal({ metric, onClose }) {
           ✕
         </button>
 
-        <div className="mc-flip-scene h-[360px]">
+        <div className="mc-flip-scene h-[392px]">
           <div className={`mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`}>
             <div className="mc-flip-face absolute inset-0 overflow-hidden rounded-2xl">
               <CardFace m={metric} rarity={rarity} flipped={flipped} onFlip={() => setFlipped((v) => !v)} />
