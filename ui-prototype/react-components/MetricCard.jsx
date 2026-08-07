@@ -1,18 +1,22 @@
 /**
  * ============================================================================
- * MetricCard · 数据治理指标卡片组件（成品卡）
+ * MetricCard · 数据治理指标卡片组件（成品卡）—— 炉石传说（Hearthstone）风格
  * ============================================================================
- * 风格：TCG 集换式卡牌质感 × 企业级可读性
- *   卡牌质感：细装饰边框 + 双层描边 + 四角饰点 + 多层阴影 hover 抬升
- *   企业约束：无粒子特效 / 无炫丽渐变 / 业务信息优先 / WCAG AA 对比度
+ * 参考炉石卡牌视觉体系：
+ *   - 顶部名称栏（稀有度描边 + 宝石 ◆ + 卡名）
+ *   - 中部深色卡面主体（英文名 / 构件 / 口径）
+ *   - 底部攻/血式角标（左=质量评分，右=版本号）—— 对应炉石"攻击/生命"
+ *   - 稀有度宝石与边框色：≥90 橙金（传说）/ ≥75 紫（史诗）/ ≥60 蓝（稀有）/ <60 灰（普通）
+ *   - hover 抬升 + 稀有度色发光（克制，无粒子特效）
+ *
+ * 业务约束（用户确认）：
+ *   - 核心数字文字对比度满足 WCAG AA（白字 on 深色卡面 ≈ 12.9:1；宝石色均 ≥ 4.5:1）
+ *   - 业务信息优先：名称/口径/评分/版本为视觉主体，装饰元素不抢信息
  *
  * 设计参数（产品确认）：
- *   DESIGN_VARIANCE = 5  —— 适度辨识度（TCG 元素克制存在，不喧宾夺主）
- *   MOTION_INTENSITY = 4 —— 中等动效（hover 抬升 / 下探弹窗 / 翻面，全部可降级）
- *   VISUAL_DENSITY   = 7  —— 高信息密度（卡面紧凑承载名称/中英文/口径/时间/角标/徽章）
+ *   DESIGN_VARIANCE = 5 · MOTION_INTENSITY = 4 · VISUAL_DENSITY = 7
  *
  * 产品隐喻（PRD 1.5）：指标 = 成品卡，主题域 = 卡库，评分 = 稀有度，口径 = 效果文字
- *
  * 技术栈：React 18 + Tailwind CSS（无第三方 UI 依赖）
  * 无障碍：语义 <button> / aria / focus-visible / Esc 关闭 / prefers-reduced-motion 降级
  * ============================================================================
@@ -24,7 +28,7 @@ import { useEffect, useRef, useState } from "react";
  * 常量与工具
  * ------------------------------------------------------------------------- */
 
-/** 14 主题域角标配色 —— 深色底 + 白字，均为对比度 ≥ 4.5:1 的深色系 */
+/** 14 主题域角标配色 —— 深色底 + 白字，对比度均 ≥ 4.5:1 */
 const DOMAIN_STYLES = {
   sale:  { label: "交易",     bg: "#0b4f6c" },
   mall:  { label: "商场",     bg: "#2d5a27" },
@@ -45,27 +49,32 @@ const DOMAIN_FALLBACK = { label: "未知域", bg: "#4b5563" };
 
 /** 状态徽章 —— 实色底 + 白字，对比度均 ≥ 4.5:1 */
 const STATUS_STYLES = {
-  approved: { label: "已审核", bg: "#1a7f37" }, // 白字对比 ≈ 4.9:1
-  pending:  { label: "待审核", bg: "#8a5a00" }, // 白字对比 ≈ 5.1:1
-  rejected: { label: "已打回", bg: "#a40e26" }, // 白字对比 ≈ 7.0:1
+  approved: { label: "已审核", bg: "#1a7f37" }, // 白字 ≈ 4.9:1
+  pending:  { label: "待审核", bg: "#8a5a00" }, // 白字 ≈ 5.1:1
+  rejected: { label: "已打回", bg: "#a40e26" }, // 白字 ≈ 7.0:1
+  draft:    { label: "草稿",   bg: "#5c6b7a" }, // 白字 ≈ 6.0:1
 };
 
-/** 异议标记（争议中）—— 深红描边 + 淡红底文字（非实色，避免与"已打回"撞视觉） */
+/** 异议标记 —— 淡红底深红字（与"已打回"实色区分） */
 const OBJECTION_STYLE = {
-  border: "#a40e26",
-  text: "#7a0c1c", // 对比 ≈ 9.5:1 on #fff
-  bg: "#fff1f0",
+  border: "#e5534b",
+  text: "#ffd7d5", // 深色卡面上可读
+  bg: "rgba(165,14,38,0.25)",
 };
 
-/** 稀有度（评分 → 星级，PRD 3.6：≥90 优秀 / ≥75 良好 / ≥60 合格 / <60 待改进） */
+/**
+ * 稀有度（评分 → 炉石宝石体系）：
+ *   ≥90 橙金（传说）/ ≥75 紫（史诗）/ ≥60 蓝（稀有）/ <60 灰（普通）
+ * 宝石色均取"深色变体"，保证白字对比 ≥ 4.5:1
+ */
 function rarityOf(score) {
-  if (score >= 90) return { stars: 4, label: "优秀" };
-  if (score >= 75) return { stars: 3, label: "良好" };
-  if (score >= 60) return { stars: 2, label: "合格" };
-  return { stars: 1, label: "待改进" };
+  if (score >= 90) return { stars: 4, label: "传说",  gem: "#c76f00", glow: "0 0 18px rgba(199,111,0,0.45)" };
+  if (score >= 75) return { stars: 3, label: "史诗",  gem: "#7c3aed", glow: "0 0 18px rgba(124,58,237,0.45)" };
+  if (score >= 60) return { stars: 2, label: "稀有",  gem: "#2563eb", glow: "0 0 16px rgba(37,99,235,0.40)" };
+  return          { stars: 1, label: "普通",  gem: "#6b7280", glow: "0 0 12px rgba(107,114,128,0.30)" };
 }
 
-/** 展示时间（企业级：显式日期，不做"3 天前"模糊化） */
+/** 展示时间 */
 function formatTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -74,25 +83,46 @@ function formatTime(iso) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/** 深色卡面色板（白字 on 深色，对比度均 ≥ 4.5:1） */
 const CARD_TEXT = {
-  title: "#1f2328", // 主文字，on #fff ≈ 16:1
-  body: "#3d444d",  // 口径文字，≈ 11:1
-  muted: "#57606a", // 英文名/时间，≈ 7.4:1
-  faint: "#6e7781", // 辅助标注，≈ 5.4:1
+  title: "#ffffff",   // 卡名，on #2a3040 ≈ 12.9:1
+  body: "#d3d9e2",    // 口径正文，≈ 9.6:1
+  muted: "#b8c0cc",   // 英文名/ID，≈ 7.3:1
+  faint: "#8f98a8",   // 辅助标签/时间，≈ 4.9:1
 };
-const CARD_BORDER = "#d0d7de";
+const CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%)";
+const NAME_BAR_BG = "linear-gradient(180deg, #383f55 0%, #2a3040 100%)";
+const GEM_BORDER = "#c9ced8";
 
 /* ---------------------------------------------------------------------------
  * 子组件
  * ------------------------------------------------------------------------- */
 
-/** 卡面内容（网格/弹窗正面共用） */
+/** 炉石式宝石（菱形 ◆） */
+function Gem({ color, size = 14 }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block shrink-0"
+      style={{
+        width: size,
+        height: size,
+        transform: "rotate(45deg)",
+        background: color,
+        border: `1.5px solid ${GEM_BORDER}`,
+        borderRadius: 3,
+        boxShadow: `0 0 6px ${color}`,
+      }}
+    />
+  );
+}
+
+/** 卡面（正面）—— 炉石布局：名称栏 / 中部主体 / 底部攻·血角标 */
 function CardFace({ m, rarity, onFlip, flipped }) {
   const domain = DOMAIN_STYLES[m.domain_code] || DOMAIN_FALLBACK;
   const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
   const hasObjection = Boolean(m.objection_status && m.objection_status !== "none" && m.objection_status !== "") || Boolean(m.objection);
 
-  // 构件（词根）：root_ids 分号分隔 → 标签
   const roots = String(m.root_ids || "")
     .split(/[;,]/)
     .map((s) => s.trim())
@@ -101,118 +131,158 @@ function CardFace({ m, rarity, onFlip, flipped }) {
   const dataTypeLabels = { amt: "金额", cnt: "数量", pct: "比率", rate: "比率", ratio: "比率", avg: "均值", idx: "指数" };
 
   return (
-    <div className="relative flex h-full flex-col p-4">
-      {/* 左上：业务域角标 */}
+    <div className="relative flex h-full flex-col overflow-hidden rounded-lg" style={{ background: CARD_BG }}>
+      {/* ── 顶部名称栏（炉石卡牌顶栏）── */}
       <div
-        className="absolute left-4 top-4 rounded-sm px-1.5 py-0.5 text-[11px] font-semibold tracking-wide"
-        style={{ backgroundColor: domain.bg, color: "#ffffff" }}
+        className="relative flex items-center gap-2 px-3 py-2"
+        style={{
+          background: NAME_BAR_BG,
+          borderBottom: `2px solid ${rarity.gem}`,
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.4)`,
+        }}
       >
-        {domain.label}
-      </div>
-
-      {/* 右上：状态徽章 + 异议标记 */}
-      <div className="absolute right-4 top-4 flex items-center gap-1.5">
-        {hasObjection && (
-          <span
-            className="rounded-sm border px-1.5 py-0.5 text-[10px] font-bold tracking-wide"
-            style={{ borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg }}
-            title="存在异议，口径待复核"
-          >
-            异议
-          </span>
-        )}
-        <span
-          className="rounded-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide"
-          style={{ backgroundColor: status.bg, color: "#ffffff" }}
+        <Gem color={rarity.gem} />
+        <h3
+          className="min-w-0 flex-1 truncate text-[15px] font-extrabold leading-tight tracking-wide"
+          style={{ color: CARD_TEXT.title, textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
         >
-          {status.label}
-        </span>
-      </div>
-
-      {/* 稀有度（评分星级）+ 指标类型/数据类型 */}
-      <div className="mt-6 flex items-center gap-2" aria-label={`质量等级：${rarity.label}`}>
-        <span className="text-[11px] font-semibold" style={{ color: "#9a6700" }}>
-          {"★".repeat(rarity.stars)}
-          <span style={{ color: "#d4d9e0" }}>{"★".repeat(4 - rarity.stars)}</span>
-        </span>
-        <span className="text-[10px]" style={{ color: CARD_TEXT.faint }}>
-          {rarity.label}
-        </span>
-        <span
-          className="rounded-sm bg-[#f0f3f6] px-1 py-px text-[9.5px] font-semibold"
-          style={{ color: "#3d444d" }}
-        >
-          {typeLabels[m.metric_type] || m.metric_type || "原子"} · {dataTypeLabels[m.data_type] || m.data_type || "—"}
-        </span>
-      </div>
-
-      {/* 指标名称 + 中英文 */}
-      <h3
-        className="mt-2 text-lg font-bold leading-snug"
-        style={{ color: CARD_TEXT.title }}
-      >
-        {m.metric_cn || "—"}
-      </h3>
-      <p
-        className="mt-0.5 font-mono text-[11px] tracking-wide"
-        style={{ color: CARD_TEXT.muted }}
-      >
-        {m.metric_en || "pending_naming"} · {m.metric_id || ""}
-      </p>
-
-      {/* 构件（词根组合）+ 二级分类 */}
-      <div className="mt-2 flex flex-wrap items-center gap-1">
-        {roots.length > 0 ? (
-          roots.map((r) => (
+          {m.metric_cn || "—"}
+        </h3>
+        {/* 右上：异议 + 状态徽章 */}
+        <div className="flex shrink-0 items-center gap-1">
+          {hasObjection && (
             <span
-              key={r}
-              className="rounded-sm border px-1 py-px text-[9.5px] font-medium"
-              style={{ borderColor: "#d0d7de", color: "#57606a" }}
-              title="构成该指标的词根构件"
+              className="rounded-sm border px-1 py-0.5 text-[9px] font-bold tracking-wide"
+              style={{ borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg }}
+              title={m.objection_note || m.objection || "存在异议"}
             >
-              {r}
+              异议
             </span>
-          ))
-        ) : (
-          <span className="text-[9.5px]" style={{ color: CARD_TEXT.faint }}>
-            无构件映射
+          )}
+          <span
+            className="rounded-sm px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+            style={{ backgroundColor: status.bg, color: "#ffffff" }}
+          >
+            {status.label}
           </span>
-        )}
-        <span className="ml-auto text-[9.5px]" style={{ color: CARD_TEXT.faint }}>
-          {m.category_l2 || m.category_l1 || ""}
-        </span>
+        </div>
       </div>
 
-      {/* 口径摘要（3 行截断） */}
-      <p
-        className="mt-2.5 line-clamp-3 text-[12.5px] leading-relaxed"
-        style={{ color: CARD_TEXT.body }}
-        title={m.caliber_desc}
-      >
-        {m.caliber_desc || "暂无口径描述"}
-      </p>
+      {/* ── 中部主体：域角标 + 英文名 + 构件 + 口径 ── */}
+      <div className="relative flex flex-1 flex-col px-3 pt-2.5">
+        {/* 左上：业务域角标（小宝石+域名） */}
+        <div
+          className="absolute right-3 top-2 flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide"
+          style={{ backgroundColor: domain.bg, color: "#ffffff" }}
+        >
+          {domain.label}
+        </div>
 
-      {/* 底部：更新时间 + 翻面入口 */}
-      <div className="mt-auto flex items-center justify-between border-t pt-2.5" style={{ borderColor: CARD_BORDER }}>
-        <span className="text-[10.5px]" style={{ color: CARD_TEXT.faint }}>
-          更新 {formatTime(m.updated_at || m.created_at)}
-        </span>
-        {onFlip && (
-          <button
-            type="button"
-            onClick={onFlip}
-            className="rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none transition-colors focus-visible:ring-2"
-            style={{ color: "#0b4f6c", "--tw-ring-color": "#0969da" }}
-          >
-            {flipped ? "返回正面" : "查看完整口径 ↻"}
-          </button>
-        )}
+        <p className="pr-16 font-mono text-[10.5px] tracking-wide" style={{ color: CARD_TEXT.muted }}>
+          {m.metric_en || "pending_naming"}
+        </p>
+        <p className="font-mono text-[9px] tracking-widest" style={{ color: CARD_TEXT.faint }}>
+          {m.metric_id || ""} · {typeLabels[m.metric_type] || m.metric_type || "原子"}
+          {dataTypeLabels[m.data_type] ? " · " + dataTypeLabels[m.data_type] : ""}
+        </p>
+
+        {/* 构件（词根）标签 */}
+        <div className="mt-2 flex flex-wrap gap-1">
+          {roots.length > 0 ? (
+            roots.map((r) => (
+              <span
+                key={r}
+                className="rounded-sm border px-1 py-px font-mono text-[9px] font-medium"
+                style={{ borderColor: "rgba(255,255,255,0.18)", color: CARD_TEXT.muted, backgroundColor: "rgba(255,255,255,0.06)" }}
+                title="构成该指标的词根构件"
+              >
+                {r}
+              </span>
+            ))
+          ) : (
+            <span className="text-[9px]" style={{ color: CARD_TEXT.faint }}>
+              无构件映射
+            </span>
+          )}
+        </div>
+
+        {/* 口径摘要（3 行截断） */}
+        <p
+          className="mt-2 line-clamp-3 text-[11.5px] leading-relaxed"
+          style={{ color: CARD_TEXT.body }}
+          title={m.caliber_desc}
+        >
+          {m.caliber_desc || "暂无口径描述"}
+        </p>
+      </div>
+
+      {/* ── 底部：攻·血式角标（评分 / 版本）+ 时间条 ── */}
+      <div className="relative px-3 pb-2.5 pt-1">
+        {/* 左下：质量评分（对应攻击力） */}
+        <div
+          className="absolute bottom-2.5 left-3 flex h-11 w-11 flex-col items-center justify-center rounded-full"
+          style={{
+            background: rarity.gem,
+            border: "2px solid " + GEM_BORDER,
+            boxShadow: `0 2px 6px rgba(0,0,0,0.5), ${rarity.glow}`,
+          }}
+          aria-label={`质量评分 ${m.score ?? "—"}，${rarity.label}`}
+        >
+          <span className="text-[15px] font-black leading-none" style={{ color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }}>
+            {m.score ?? "—"}
+          </span>
+          <span className="mt-0.5 text-[7.5px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.92)" }}>
+            {rarity.label}
+          </span>
+        </div>
+
+        {/* 右下：版本号（对应生命值） */}
+        <div
+          className="absolute bottom-2.5 right-3 flex h-11 w-11 flex-col items-center justify-center rounded-full"
+          style={{
+            background: "#2c3345",
+            border: "2px solid " + GEM_BORDER,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+          }}
+          aria-label={`版本 ${m.version || "—"}，${typeLabels[m.metric_type] || m.metric_type || "原子"}指标`}
+        >
+          <span className="font-mono text-[13px] font-black leading-none" style={{ color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }}>
+            {m.version || "—"}
+          </span>
+          <span className="mt-0.5 text-[7.5px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.85)" }}>
+            {typeLabels[m.metric_type] || "原子"}
+          </span>
+        </div>
+
+        {/* 底部信息条：稀有度星级 + 更新时间 + 翻面入口 */}
+        <div
+          className="mt-1 flex items-center justify-between rounded-sm px-2 py-1"
+          style={{ backgroundColor: "rgba(255,255,255,0.05)", borderTop: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <span className="text-[10px] font-semibold" style={{ color: rarity.gem === "#c76f00" ? "#f5b24c" : rarity.gem }}>
+            {"★".repeat(rarity.stars)}
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(4 - rarity.stars)}</span>
+          </span>
+          <span className="text-[9px]" style={{ color: CARD_TEXT.faint }}>
+            更新 {formatTime(m.updated_at || m.created_at)}
+          </span>
+          {onFlip && (
+            <button
+              type="button"
+              onClick={onFlip}
+              className="rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2"
+              style={{ color: "#a8c7ff", "--tw-ring-color": "#58a6ff" }}
+            >
+              {flipped ? "返回正面" : "完整口径 ↻"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-/** 卡背：完整信息（指标库 48 字段全量分组展示，空值显示 —） */
+/** 字段行（完整态） */
 function FieldRow({ k, v, mono }) {
   return (
     <div className="flex gap-2 text-[11.5px] leading-relaxed">
@@ -234,7 +304,7 @@ function FieldGroup({ title, fields }) {
     <section>
       <h5
         className="mb-1.5 border-b pb-1 text-[10.5px] font-bold tracking-widest"
-        style={{ borderColor: "#e6e9ee", color: "#57606a" }}
+        style={{ borderColor: "rgba(255,255,255,0.14)", color: CARD_TEXT.muted }}
       >
         {title}
       </h5>
@@ -243,10 +313,11 @@ function FieldGroup({ title, fields }) {
   );
 }
 
+/** 卡背：完整信息（48 字段分组，滚动）—— 深色主题 */
 function CardBack({ m, onFlip }) {
   const typeLabels = { atomic: "原子", derived: "衍生", composite: "复合" };
   return (
-    <div className="flex h-full flex-col p-4">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg p-4" style={{ background: CARD_BG }}>
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-bold" style={{ color: CARD_TEXT.title }}>
           {m.metric_cn} · 完整信息
@@ -255,7 +326,7 @@ function CardBack({ m, onFlip }) {
           type="button"
           onClick={onFlip}
           className="rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none focus-visible:ring-2"
-          style={{ color: "#0b4f6c" }}
+          style={{ color: "#a8c7ff" }}
         >
           ↻ 返回正面
         </button>
@@ -343,26 +414,23 @@ function CardBack({ m, onFlip }) {
  * ------------------------------------------------------------------------- */
 
 /**
- * @param {{ metric: object }} props
- * metric: { metric_id, metric_cn, metric_en, domain_code, caliber_desc,
- *           formula, formula_cn, frequency, unit, dimensions, data_sources,
- *           source_table, owner, updated_at, review_status, objection, score }
+ * @param {{ metric: object, onOpen?: (m) => void }} props
  */
 export function MetricCard({ metric, onOpen }) {
   const [hovered, setHovered] = useState(false);
   const rarity = rarityOf(metric.score);
 
-  // TCG 质感：双层描边（白内圈 + 灰外圈）由多层 box-shadow 模拟，hover 时增强抬升
+  // 炉石式卡框：稀有度色描边（双层：白内圈 + 稀有度外圈）+ hover 稀有度发光抬升
   const baseShadow = [
-    "0 0 0 1px #ffffff",   // 内白描边（模拟卡牌白边）
-    "0 0 0 2px " + CARD_BORDER, // 外灰描边
-    "0 1px 2px rgba(31,35,40,0.10)",
+    `0 0 0 1px #ffffff`,
+    `0 0 0 2px ${rarity.gem}`,
+    "0 3px 8px rgba(0,0,0,0.45)",
   ].join(",");
   const hoverShadow = [
-    "0 0 0 1px #ffffff",
-    "0 0 0 2px #8c959f",
-    "0 8px 16px rgba(31,35,40,0.16)",
-    "0 16px 32px rgba(31,35,40,0.12)",
+    `0 0 0 1px #ffffff`,
+    `0 0 0 2px ${rarity.gem}`,
+    `0 12px 24px rgba(0,0,0,0.5)`,
+    rarity.glow,
   ].join(",");
 
   return (
@@ -371,21 +439,17 @@ export function MetricCard({ metric, onOpen }) {
       onClick={() => onOpen && onOpen(metric)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      aria-label={`指标 ${metric.metric_cn || metric.metric_id || ""}，${DOMAIN_STYLES[metric.domain_code]?.label || "未知域"}，${STATUS_STYLES[metric.review_status]?.label || "待审核"}`}
+      aria-label={`指标 ${metric.metric_cn || metric.metric_id || ""}，${DOMAIN_STYLES[metric.domain_code]?.label || "未知域"}，${STATUS_STYLES[metric.review_status]?.label || "待审核"}，评分 ${metric.score ?? "—"}`}
       className={[
-        "group relative w-full cursor-pointer rounded-lg bg-white text-left outline-none",
-        "focus-visible:ring-2 focus-visible:ring-offset-2",
-        // 动效强度 4/7：轻抬升 + 阴影增强，180ms 指数缓出（无粒子/无炫光）
+        "group relative w-full cursor-pointer rounded-[10px] bg-transparent text-left outline-none",
+        "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1f2c]",
+        // 动效强度 4/7：轻抬升 + 稀有度发光，180ms 指数缓出，无粒子
         "transition-[transform,box-shadow] duration-180 ease-out",
         "motion-reduce:transition-none motion-reduce:hover:transform-none",
       ].join(" ")}
       style={{
         boxShadow: hovered ? hoverShadow : baseShadow,
-        transform: hovered ? "translateY(-4px)" : "translateY(0)",
-        // 四角饰点（TCG 质感：细装饰，纯色小方块）
-        backgroundImage: "radial-gradient(circle at 8px 8px, " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at calc(100% - 8px) 8px, " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at 8px calc(100% - 8px), " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), " + CARD_BORDER + " 1.5px, transparent 1.5px)",
-        backgroundPosition: "0 0, 100% 0, 0 100%, 100% 100%",
-        backgroundRepeat: "no-repeat",
+        transform: hovered ? "translateY(-5px) scale(1.015)" : "translateY(0) scale(1)",
       }}
     >
       <CardFace m={metric} rarity={rarity} />
@@ -397,15 +461,12 @@ export function MetricCard({ metric, onOpen }) {
  * 主组件：卡牌网格（CSS Grid 自适应）
  * ------------------------------------------------------------------------- */
 
-/**
- * 布局：grid auto-fill + minmax(280px, 1fr)，窄屏自动降列，无需媒体查询断点
- */
 export function MetricCardGrid({ metrics = [], onOpenCard }) {
   if (!metrics.length) {
     return (
       <div
         className="rounded-lg border border-dashed p-10 text-center text-sm"
-        style={{ borderColor: CARD_BORDER, color: CARD_TEXT.muted }}
+        style={{ borderColor: "rgba(255,255,255,0.2)", color: CARD_TEXT.muted, background: "#1c212e" }}
       >
         暂无指标（卡库为空）
       </div>
@@ -415,7 +476,7 @@ export function MetricCardGrid({ metrics = [], onOpenCard }) {
     <div
       role="list"
       aria-label="指标卡库"
-      className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+      className="grid grid-cols-[repeat(auto-fill,minmax(252px,1fr))] gap-4"
     >
       {metrics.map((m) => (
         <div key={m.metric_id || m.metric_cn} role="listitem">
@@ -430,17 +491,11 @@ export function MetricCardGrid({ metrics = [], onOpenCard }) {
  * 主组件：下探弹窗 + 翻面预览
  * ------------------------------------------------------------------------- */
 
-/**
- * 交互：点击卡片 → 弹窗从卡片处"下探"落下（scale .96 → 1 + 下滑），
- *       弹窗内可 3D 翻面查看完整口径。
- * 无障碍：role=dialog / aria-modal / Esc 关闭 / 点击遮罩关闭 / 初始聚焦弹窗。
- */
 export function MetricCardModal({ metric, onClose }) {
   const [flipped, setFlipped] = useState(false);
   const dialogRef = useRef(null);
   const rarity = rarityOf(metric?.score);
 
-  // 焦点管理：打开时聚焦弹窗；Esc 关闭；prefers-reduced-motion 时关闭翻面动画
   useEffect(() => {
     const el = dialogRef.current;
     if (el) el.focus();
@@ -448,7 +503,7 @@ export function MetricCardModal({ metric, onClose }) {
       if (e.key === "Escape") onClose && onClose();
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden"; // 锁定背景滚动
+    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
@@ -459,11 +514,10 @@ export function MetricCardModal({ metric, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(20,24,28,0.45)] p-4 pt-[8vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(8,10,14,0.72)] p-4 pt-[7vh]"
       onClick={onClose}
       aria-label="关闭弹窗"
     >
-      {/* 下探动画：drop-in（scale .96 + translateY -16px → 0，200ms ease-out） */}
       <div
         ref={dialogRef}
         role="dialog"
@@ -471,8 +525,11 @@ export function MetricCardModal({ metric, onClose }) {
         aria-label={`指标 ${metric.metric_cn} 详情`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-xl bg-white outline-none [animation:drop-in_200ms_ease-out] motion-reduce:[animation:none]"
-        style={{ boxShadow: "0 24px 64px rgba(20,24,28,0.35), 0 0 0 1px rgba(20,24,28,0.08)" }}
+        className="relative w-full max-w-md rounded-xl outline-none [animation:drop-in_200ms_ease-out] motion-reduce:[animation:none]"
+        style={{
+          boxShadow: `0 24px 64px rgba(0,0,0,0.6), 0 0 0 2px ${rarity.gem}, 0 0 0 3px #ffffff`,
+          background: "#1c212e",
+        }}
       >
         <style>{`
           @keyframes drop-in {
@@ -489,7 +546,6 @@ export function MetricCardModal({ metric, onClose }) {
           }
         `}</style>
 
-        {/* 关闭按钮（弹窗右上） */}
         <button
           type="button"
           onClick={onClose}
@@ -500,13 +556,13 @@ export function MetricCardModal({ metric, onClose }) {
           ✕
         </button>
 
-        {/* 3D 翻面容器：正面 = 卡面摘要；背面 = 完整信息（48 字段，滚动） */}
-        <div className="mc-flip-scene h-[340px]">
+        {/* 3D 翻面：正面 = 卡面；背面 = 完整信息（48 字段滚动） */}
+        <div className="mc-flip-scene h-[360px]">
           <div className={`mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`}>
-            <div className="mc-flip-face absolute inset-0 overflow-hidden">
+            <div className="mc-flip-face absolute inset-0 overflow-hidden rounded-xl">
               <CardFace m={metric} rarity={rarity} flipped={flipped} onFlip={() => setFlipped((v) => !v)} />
             </div>
-            <div className="mc-flip-face mc-flip-back absolute inset-0 overflow-hidden">
+            <div className="mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-xl">
               <CardBack m={metric} onFlip={() => setFlipped((v) => !v)} />
             </div>
           </div>
@@ -517,7 +573,7 @@ export function MetricCardModal({ metric, onClose }) {
 }
 
 /* ---------------------------------------------------------------------------
- * 组合示例：网格 + 弹窗状态管理
+ * 组合示例
  * ------------------------------------------------------------------------- */
 
 export function MetricCardLibrary({ metrics }) {

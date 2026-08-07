@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>指标卡组件 Demo · 数据治理平台（自包含）</title>
+<title>指标卡组件 Demo · 炉石风格（自包含）</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:#f6f8fa;margin:0;padding:24px 16px 40px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:#12161f;margin:0;padding:24px 16px 40px;color:#d3d9e2}
 </style>
 </head>
 <body>
@@ -21847,23 +21847,25 @@ Check your Browserslist config to be sure that your targets are set up correctly
   var DOMAIN_FALLBACK = { label: "\u672A\u77E5\u57DF", bg: "#4b5563" };
   var STATUS_STYLES = {
     approved: { label: "\u5DF2\u5BA1\u6838", bg: "#1a7f37" },
-    // 白字对比 ≈ 4.9:1
+    // 白字 ≈ 4.9:1
     pending: { label: "\u5F85\u5BA1\u6838", bg: "#8a5a00" },
-    // 白字对比 ≈ 5.1:1
-    rejected: { label: "\u5DF2\u6253\u56DE", bg: "#a40e26" }
-    // 白字对比 ≈ 7.0:1
+    // 白字 ≈ 5.1:1
+    rejected: { label: "\u5DF2\u6253\u56DE", bg: "#a40e26" },
+    // 白字 ≈ 7.0:1
+    draft: { label: "\u8349\u7A3F", bg: "#5c6b7a" }
+    // 白字 ≈ 6.0:1
   };
   var OBJECTION_STYLE = {
-    border: "#a40e26",
-    text: "#7a0c1c",
-    // 对比 ≈ 9.5:1 on #fff
-    bg: "#fff1f0"
+    border: "#e5534b",
+    text: "#ffd7d5",
+    // 深色卡面上可读
+    bg: "rgba(165,14,38,0.25)"
   };
   function rarityOf(score) {
-    if (score >= 90) return { stars: 4, label: "\u4F18\u79C0" };
-    if (score >= 75) return { stars: 3, label: "\u826F\u597D" };
-    if (score >= 60) return { stars: 2, label: "\u5408\u683C" };
-    return { stars: 1, label: "\u5F85\u6539\u8FDB" };
+    if (score >= 90) return { stars: 4, label: "\u4F20\u8BF4", gem: "#c76f00", glow: "0 0 18px rgba(199,111,0,0.45)" };
+    if (score >= 75) return { stars: 3, label: "\u53F2\u8BD7", gem: "#7c3aed", glow: "0 0 18px rgba(124,58,237,0.45)" };
+    if (score >= 60) return { stars: 2, label: "\u7A00\u6709", gem: "#2563eb", glow: "0 0 16px rgba(37,99,235,0.40)" };
+    return { stars: 1, label: "\u666E\u901A", gem: "#6b7280", glow: "0 0 12px rgba(107,114,128,0.30)" };
   }
   function formatTime(iso) {
     if (!iso) return "\u2014";
@@ -21873,16 +21875,36 @@ Check your Browserslist config to be sure that your targets are set up correctly
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
   var CARD_TEXT = {
-    title: "#1f2328",
-    // 主文字，on #fff ≈ 16:1
-    body: "#3d444d",
-    // 口径文字，≈ 11:1
-    muted: "#57606a",
-    // 英文名/时间，≈ 7.4:1
-    faint: "#6e7781"
-    // 辅助标注，≈ 5.4:1
+    title: "#ffffff",
+    // 卡名，on #2a3040 ≈ 12.9:1
+    body: "#d3d9e2",
+    // 口径正文，≈ 9.6:1
+    muted: "#b8c0cc",
+    // 英文名/ID，≈ 7.3:1
+    faint: "#8f98a8"
+    // 辅助标签/时间，≈ 4.9:1
   };
-  var CARD_BORDER = "#d0d7de";
+  var CARD_BG = "linear-gradient(165deg, #2c3345 0%, #1c212e 55%, #151a24 100%)";
+  var NAME_BAR_BG = "linear-gradient(180deg, #383f55 0%, #2a3040 100%)";
+  var GEM_BORDER = "#c9ced8";
+  function Gem({ color, size = 14 }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      "span",
+      {
+        "aria-hidden": "true",
+        className: "inline-block shrink-0",
+        style: {
+          width: size,
+          height: size,
+          transform: "rotate(45deg)",
+          background: color,
+          border: `1.5px solid ${GEM_BORDER}`,
+          borderRadius: 3,
+          boxShadow: `0 0 6px ${color}`
+        }
+      }
+    );
+  }
   function CardFace({ m, rarity, onFlip, flipped }) {
     const domain = DOMAIN_STYLES[m.domain_code] || DOMAIN_FALLBACK;
     const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
@@ -21890,108 +21912,142 @@ Check your Browserslist config to be sure that your targets are set up correctly
     const roots = String(m.root_ids || "").split(/[;,]/).map((s) => s.trim()).filter(Boolean);
     const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
     const dataTypeLabels = { amt: "\u91D1\u989D", cnt: "\u6570\u91CF", pct: "\u6BD4\u7387", rate: "\u6BD4\u7387", ratio: "\u6BD4\u7387", avg: "\u5747\u503C", idx: "\u6307\u6570" };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex h-full flex-col p-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex h-full flex-col overflow-hidden rounded-lg", style: { background: CARD_BG }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
         "div",
         {
-          className: "absolute left-4 top-4 rounded-sm px-1.5 py-0.5 text-[11px] font-semibold tracking-wide",
-          style: { backgroundColor: domain.bg, color: "#ffffff" },
-          children: domain.label
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "absolute right-4 top-4 flex items-center gap-1.5", children: [
-        hasObjection && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "span",
-          {
-            className: "rounded-sm border px-1.5 py-0.5 text-[10px] font-bold tracking-wide",
-            style: { borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg },
-            title: "\u5B58\u5728\u5F02\u8BAE\uFF0C\u53E3\u5F84\u5F85\u590D\u6838",
-            children: "\u5F02\u8BAE"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "span",
-          {
-            className: "rounded-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide",
-            style: { backgroundColor: status.bg, color: "#ffffff" },
-            children: status.label
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-6 flex items-center gap-2", "aria-label": `\u8D28\u91CF\u7B49\u7EA7\uFF1A${rarity.label}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[11px] font-semibold", style: { color: "#9a6700" }, children: [
-          "\u2605".repeat(rarity.stars),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#d4d9e0" }, children: "\u2605".repeat(4 - rarity.stars) })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px]", style: { color: CARD_TEXT.faint }, children: rarity.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "span",
-          {
-            className: "rounded-sm bg-[#f0f3f6] px-1 py-px text-[9.5px] font-semibold",
-            style: { color: "#3d444d" },
-            children: [
-              typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50",
-              " \xB7 ",
-              dataTypeLabels[m.data_type] || m.data_type || "\u2014"
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        "h3",
-        {
-          className: "mt-2 text-lg font-bold leading-snug",
-          style: { color: CARD_TEXT.title },
-          children: m.metric_cn || "\u2014"
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "p",
-        {
-          className: "mt-0.5 font-mono text-[11px] tracking-wide",
-          style: { color: CARD_TEXT.muted },
+          className: "relative flex items-center gap-2 px-3 py-2",
+          style: {
+            background: NAME_BAR_BG,
+            borderBottom: `2px solid ${rarity.gem}`,
+            boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.4)`
+          },
           children: [
-            m.metric_en || "pending_naming",
-            " \xB7 ",
-            m.metric_id || ""
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Gem, { color: rarity.gem }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "h3",
+              {
+                className: "min-w-0 flex-1 truncate text-[15px] font-extrabold leading-tight tracking-wide",
+                style: { color: CARD_TEXT.title, textShadow: "0 1px 2px rgba(0,0,0,0.6)" },
+                children: m.metric_cn || "\u2014"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex shrink-0 items-center gap-1", children: [
+              hasObjection && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                "span",
+                {
+                  className: "rounded-sm border px-1 py-0.5 text-[9px] font-bold tracking-wide",
+                  style: { borderColor: OBJECTION_STYLE.border, color: OBJECTION_STYLE.text, backgroundColor: OBJECTION_STYLE.bg },
+                  title: m.objection_note || m.objection || "\u5B58\u5728\u5F02\u8BAE",
+                  children: "\u5F02\u8BAE"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                "span",
+                {
+                  className: "rounded-sm px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+                  style: { backgroundColor: status.bg, color: "#ffffff" },
+                  children: status.label
+                }
+              )
+            ] })
           ]
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-2 flex flex-wrap items-center gap-1", children: [
-        roots.length > 0 ? roots.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex flex-1 flex-col px-3 pt-2.5", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "div",
+          {
+            className: "absolute right-3 top-2 flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide",
+            style: { backgroundColor: domain.bg, color: "#ffffff" },
+            children: domain.label
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "pr-16 font-mono text-[10.5px] tracking-wide", style: { color: CARD_TEXT.muted }, children: m.metric_en || "pending_naming" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "font-mono text-[9px] tracking-widest", style: { color: CARD_TEXT.faint }, children: [
+          m.metric_id || "",
+          " \xB7 ",
+          typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50",
+          dataTypeLabels[m.data_type] ? " \xB7 " + dataTypeLabels[m.data_type] : ""
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-2 flex flex-wrap gap-1", children: roots.length > 0 ? roots.map((r) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "span",
           {
-            className: "rounded-sm border px-1 py-px text-[9.5px] font-medium",
-            style: { borderColor: "#d0d7de", color: "#57606a" },
+            className: "rounded-sm border px-1 py-px font-mono text-[9px] font-medium",
+            style: { borderColor: "rgba(255,255,255,0.18)", color: CARD_TEXT.muted, backgroundColor: "rgba(255,255,255,0.06)" },
             title: "\u6784\u6210\u8BE5\u6307\u6807\u7684\u8BCD\u6839\u6784\u4EF6",
             children: r
           },
           r
-        )) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[9.5px]", style: { color: CARD_TEXT.faint }, children: "\u65E0\u6784\u4EF6\u6620\u5C04" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "ml-auto text-[9.5px]", style: { color: CARD_TEXT.faint }, children: m.category_l2 || m.category_l1 || "" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        "p",
-        {
-          className: "mt-2.5 line-clamp-3 text-[12.5px] leading-relaxed",
-          style: { color: CARD_TEXT.body },
-          title: m.caliber_desc,
-          children: m.caliber_desc || "\u6682\u65E0\u53E3\u5F84\u63CF\u8FF0"
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-auto flex items-center justify-between border-t pt-2.5", style: { borderColor: CARD_BORDER }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10.5px]", style: { color: CARD_TEXT.faint }, children: [
-          "\u66F4\u65B0 ",
-          formatTime(m.updated_at || m.created_at)
-        ] }),
-        onFlip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "button",
+        )) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[9px]", style: { color: CARD_TEXT.faint }, children: "\u65E0\u6784\u4EF6\u6620\u5C04" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "p",
           {
-            type: "button",
-            onClick: onFlip,
-            className: "rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none transition-colors focus-visible:ring-2",
-            style: { color: "#0b4f6c", "--tw-ring-color": "#0969da" },
-            children: flipped ? "\u8FD4\u56DE\u6B63\u9762" : "\u67E5\u770B\u5B8C\u6574\u53E3\u5F84 \u21BB"
+            className: "mt-2 line-clamp-3 text-[11.5px] leading-relaxed",
+            style: { color: CARD_TEXT.body },
+            title: m.caliber_desc,
+            children: m.caliber_desc || "\u6682\u65E0\u53E3\u5F84\u63CF\u8FF0"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative px-3 pb-2.5 pt-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "div",
+          {
+            className: "absolute bottom-2.5 left-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
+            style: {
+              background: rarity.gem,
+              border: "2px solid " + GEM_BORDER,
+              boxShadow: `0 2px 6px rgba(0,0,0,0.5), ${rarity.glow}`
+            },
+            "aria-label": `\u8D28\u91CF\u8BC4\u5206 ${m.score ?? "\u2014"}\uFF0C${rarity.label}`,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[15px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }, children: m.score ?? "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-bold tracking-wide", style: { color: "rgba(255,255,255,0.92)" }, children: rarity.label })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "div",
+          {
+            className: "absolute bottom-2.5 right-3 flex h-11 w-11 flex-col items-center justify-center rounded-full",
+            style: {
+              background: "#2c3345",
+              border: "2px solid " + GEM_BORDER,
+              boxShadow: "0 2px 6px rgba(0,0,0,0.5)"
+            },
+            "aria-label": `\u7248\u672C ${m.version || "\u2014"}\uFF0C${typeLabels[m.metric_type] || m.metric_type || "\u539F\u5B50"}\u6307\u6807`,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-mono text-[13px] font-black leading-none", style: { color: "#ffffff", textShadow: "0 1px 1px rgba(0,0,0,0.5)" }, children: m.version || "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mt-0.5 text-[7.5px] font-bold tracking-wide", style: { color: "rgba(255,255,255,0.85)" }, children: typeLabels[m.metric_type] || "\u539F\u5B50" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "div",
+          {
+            className: "mt-1 flex items-center justify-between rounded-sm px-2 py-1",
+            style: { backgroundColor: "rgba(255,255,255,0.05)", borderTop: "1px solid rgba(255,255,255,0.08)" },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[10px] font-semibold", style: { color: rarity.gem === "#c76f00" ? "#f5b24c" : rarity.gem }, children: [
+                "\u2605".repeat(rarity.stars),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "rgba(255,255,255,0.25)" }, children: "\u2605".repeat(4 - rarity.stars) })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-[9px]", style: { color: CARD_TEXT.faint }, children: [
+                "\u66F4\u65B0 ",
+                formatTime(m.updated_at || m.created_at)
+              ] }),
+              onFlip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: onFlip,
+                  className: "rounded-sm px-1 py-0.5 text-[9.5px] font-semibold outline-none focus-visible:ring-2",
+                  style: { color: "#a8c7ff", "--tw-ring-color": "#58a6ff" },
+                  children: flipped ? "\u8FD4\u56DE\u6B63\u9762" : "\u5B8C\u6574\u53E3\u5F84 \u21BB"
+                }
+              )
+            ]
           }
         )
       ] })
@@ -22016,7 +22072,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         "h5",
         {
           className: "mb-1.5 border-b pb-1 text-[10.5px] font-bold tracking-widest",
-          style: { borderColor: "#e6e9ee", color: "#57606a" },
+          style: { borderColor: "rgba(255,255,255,0.14)", color: CARD_TEXT.muted },
           children: title
         }
       ),
@@ -22025,7 +22081,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
   }
   function CardBack({ m, onFlip }) {
     const typeLabels = { atomic: "\u539F\u5B50", derived: "\u884D\u751F", composite: "\u590D\u5408" };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col p-4", children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex h-full flex-col overflow-hidden rounded-lg p-4", style: { background: CARD_BG }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", { className: "text-sm font-bold", style: { color: CARD_TEXT.title }, children: [
           m.metric_cn,
@@ -22037,7 +22093,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
             type: "button",
             onClick: onFlip,
             className: "rounded-sm px-1.5 py-0.5 text-[10.5px] font-semibold outline-none focus-visible:ring-2",
-            style: { color: "#0b4f6c" },
+            style: { color: "#a8c7ff" },
             children: "\u21BB \u8FD4\u56DE\u6B63\u9762"
           }
         )
@@ -22136,17 +22192,15 @@ Check your Browserslist config to be sure that your targets are set up correctly
     const [hovered, setHovered] = (0, import_react.useState)(false);
     const rarity = rarityOf(metric.score);
     const baseShadow = [
-      "0 0 0 1px #ffffff",
-      // 内白描边（模拟卡牌白边）
-      "0 0 0 2px " + CARD_BORDER,
-      // 外灰描边
-      "0 1px 2px rgba(31,35,40,0.10)"
+      `0 0 0 1px #ffffff`,
+      `0 0 0 2px ${rarity.gem}`,
+      "0 3px 8px rgba(0,0,0,0.45)"
     ].join(",");
     const hoverShadow = [
-      "0 0 0 1px #ffffff",
-      "0 0 0 2px #8c959f",
-      "0 8px 16px rgba(31,35,40,0.16)",
-      "0 16px 32px rgba(31,35,40,0.12)"
+      `0 0 0 1px #ffffff`,
+      `0 0 0 2px ${rarity.gem}`,
+      `0 12px 24px rgba(0,0,0,0.5)`,
+      rarity.glow
     ].join(",");
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "button",
@@ -22155,21 +22209,17 @@ Check your Browserslist config to be sure that your targets are set up correctly
         onClick: () => onOpen && onOpen(metric),
         onMouseEnter: () => setHovered(true),
         onMouseLeave: () => setHovered(false),
-        "aria-label": `\u6307\u6807 ${metric.metric_cn || metric.metric_id || ""}\uFF0C${DOMAIN_STYLES[metric.domain_code]?.label || "\u672A\u77E5\u57DF"}\uFF0C${STATUS_STYLES[metric.review_status]?.label || "\u5F85\u5BA1\u6838"}`,
+        "aria-label": `\u6307\u6807 ${metric.metric_cn || metric.metric_id || ""}\uFF0C${DOMAIN_STYLES[metric.domain_code]?.label || "\u672A\u77E5\u57DF"}\uFF0C${STATUS_STYLES[metric.review_status]?.label || "\u5F85\u5BA1\u6838"}\uFF0C\u8BC4\u5206 ${metric.score ?? "\u2014"}`,
         className: [
-          "group relative w-full cursor-pointer rounded-lg bg-white text-left outline-none",
-          "focus-visible:ring-2 focus-visible:ring-offset-2",
-          // 动效强度 4/7：轻抬升 + 阴影增强，180ms 指数缓出（无粒子/无炫光）
+          "group relative w-full cursor-pointer rounded-[10px] bg-transparent text-left outline-none",
+          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1f2c]",
+          // 动效强度 4/7：轻抬升 + 稀有度发光，180ms 指数缓出，无粒子
           "transition-[transform,box-shadow] duration-180 ease-out",
           "motion-reduce:transition-none motion-reduce:hover:transform-none"
         ].join(" "),
         style: {
           boxShadow: hovered ? hoverShadow : baseShadow,
-          transform: hovered ? "translateY(-4px)" : "translateY(0)",
-          // 四角饰点（TCG 质感：细装饰，纯色小方块）
-          backgroundImage: "radial-gradient(circle at 8px 8px, " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at calc(100% - 8px) 8px, " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at 8px calc(100% - 8px), " + CARD_BORDER + " 1.5px, transparent 1.5px), radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), " + CARD_BORDER + " 1.5px, transparent 1.5px)",
-          backgroundPosition: "0 0, 100% 0, 0 100%, 100% 100%",
-          backgroundRepeat: "no-repeat"
+          transform: hovered ? "translateY(-5px) scale(1.015)" : "translateY(0) scale(1)"
         },
         children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity })
       }
@@ -22181,7 +22231,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         "div",
         {
           className: "rounded-lg border border-dashed p-10 text-center text-sm",
-          style: { borderColor: CARD_BORDER, color: CARD_TEXT.muted },
+          style: { borderColor: "rgba(255,255,255,0.2)", color: CARD_TEXT.muted, background: "#1c212e" },
           children: "\u6682\u65E0\u6307\u6807\uFF08\u5361\u5E93\u4E3A\u7A7A\uFF09"
         }
       );
@@ -22191,7 +22241,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       {
         role: "list",
         "aria-label": "\u6307\u6807\u5361\u5E93",
-        className: "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4",
+        className: "grid grid-cols-[repeat(auto-fill,minmax(252px,1fr))] gap-4",
         children: metrics.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { role: "listitem", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MetricCard, { metric: m, onOpen: onOpenCard }) }, m.metric_id || m.metric_cn))
       }
     );
@@ -22217,7 +22267,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "div",
       {
-        className: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(20,24,28,0.45)] p-4 pt-[8vh]",
+        className: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(8,10,14,0.72)] p-4 pt-[7vh]",
         onClick: onClose,
         "aria-label": "\u5173\u95ED\u5F39\u7A97",
         children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
@@ -22229,8 +22279,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
             "aria-label": `\u6307\u6807 ${metric.metric_cn} \u8BE6\u60C5`,
             tabIndex: -1,
             onClick: (e) => e.stopPropagation(),
-            className: "relative w-full max-w-md rounded-xl bg-white outline-none [animation:drop-in_200ms_ease-out] motion-reduce:[animation:none]",
-            style: { boxShadow: "0 24px 64px rgba(20,24,28,0.35), 0 0 0 1px rgba(20,24,28,0.08)" },
+            className: "relative w-full max-w-md rounded-xl outline-none [animation:drop-in_200ms_ease-out] motion-reduce:[animation:none]",
+            style: {
+              boxShadow: `0 24px 64px rgba(0,0,0,0.6), 0 0 0 2px ${rarity.gem}, 0 0 0 3px #ffffff`,
+              background: "#1c212e"
+            },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
           @keyframes drop-in {
@@ -22257,9 +22310,9 @@ Check your Browserslist config to be sure that your targets are set up correctly
                   children: "\u2715"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[340px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[360px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
               ] }) })
             ]
           }
