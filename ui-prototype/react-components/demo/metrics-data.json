@@ -47,7 +47,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": 93.0
  },
  {
   "metric_id": "M_SALE_002",
@@ -97,7 +98,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": 87.0
  },
  {
   "metric_id": "M_SALE_003",
@@ -147,7 +149,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_004",
@@ -197,7 +200,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_005",
@@ -247,7 +251,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_006",
@@ -297,7 +302,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_007",
@@ -347,7 +353,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_008",
@@ -397,7 +404,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_009",
@@ -447,7 +455,8 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  },
  {
   "metric_id": "M_SALE_010",
@@ -497,6 +506,7 @@
   "caliber_ai_by": "",
   "caliber_checked_by": "",
   "caliber_checked_at": "",
-  "caliber_reject_reason": ""
+  "caliber_reject_reason": "",
+  "score": null
  }
 ]

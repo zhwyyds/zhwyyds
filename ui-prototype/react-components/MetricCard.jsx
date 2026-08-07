@@ -67,7 +67,7 @@ const OBJECTION_STYLE = {
  *   ≥90 亮橙金（传说）/ ≥75 亮紫（史诗）/ ≥60 亮蓝（稀有）/ <60 银灰（普通）
  * 角标/宝石用亮色，数字用深色 #14181f（对比均 ≥ 4.5:1）
  */
-function rarityOf(score) {
+export function rarityOf(score) {
   if (score >= 90) return { stars: 4, label: "传说",  gem: "#f5a623", glow: "0 0 22px rgba(245,166,35,0.55)" };
   if (score >= 75) return { stars: 3, label: "史诗",  gem: "#a335ee", glow: "0 0 22px rgba(163,53,238,0.55)" };
   if (score >= 60) return { stars: 2, label: "稀有",  gem: "#0070dd", glow: "0 0 18px rgba(0,112,221,0.5)" };
@@ -102,7 +102,7 @@ const GEM_BORDER = "#e8eaf0";
  * ------------------------------------------------------------------------- */
 
 /** 炉石式宝石（菱形 ◆） */
-function Gem({ color, size = 14 }) {
+export function Gem({ color, size = 14 }) {
   return (
     <span
       aria-hidden="true"
@@ -121,7 +121,7 @@ function Gem({ color, size = 14 }) {
 }
 
 /** 卡面（正面）—— 炉石布局：名称栏 / 中部主体 / 底部攻·血角标 */
-function CardFace({ m, rarity, onFlip, flipped }) {
+export function CardFace({ m, rarity, onFlip, flipped }) {
   const domain = DOMAIN_STYLES[m.domain_code] || DOMAIN_FALLBACK;
   const status = STATUS_STYLES[m.review_status] || STATUS_STYLES.pending;
   const hasObjection = Boolean(m.objection_status && m.objection_status !== "none" && m.objection_status !== "") || Boolean(m.objection);
@@ -321,7 +321,7 @@ function FieldGroup({ title, fields }) {
 }
 
 /** 卡背：完整信息（48 字段分组，滚动）—— 深色主题 */
-function CardBack({ m, onFlip }) {
+export function CardBack({ m, onFlip }) {
   const typeLabels = { atomic: "原子", derived: "衍生", composite: "复合" };
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg p-4" style={{ background: CARD_BG }}>

@@ -1,22 +1,18 @@
 /**
- * MetricCard Demo 入口 —— 数据来自指标库（真实 CSV 快照）
- * 加载策略：优先 fetch /api/metrics（本地联 API 时用实时数据），
- *           失败则回退 ./metrics-data.json（静态快照，部署可用）。
- * 构建：esbuild --bundle
+ * MetricCard Demo 入口 —— 炉石式开包 + 手牌（数据来自指标库）
+ * 加载策略：优先 /api/metrics，失败回退内联快照。
  */
 import { createRoot } from "react-dom/client";
 import { useEffect, useState } from "react";
-import MetricCardLibrary from "../MetricCard.jsx";
+import BoosterPackDemo from "../BoosterPack.jsx";
 import snapshot from "./metrics-data.json";
 
-const STATUS_LABELS = {
-  approved: "已审核",
-  pending: "待审核",
-  rejected: "已打回",
-  draft: "草稿",
+const DOMAIN_NAMES = {
+  sale: "交易", mall: "商场", base: "基础", cont: "合同", cust: "消费者",
+  fin: "财务", fund: "资金", hr: "人资", mkt: "营销", prod: "商品",
+  ptnr: "商户", shop: "店铺", traf: "流量", wk: "流程",
 };
 
-/** 加载指标库数据：优先实时 API，失败回退内联快照（离线/静态部署可用） */
 function loadMetrics() {
   return fetch("/api/metrics", { headers: { Accept: "application/json" } })
     .then((r) => {
@@ -31,6 +27,28 @@ function loadMetrics() {
     .catch(() => ({ list: snapshot, fromApi: false }));
 }
 
+/** 按主题域组装卡包（每包最多 5 张，评分高者视为高稀有度） */
+function buildPacks(metrics) {
+  const byDomain = {};
+  metrics.forEach((m) => {
+    (byDomain[m.domain_code] = byDomain[m.domain_code] || []).push(m);
+  });
+  const packs = Object.keys(byDomain)
+    .sort()
+    .map((d) => ({
+      id: d,
+      title: `${DOMAIN_NAMES[d] || d} 卡包`,
+      sub: `${byDomain[d].length} 张指标`,
+      domain: d,
+      filter: (m) => m.domain_code === d,
+      max: 5,
+    }));
+  if (!packs.length) {
+    packs.push({ id: "all", title: "指标卡库", sub: "全部指标", domain: "default", filter: () => true, max: 5 });
+  }
+  return packs;
+}
+
 function App() {
   const [metrics, setMetrics] = useState(null);
   const [source, setSource] = useState("");
@@ -42,51 +60,38 @@ function App() {
         setMetrics(list);
         setSource(fromApi ? "api" : "snapshot");
       })
-      .catch((e) => {
-        setError(String(e.message || e));
-        setSource("error");
-      });
+      .catch((e) => setError(String(e.message || e)));
   }, []);
 
   if (error) {
     return (
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24, color: "#a40e26" }}>
-        加载指标库数据失败：{error}（请确认本地服务已启动，或检查 metrics-data.json）
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24, color: "#e5534b" }}>
+        加载指标库数据失败：{error}
       </div>
     );
   }
   if (!metrics) {
     return (
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24, color: "#57606a" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24, color: "#8f98a8" }}>
         正在从指标库加载数据…
       </div>
     );
   }
 
-  const counts = {
-    已审核: metrics.filter((m) => m.review_status === "approved").length,
-    待审核: metrics.filter((m) => m.review_status === "pending" || m.review_status === "draft").length,
-    异议: metrics.filter(
-      (m) => m.objection_status && m.objection_status !== "none" && m.objection_status !== ""
-    ).length,
-  };
+  const packs = buildPacks(metrics);
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <header style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 4px" }}>
-          指标卡 · TCG 质感 × 企业可读性（指标库真实数据）
+      <header style={{ marginBottom: 4 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, color: "#ffffff" }}>
+          ⚔ 指标卡包 · 炉石开包
         </h1>
-        <p style={{ fontSize: 12.5, color: "#57606a", margin: 0 }}>
-          数据源：{source === "api" ? "指标库 API（/api/metrics）" : "指标库快照（内联）"} ·
-          {metrics.length} 条指标 · 已审核 {counts.已审核} / 待审核 {counts.待审核} / 异议 {counts.异议}
-          {"  "}· 点击卡片查看全部 48 字段（可翻面）
+        <p style={{ fontSize: 12.5, color: "#8f98a8", margin: "6px 0 0" }}>
+          数据源：{source === "api" ? "指标库 API" : "指标库快照"} · {metrics.length} 条指标 ·{" "}
+          开包 → 逐张翻面揭示（评分 = 稀有度）→ 手牌 hover 抽出 → 点击看全部 48 字段
         </p>
       </header>
-      <MetricCardLibrary metrics={metrics} />
-      <footer style={{ marginTop: 20, fontSize: 11.5, color: "#6e7781" }}>
-        组件：MetricCard.jsx（React + Tailwind）· 无障碍：WCAG AA · 无粒子特效 / 无炫丽渐变 · 完整字段见翻面详情
-      </footer>
+      <BoosterPackDemo metrics={metrics} packs={packs} />
     </div>
   );
 }

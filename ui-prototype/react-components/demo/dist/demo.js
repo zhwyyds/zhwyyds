@@ -21724,6 +21724,9 @@
 
   // demo-entry.jsx
   var import_client = __toESM(require_client());
+  var import_react3 = __toESM(require_react());
+
+  // ../BoosterPack.jsx
   var import_react2 = __toESM(require_react());
 
   // ../MetricCard.jsx
@@ -22094,64 +22097,6 @@
       ] })
     ] });
   }
-  function MetricCard({ metric, onOpen }) {
-    const [hovered, setHovered] = (0, import_react.useState)(false);
-    const rarity = rarityOf(metric.score);
-    const baseShadow = [
-      `0 0 0 1px #ffffff`,
-      `0 0 0 2px ${rarity.gem}`,
-      "0 3px 8px rgba(0,0,0,0.5)"
-    ].join(",");
-    const hoverShadow = [
-      `0 0 0 1px #ffffff`,
-      `0 0 0 2px ${rarity.gem}`,
-      `0 14px 28px rgba(0,0,0,0.6)`,
-      rarity.glow
-    ].join(",");
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-      "button",
-      {
-        type: "button",
-        onClick: () => onOpen && onOpen(metric),
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-        "aria-label": `\u6307\u6807 ${metric.metric_cn || metric.metric_id || ""}\uFF0C${DOMAIN_STYLES[metric.domain_code]?.label || "\u672A\u77E5\u57DF"}\uFF0C${STATUS_STYLES[metric.review_status]?.label || "\u5F85\u5BA1\u6838"}\uFF0C\u8BC4\u5206 ${metric.score ?? "\u2014"}`,
-        className: [
-          "group relative w-full cursor-pointer rounded-[10px] bg-transparent text-left outline-none",
-          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#12161f]",
-          // 动效强度 4/7：抬升 + 稀有度发光 + 轻微放大
-          "transition-[transform,box-shadow] duration-200 ease-out",
-          "motion-reduce:transition-none motion-reduce:hover:transform-none"
-        ].join(" "),
-        style: {
-          boxShadow: hovered ? hoverShadow : baseShadow,
-          transform: hovered ? "translateY(-6px) scale(1.02)" : "translateY(0) scale(1)"
-        },
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity })
-      }
-    );
-  }
-  function MetricCardGrid({ metrics = [], onOpenCard }) {
-    if (!metrics.length) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        "div",
-        {
-          className: "rounded-lg border border-dashed p-10 text-center text-sm",
-          style: { borderColor: "rgba(255,255,255,0.2)", color: CARD_TEXT.muted, background: "#1c212e" },
-          children: "\u6682\u65E0\u6307\u6807\uFF08\u5361\u5E93\u4E3A\u7A7A\uFF09"
-        }
-      );
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-      "div",
-      {
-        role: "list",
-        "aria-label": "\u6307\u6807\u5361\u5E93",
-        className: "grid grid-cols-[repeat(auto-fill,minmax(252px,1fr))] gap-4",
-        children: metrics.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { role: "listitem", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MetricCard, { metric: m, onOpen: onOpenCard }) }, m.metric_id || m.metric_cn))
-      }
-    );
-  }
   function MetricCardModal({ metric, onClose }) {
     const [flipped, setFlipped] = (0, import_react.useState)(false);
     const dialogRef = (0, import_react.useRef)(null);
@@ -22226,14 +22171,260 @@
       }
     );
   }
-  function MetricCardLibrary({ metrics }) {
-    const [active, setActive] = (0, import_react.useState)(null);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MetricCardGrid, { metrics, onOpenCard: setActive }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MetricCardModal, { metric: active, onClose: () => setActive(null) })
+
+  // ../BoosterPack.jsx
+  var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+  var CARD_W = 280;
+  var CARD_H = 392;
+  var PACK_COLORS = {
+    default: { from: "#4b3b8c", to: "#241c4d", seal: "#c9b458" },
+    sale: { from: "#0f5e8c", to: "#0a2e4a", seal: "#58a6c9" },
+    fin: { from: "#8c3b3b", to: "#4a1515", seal: "#c9a058" },
+    cust: { from: "#5c3b8c", to: "#2a1a4a", seal: "#b458c9" },
+    hr: { from: "#8c6b3b", to: "#4a2e15", seal: "#c9c958" }
+  };
+  function pickPackColor(domain) {
+    return PACK_COLORS[domain] || PACK_COLORS.default;
+  }
+  function CardBackCover({ rarity, gem }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+      "div",
+      {
+        className: "relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg",
+        style: {
+          background: "radial-gradient(circle at 50% 40%, #2a3040, #12161f 75%)",
+          boxShadow: `inset 0 0 0 2px ${gem}, inset 0 0 0 3px #ffffff`
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Gem, { size: 34 }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+            "span",
+            {
+              className: "absolute bottom-3 text-[9px] font-bold tracking-[0.3em]",
+              style: { color: "#8f98a8" },
+              children: "\u6570\u636E\u6CBB\u7406 \xB7 \u6307\u6807\u5361"
+            }
+          )
+        ]
+      }
+    );
+  }
+  function BoosterPack({ title, sub, domain, packSize = 5, onOpen, disabled }) {
+    const [state, setState] = (0, import_react2.useState)("idle");
+    const colors = pickPackColor(domain);
+    const handleClick = () => {
+      if (disabled || state !== "idle") return;
+      setState("shaking");
+      setTimeout(() => {
+        setState("burst");
+        setTimeout(() => {
+          setState("gone");
+          onOpen && onOpen();
+        }, 380);
+      }, 850);
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex flex-col items-center gap-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          role: "button",
+          tabIndex: 0,
+          "aria-label": `\u5F00 ${title} \u5361\u5305`,
+          onClick: handleClick,
+          onKeyDown: (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleClick();
+            }
+          },
+          className: [
+            "relative cursor-pointer select-none outline-none focus-visible:ring-2",
+            "transition-transform duration-300 motion-reduce:transition-none",
+            state === "gone" ? "pointer-events-none opacity-0 scale-0" : ""
+          ].join(" "),
+          style: {
+            width: 168,
+            height: 232,
+            transform: state === "idle" ? "translateY(0)" : void 0
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+            "div",
+            {
+              className: "absolute inset-0 rounded-xl",
+              style: {
+                background: `linear-gradient(160deg, ${colors.from}, ${colors.to})`,
+                boxShadow: "0 18px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 2px 0 rgba(255,255,255,0.22)",
+                animation: state === "shaking" ? "pack-shake 0.14s linear infinite" : "pack-float 3.2s ease-in-out infinite"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-x-0 top-3 h-4",
+                    style: { background: "rgba(0,0,0,0.28)", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)" }
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "absolute inset-0 flex items-center justify-center", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: 64,
+                        height: 64,
+                        transform: "rotate(45deg)",
+                        background: `radial-gradient(circle at 35% 30%, ${colors.seal}, #7a5c1e)`,
+                        border: "3px solid #f0e6c8",
+                        boxShadow: `0 0 24px ${colors.seal}`
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                    "span",
+                    {
+                      className: "absolute text-[13px] font-black tracking-widest",
+                      style: { color: "#f7efd6", textShadow: "0 1px 2px rgba(0,0,0,0.7)" },
+                      children: "DG"
+                    }
+                  )
+                ] }),
+                state === "burst" && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-0 rounded-xl",
+                    style: {
+                      animation: "pack-burst 0.4s ease-out forwards",
+                      background: "radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 65%)"
+                    }
+                  }
+                )
+              ]
+            }
+          )
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "text-center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-[15px] font-extrabold", style: { color: "#ffffff" }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-[11px]", style: { color: "#8f98a8" }, children: sub || "\u70B9\u51FB\u5F00\u5305" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
+        @keyframes pack-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes pack-shake {
+          0%, 100% { transform: rotate(0); }
+          25% { transform: rotate(-4deg); }
+          75% { transform: rotate(4deg); }
+        }
+        @keyframes pack-burst {
+          0% { transform: scale(0.6); opacity: 0; }
+          40% { transform: scale(1.6); opacity: 1; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes pack-float { 0%, 100% { transform: none; } }
+          @keyframes pack-shake { 0%, 100% { transform: none; } }
+        }
+      ` })
     ] });
   }
-  var MetricCard_default = MetricCardLibrary;
+  function HandFan({ cards, onSelect }) {
+    const [spread, setSpread] = (0, import_react2.useState)(false);
+    const n = cards.length;
+    if (!n) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+      "div",
+      {
+        role: "list",
+        "aria-label": "\u5F00\u51FA\u7684\u6307\u6807\u5361\u624B\u724C",
+        onMouseEnter: () => setSpread(true),
+        onMouseLeave: () => setSpread(false),
+        className: "flex items-end justify-center overflow-x-auto pb-4 pt-8",
+        style: { minHeight: CARD_H + 70 },
+        children: [
+          cards.map((c, i) => {
+            const r = rarityOf(c.score);
+            return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "div",
+              {
+                role: "listitem",
+                className: "card-slot shrink-0",
+                style: {
+                  marginLeft: i === 0 ? 0 : spread ? -56 : -168,
+                  zIndex: i,
+                  transition: "margin 0.32s cubic-bezier(0.22,1,0.36,1)"
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => onSelect && onSelect(c),
+                    "aria-label": `\u6307\u6807 ${c.metric_cn}\uFF0C\u7A00\u6709\u5EA6 ${r.label}\uFF0C\u8BC4\u5206 ${c.score ?? "\u2014"}`,
+                    className: "card-item relative cursor-pointer rounded-[10px] bg-transparent p-0 outline-none focus-visible:ring-2",
+                    style: { width: CARD_W, height: CARD_H, transition: "transform 0.25s cubic-bezier(0.22,1,0.36,1)" },
+                    children: c.__revealed ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "h-full w-full overflow-hidden rounded-lg", style: { boxShadow: `0 0 0 2px ${r.gem}, 0 0 0 3px #fff, 0 16px 32px rgba(0,0,0,0.5), ${r.glow}` }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardFace, { m: c, rarity: r }) }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "h-full w-full", style: { boxShadow: `0 16px 32px rgba(0,0,0,0.5)` }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(CardBackCover, { rarity: r, gem: r.gem }) })
+                  }
+                )
+              },
+              c.metric_id || c.metric_cn
+            );
+          }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
+        .card-item:hover {
+          transform: translateY(-56px) scale(1.1) !important;
+          z-index: 99;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .card-item, .card-slot { transition: none; }
+          .card-item:hover { transform: translateY(-20px) !important; }
+        }
+      ` })
+        ]
+      }
+    );
+  }
+  function BoosterPackOpener({ pack, cards }) {
+    const [phase, setPhase] = (0, import_react2.useState)("fly");
+    const [deck, setDeck] = (0, import_react2.useState)([]);
+    const [selected, setSelected] = (0, import_react2.useState)(null);
+    const timers = (0, import_react2.useRef)([]);
+    (0, import_react2.useEffect)(() => {
+      const sorted = [...cards].sort((a, b) => (b.score || 0) - (a.score || 0));
+      setDeck(sorted.map((c) => ({ ...c, __revealed: false })));
+      const revealAt = 600 + sorted.length * 130;
+      sorted.forEach((_, i) => {
+        timers.current.push(
+          setTimeout(() => {
+            setDeck((prev) => prev.map((c, ci) => ci === i ? { ...c, __revealed: true } : c));
+            if (i === sorted.length - 1) setPhase("done");
+          }, revealAt + i * 420)
+        );
+      });
+      return () => timers.current.forEach(clearTimeout);
+    }, [cards]);
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "w-full", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "mb-2 text-center text-[12px]", style: { color: "#8f98a8" }, children: phase === "fly" ? `\u5F00\u5305\u4E2D \xB7 ${pack.title}\u2026` : phase === "reveal" ? "\u63ED\u793A\u4E2D\u2026" : `\u5F00\u5305\u5B8C\u6210 \xB7 ${deck.length} \u5F20\u6307\u6807\u5361\uFF08hover \u62BD\u51FA\uFF0C\u70B9\u51FB\u67E5\u770B\u5B8C\u6574\u4FE1\u606F\uFF09` }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(HandFan, { cards: deck, onSelect: setSelected }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(MetricCardModal, { metric: selected, onClose: () => setSelected(null) })
+    ] });
+  }
+  function BoosterPackDemo({ metrics, packs }) {
+    const [activePack, setActivePack] = (0, import_react2.useState)(null);
+    const packsList = packs && packs.length ? packs : [{ id: "all", title: "\u6307\u6807\u5361\u5E93", sub: "\u5168\u90E8\u6307\u6807", domain: "default", filter: () => true }];
+    const handlePick = (p) => {
+      const list = metrics.filter(p.filter).sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, p.max || 5);
+      setActivePack({ ...p, cards: list });
+    };
+    if (activePack) {
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(BoosterPackOpener, { pack: activePack, cards: activePack.cards });
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "mb-1 text-[18px] font-black", style: { color: "#ffffff" }, children: "\u9009\u62E9\u5361\u5305\u5F00\u5305" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "mb-6 text-[12.5px]", style: { color: "#8f98a8" }, children: "\u53C2\u8003\u7089\u77F3 \xB7 \u4E00\u5305 5 \u5F20 \xB7 \u7A00\u6709\u5EA6\u8D8A\u9AD8\u8D8A\u665A\u63ED\u793A\uFF08\u8BC4\u5206 = \u7A00\u6709\u5EA6\uFF09" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex flex-wrap justify-center gap-10 py-6", children: packsList.map((p) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(BoosterPack, { title: p.title, sub: p.sub, domain: p.domain, onOpen: () => handlePick(p) }, p.id)) })
+    ] });
+  }
+  var BoosterPack_default = BoosterPackDemo;
 
   // metrics-data.json
   var metrics_data_default = [
@@ -22285,7 +22476,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: 93
     },
     {
       metric_id: "M_SALE_002",
@@ -22335,7 +22527,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: 87
     },
     {
       metric_id: "M_SALE_003",
@@ -22385,7 +22578,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_004",
@@ -22435,7 +22629,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_005",
@@ -22485,7 +22680,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_006",
@@ -22535,7 +22731,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_007",
@@ -22585,7 +22782,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_008",
@@ -22635,7 +22833,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_009",
@@ -22685,7 +22884,8 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     },
     {
       metric_id: "M_SALE_010",
@@ -22735,12 +22935,29 @@
       caliber_ai_by: "",
       caliber_checked_by: "",
       caliber_checked_at: "",
-      caliber_reject_reason: ""
+      caliber_reject_reason: "",
+      score: null
     }
   ];
 
   // demo-entry.jsx
-  var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+  var import_jsx_runtime3 = __toESM(require_jsx_runtime());
+  var DOMAIN_NAMES = {
+    sale: "\u4EA4\u6613",
+    mall: "\u5546\u573A",
+    base: "\u57FA\u7840",
+    cont: "\u5408\u540C",
+    cust: "\u6D88\u8D39\u8005",
+    fin: "\u8D22\u52A1",
+    fund: "\u8D44\u91D1",
+    hr: "\u4EBA\u8D44",
+    mkt: "\u8425\u9500",
+    prod: "\u5546\u54C1",
+    ptnr: "\u5546\u6237",
+    shop: "\u5E97\u94FA",
+    traf: "\u6D41\u91CF",
+    wk: "\u6D41\u7A0B"
+  };
   function loadMetrics() {
     return fetch("/api/metrics", { headers: { Accept: "application/json" } }).then((r) => {
       if (!r.ok) throw new Error("api unavailable");
@@ -22751,59 +22968,61 @@
       return { list, fromApi: true };
     }).catch(() => ({ list: metrics_data_default, fromApi: false }));
   }
+  function buildPacks(metrics) {
+    const byDomain = {};
+    metrics.forEach((m) => {
+      (byDomain[m.domain_code] = byDomain[m.domain_code] || []).push(m);
+    });
+    const packs = Object.keys(byDomain).sort().map((d) => ({
+      id: d,
+      title: `${DOMAIN_NAMES[d] || d} \u5361\u5305`,
+      sub: `${byDomain[d].length} \u5F20\u6307\u6807`,
+      domain: d,
+      filter: (m) => m.domain_code === d,
+      max: 5
+    }));
+    if (!packs.length) {
+      packs.push({ id: "all", title: "\u6307\u6807\u5361\u5E93", sub: "\u5168\u90E8\u6307\u6807", domain: "default", filter: () => true, max: 5 });
+    }
+    return packs;
+  }
   function App() {
-    const [metrics, setMetrics] = (0, import_react2.useState)(null);
-    const [source, setSource] = (0, import_react2.useState)("");
-    const [error, setError] = (0, import_react2.useState)("");
-    (0, import_react2.useEffect)(() => {
+    const [metrics, setMetrics] = (0, import_react3.useState)(null);
+    const [source, setSource] = (0, import_react3.useState)("");
+    const [error, setError] = (0, import_react3.useState)("");
+    (0, import_react3.useEffect)(() => {
       loadMetrics().then(({ list, fromApi }) => {
         setMetrics(list);
         setSource(fromApi ? "api" : "snapshot");
-      }).catch((e) => {
-        setError(String(e.message || e));
-        setSource("error");
-      });
+      }).catch((e) => setError(String(e.message || e)));
     }, []);
     if (error) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#a40e26" }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#e5534b" }, children: [
         "\u52A0\u8F7D\u6307\u6807\u5E93\u6570\u636E\u5931\u8D25\uFF1A",
-        error,
-        "\uFF08\u8BF7\u786E\u8BA4\u672C\u5730\u670D\u52A1\u5DF2\u542F\u52A8\uFF0C\u6216\u68C0\u67E5 metrics-data.json\uFF09"
+        error
       ] });
     }
     if (!metrics) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#57606a" }, children: "\u6B63\u5728\u4ECE\u6307\u6807\u5E93\u52A0\u8F7D\u6570\u636E\u2026" });
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { maxWidth: 1200, margin: "0 auto", padding: 24, color: "#8f98a8" }, children: "\u6B63\u5728\u4ECE\u6307\u6807\u5E93\u52A0\u8F7D\u6570\u636E\u2026" });
     }
-    const counts = {
-      \u5DF2\u5BA1\u6838: metrics.filter((m) => m.review_status === "approved").length,
-      \u5F85\u5BA1\u6838: metrics.filter((m) => m.review_status === "pending" || m.review_status === "draft").length,
-      \u5F02\u8BAE: metrics.filter(
-        (m) => m.objection_status && m.objection_status !== "none" && m.objection_status !== ""
-      ).length
-    };
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("header", { style: { marginBottom: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h1", { style: { fontSize: 18, fontWeight: 700, margin: "0 0 4px" }, children: "\u6307\u6807\u5361 \xB7 TCG \u8D28\u611F \xD7 \u4F01\u4E1A\u53EF\u8BFB\u6027\uFF08\u6307\u6807\u5E93\u771F\u5B9E\u6570\u636E\uFF09" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { style: { fontSize: 12.5, color: "#57606a", margin: 0 }, children: [
+    const packs = buildPacks(metrics);
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { maxWidth: 1200, margin: "0 auto" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("header", { style: { marginBottom: 4 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h1", { style: { fontSize: 22, fontWeight: 900, margin: 0, color: "#ffffff" }, children: "\u2694 \u6307\u6807\u5361\u5305 \xB7 \u7089\u77F3\u5F00\u5305" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { style: { fontSize: 12.5, color: "#8f98a8", margin: "6px 0 0" }, children: [
           "\u6570\u636E\u6E90\uFF1A",
-          source === "api" ? "\u6307\u6807\u5E93 API\uFF08/api/metrics\uFF09" : "\u6307\u6807\u5E93\u5FEB\u7167\uFF08\u5185\u8054\uFF09",
-          " \xB7",
+          source === "api" ? "\u6307\u6807\u5E93 API" : "\u6307\u6807\u5E93\u5FEB\u7167",
+          " \xB7 ",
           metrics.length,
-          " \u6761\u6307\u6807 \xB7 \u5DF2\u5BA1\u6838 ",
-          counts.\u5DF2\u5BA1\u6838,
-          " / \u5F85\u5BA1\u6838 ",
-          counts.\u5F85\u5BA1\u6838,
-          " / \u5F02\u8BAE ",
-          counts.\u5F02\u8BAE,
-          "  ",
-          "\xB7 \u70B9\u51FB\u5361\u7247\u67E5\u770B\u5168\u90E8 48 \u5B57\u6BB5\uFF08\u53EF\u7FFB\u9762\uFF09"
+          " \u6761\u6307\u6807 \xB7",
+          " ",
+          "\u5F00\u5305 \u2192 \u9010\u5F20\u7FFB\u9762\u63ED\u793A\uFF08\u8BC4\u5206 = \u7A00\u6709\u5EA6\uFF09\u2192 \u624B\u724C hover \u62BD\u51FA \u2192 \u70B9\u51FB\u770B\u5168\u90E8 48 \u5B57\u6BB5"
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(MetricCard_default, { metrics }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("footer", { style: { marginTop: 20, fontSize: 11.5, color: "#6e7781" }, children: "\u7EC4\u4EF6\uFF1AMetricCard.jsx\uFF08React + Tailwind\uFF09\xB7 \u65E0\u969C\u788D\uFF1AWCAG AA \xB7 \u65E0\u7C92\u5B50\u7279\u6548 / \u65E0\u70AB\u4E3D\u6E10\u53D8 \xB7 \u5B8C\u6574\u5B57\u6BB5\u89C1\u7FFB\u9762\u8BE6\u60C5" })
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(BoosterPack_default, { metrics, packs })
     ] });
   }
-  (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, {}));
+  (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime3.jsx)(App, {}));
 })();
 /*! Bundled license information:
 
