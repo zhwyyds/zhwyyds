@@ -22735,10 +22735,9 @@
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
-        /* peek\uFF1A\u6240\u6709\u5361\u4E0D\u52A8\uFF0C\u4EC5 hover \u5361\u5411\u4E0A\u5E73\u79FB\u9732\u51FA\u5B8C\u6574\u540D\u79F0\u680F\uFF08\u6A21\u62DF\u62BD\u5361\u770B\u4E00\u773C\uFF0C\u4E0D\u62BD\u51FA\uFF09 */
+        /* peek\uFF1A\u4EC5 hover \u5361\u5411\u4E0A\u5E73\u79FB\u9732\u51FA\u540D\u79F0\uFF1B\u90BB\u5361\u4E0D\u52A8\u3001\u538B\u7740\u5173\u7CFB\u4E0D\u53D8\u3001z \u5E8F\u4E0D\u53D8\uFF08\u4E0D\u76D6\u90BB\u5361\uFF09 */
         .rarity-pile-open-card:hover {
           transform: translateY(-30px);
-          z-index: 2;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }

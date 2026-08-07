@@ -474,10 +474,9 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1);
           z-index: 1;
         }
-        /* peek：所有卡不动，仅 hover 卡向上平移露出完整名称栏（模拟抽卡看一眼，不抽出） */
+        /* peek：仅 hover 卡向上平移露出名称；邻卡不动、压着关系不变、z 序不变（不盖邻卡） */
         .rarity-pile-open-card:hover {
           transform: translateY(-30px);
-          z-index: 2;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
