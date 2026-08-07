@@ -11,15 +11,16 @@ from data_governance.io.task_store import (
 )
 
 
-def test_split_csv_groups_by_50(tmp_path, mini_project):
-    """CSV 按 50 条/组切分，空行跳过。"""
+def test_split_csv_groups_by_30(tmp_path, mini_project):
+    """CSV 按 30 条/组切分（GROUP_SIZE=30，H32 卡包适配后），空行跳过。"""
     rows = ["metric_cn,caliber_desc"]
     rows += [f"指标{i},描述{i}" for i in range(120)]
     groups = split_csv("\n".join(rows))
-    assert len(groups) == 3
-    assert len(groups[0]) == 50
-    assert len(groups[1]) == 50
-    assert len(groups[2]) == 20
+    assert len(groups) == 4
+    assert len(groups[0]) == 30
+    assert len(groups[1]) == 30
+    assert len(groups[2]) == 30
+    assert len(groups[3]) == 30
 
 
 def test_split_csv_skips_empty_cn(tmp_path, mini_project):
@@ -35,7 +36,7 @@ def test_create_and_list_tasks(tmp_path, mini_project):
     assert len(tasks) == 2  # 60 条 → 2 组
     t = tasks[0]
     assert t["status"] == "pending"
-    assert t["total_rows"] == 50
+    assert t["total_rows"] == 30
     assert t["group_no"] == 1
     # 落盘可读
     loaded = get_import_task(mini_project, t["task_id"])

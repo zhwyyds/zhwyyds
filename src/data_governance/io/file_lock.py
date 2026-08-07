@@ -22,7 +22,12 @@ def file_lock(path: Path) -> Iterator[None]:
     path.parent.mkdir(parents=True, exist_ok=True)
     lock_path = path.with_suffix(path.suffix + ".lock")
     if os.name == "nt":
-        import msvcrt
+        import msvcrt  # type: ignore[import-not-found, attr-defined]
+
+        # msvcrt 为 Windows 专属模块，Unix 平台的 mypy stub 无 locking/LK_* 属性，按 attr-defined 忽略
+        _locking = msvcrt.locking  # type: ignore[attr-defined]
+        _lk_lock = msvcrt.LK_LOCK  # type: ignore[attr-defined]
+        _lk_unlc = msvcrt.LK_UNLCK  # type: ignore[attr-defined]
 
         # msvcrt.locking 锁定的字节范围不能超出文件末尾，须保证锁文件非空
         with lock_path.open("a+b") as lock_fd:
@@ -31,12 +36,12 @@ def file_lock(path: Path) -> Iterator[None]:
                 lock_fd.write(b"\x00")
                 lock_fd.flush()
             lock_fd.seek(0)
-            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_LOCK, 1)
+            _locking(lock_fd.fileno(), _lk_lock, 1)
             try:
                 yield
             finally:
                 lock_fd.seek(0)
-                msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
+                _locking(lock_fd.fileno(), _lk_unlc, 1)
     else:
         import fcntl  # type: ignore[import-not-found]
 
