@@ -95,6 +95,14 @@ export const DOMAIN_STYLES = {
 };
 const DOMAIN_FALLBACK = { label: "未知域", bg: "oklch(42% 0.02 265)" };
 
+/** 主题域图标（插画区中央徽章，炉石式卡面插画替代图） */
+export const DOMAIN_ICONS = {
+  sale: "📊", mall: "🏬", base: "📁", cont: "📄", cust: "👥",
+  fin: "💰", fund: "💵", hr: "👤", mkt: "📢", prod: "📦",
+  ptnr: "🤝", shop: "🏪", traf: "📈", wk: "⚙️",
+};
+const DOMAIN_ICON_FALLBACK = "📊";
+
 /** 状态徽章（白字 ≥4.5:1） */
 export const STATUS_STYLES = {
   approved: { label: "已审核", bg: "oklch(50% 0.13 150)" },
@@ -237,17 +245,40 @@ export function CardFace({ m, rarity, onFlip, flipped }) {
         </div>
       </div>
 
-      {/* ── 中部：英文名 + 构件 + 口径 ── */}
-      <div className="relative flex flex-1 flex-col px-3.5 pt-3">
-        {/* 左上：业务域角标 */}
+      {/* ── 插画区（炉石式卡面插画窗口）── */}
+      <div
+        className="relative mx-3.5 mt-3 h-[118px] shrink-0 overflow-hidden rounded-[8px]"
+        style={{
+          background: `radial-gradient(120% 130% at 50% 0%, ${domain.bg} 0%, oklch(24% 0.03 265) 72%)`,
+          boxShadow: `inset 0 0 0 1px oklch(95% 0.02 265 / 0.14), inset 0 0 26px ${rarity.gem}40`,
+        }}
+      >
+        {/* 中央大图标（主题域徽章） */}
         <div
-          className="absolute right-3.5 top-2.5 rounded-[3px] px-1.5 py-0.5"
-          style={{ fontSize: FS.xs, fontWeight: 700, letterSpacing: "0.08em", backgroundColor: domain.bg, color: "oklch(98% 0.01 265)" }}
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ fontSize: 46, filter: "drop-shadow(0 6px 12px oklch(0% 0 0 / 0.55))", transform: "translateY(-4px)" }}
+          aria-hidden="true"
+        >
+          {DOMAIN_ICONS[m.domain_code] || DOMAIN_ICON_FALLBACK}
+        </div>
+        {/* 稀有度光晕（中心柔光） */}
+        <div className="absolute inset-0" style={{ background: `radial-gradient(55% 55% at 50% 62%, ${rarity.gem}40, transparent 72%)` }} />
+        {/* 顶部高光 */}
+        <div className="absolute inset-x-0 top-0 h-6" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.16), transparent)" }} />
+        {/* 底部过渡到卡面 */}
+        <div className="absolute inset-x-0 bottom-0 h-7" style={{ background: "linear-gradient(180deg, transparent, oklch(23% 0.026 265))" }} />
+        {/* 左上：域角标（移到插画区） */}
+        <div
+          className="absolute left-1.5 top-1.5 rounded-[3px] px-1.5 py-0.5"
+          style={{ fontSize: FS.xs, fontWeight: 700, letterSpacing: "0.08em", backgroundColor: "oklch(12% 0.02 265 / 0.6)", color: "oklch(97% 0.012 265)" }}
         >
           {domain.label}
         </div>
+      </div>
 
-        <p className="pr-14" style={{ fontSize: FS.sm, fontWeight: 500, letterSpacing: "0.03em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.muted }}>
+      {/* ── 中部：英文名 + 构件 + 口径 ── */}
+      <div className="relative flex flex-1 flex-col px-3.5 pt-3">
+        <p className="" style={{ fontSize: FS.sm, fontWeight: 500, letterSpacing: "0.03em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.muted }}>
           {m.metric_en || "pending_naming"}
         </p>
         <p className="mt-0.5" style={{ fontSize: FS.xs, letterSpacing: "0.14em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.faint }}>
@@ -590,7 +621,7 @@ export function MetricCardModal({ metric, onClose }) {
         aria-label={`指标 ${metric.metric_cn} 详情`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl outline-none [animation:drop-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:[animation:none]"
+        className="relative w-full max-w-lg rounded-2xl outline-none [animation:drop-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:[animation:none]"
         style={{ boxShadow: `0 30px 80px oklch(0% 0 0 / 0.6), 0 0 0 2px ${rarity.edge}, 0 0 0 3px oklch(12% 0.015 265)`, background: SURFACE.base }}
       >
         <style>{`
@@ -618,7 +649,7 @@ export function MetricCardModal({ metric, onClose }) {
           ✕
         </button>
 
-        <div className="mc-flip-scene h-[392px]">
+        <div className="mc-flip-scene h-[480px]">
           <div className={`mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`}>
             <div className="mc-flip-face absolute inset-0 overflow-hidden rounded-2xl">
               <CardFace m={metric} rarity={rarity} flipped={flipped} onFlip={() => setFlipped((v) => !v)} />

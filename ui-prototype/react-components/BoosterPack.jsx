@@ -295,15 +295,15 @@ export function HandFan({ cards, onSelect }) {
       })}
 
       <style>{`
-        /* peek：平时叠紧（露 80px），hover 原位弹出放大，内容清晰可读 */
+        /* peek：只上移露出名称栏，不放大不浮现 */
         .card-item:hover {
-          transform: translateY(-46px) scale(1.28) !important;
+          transform: translateY(-12px) !important;
           z-index: 99;
         }
         .card-slot:hover { z-index: 50; position: relative; }
         @media (prefers-reduced-motion: reduce) {
           .card-item, .card-slot { transition: none; }
-          .card-item:hover { transform: translateY(-14px) scale(1.12) !important; }
+          .card-item:hover { transform: translateY(-4px) !important; }
         }
       `}</style>
     </div>
@@ -475,12 +475,12 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           z-index: 1;
         }
         .rarity-pile-open-card:hover {
-          transform: translateY(-32px) scale(1.1);
+          transform: translateY(-10px); /* peek：只上移，不放大不浮现，露出名称栏 */
           z-index: 99;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-14px) scale(1.06); }
+          .rarity-pile-open-card:hover { transform: translateY(-4px); }
         }
       `}</style>
     </div>

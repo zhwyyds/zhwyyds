@@ -21814,6 +21814,23 @@
     wk: { label: "\u6D41\u7A0B", bg: "oklch(40% 0.07 95)" }
   };
   var DOMAIN_FALLBACK = { label: "\u672A\u77E5\u57DF", bg: "oklch(42% 0.02 265)" };
+  var DOMAIN_ICONS = {
+    sale: "\u{1F4CA}",
+    mall: "\u{1F3EC}",
+    base: "\u{1F4C1}",
+    cont: "\u{1F4C4}",
+    cust: "\u{1F465}",
+    fin: "\u{1F4B0}",
+    fund: "\u{1F4B5}",
+    hr: "\u{1F464}",
+    mkt: "\u{1F4E2}",
+    prod: "\u{1F4E6}",
+    ptnr: "\u{1F91D}",
+    shop: "\u{1F3EA}",
+    traf: "\u{1F4C8}",
+    wk: "\u2699\uFE0F"
+  };
+  var DOMAIN_ICON_FALLBACK = "\u{1F4CA}";
   var STATUS_STYLES = {
     approved: { label: "\u5DF2\u5BA1\u6838", bg: "oklch(50% 0.13 150)" },
     pending: { label: "\u5F85\u5BA1\u6838", bg: "oklch(52% 0.11 75)" },
@@ -21950,16 +21967,40 @@
               ]
             }
           ),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+            "div",
+            {
+              className: "relative mx-3.5 mt-3 h-[118px] shrink-0 overflow-hidden rounded-[8px]",
+              style: {
+                background: `radial-gradient(120% 130% at 50% 0%, ${domain.bg} 0%, oklch(24% 0.03 265) 72%)`,
+                boxShadow: `inset 0 0 0 1px oklch(95% 0.02 265 / 0.14), inset 0 0 26px ${rarity.gem}40`
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                  "div",
+                  {
+                    className: "absolute inset-0 flex items-center justify-center",
+                    style: { fontSize: 46, filter: "drop-shadow(0 6px 12px oklch(0% 0 0 / 0.55))", transform: "translateY(-4px)" },
+                    "aria-hidden": "true",
+                    children: DOMAIN_ICONS[m.domain_code] || DOMAIN_ICON_FALLBACK
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0", style: { background: `radial-gradient(55% 55% at 50% 62%, ${rarity.gem}40, transparent 72%)` } }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-x-0 top-0 h-6", style: { background: "linear-gradient(180deg, rgba(255,255,255,0.16), transparent)" } }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-x-0 bottom-0 h-7", style: { background: "linear-gradient(180deg, transparent, oklch(23% 0.026 265))" } }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                  "div",
+                  {
+                    className: "absolute left-1.5 top-1.5 rounded-[3px] px-1.5 py-0.5",
+                    style: { fontSize: FS.xs, fontWeight: 700, letterSpacing: "0.08em", backgroundColor: "oklch(12% 0.02 265 / 0.6)", color: "oklch(97% 0.012 265)" },
+                    children: domain.label
+                  }
+                )
+              ]
+            }
+          ),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "relative flex flex-1 flex-col px-3.5 pt-3", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              "div",
-              {
-                className: "absolute right-3.5 top-2.5 rounded-[3px] px-1.5 py-0.5",
-                style: { fontSize: FS.xs, fontWeight: 700, letterSpacing: "0.08em", backgroundColor: domain.bg, color: "oklch(98% 0.01 265)" },
-                children: domain.label
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "pr-14", style: { fontSize: FS.sm, fontWeight: 500, letterSpacing: "0.03em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.muted }, children: m.metric_en || "pending_naming" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "", style: { fontSize: FS.sm, fontWeight: 500, letterSpacing: "0.03em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.muted }, children: m.metric_en || "pending_naming" }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: "mt-0.5", style: { fontSize: FS.xs, letterSpacing: "0.14em", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: TEXT.faint }, children: [
               m.metric_id || "",
               " \xB7 ",
@@ -22233,7 +22274,7 @@
             "aria-label": `\u6307\u6807 ${metric.metric_cn} \u8BE6\u60C5`,
             tabIndex: -1,
             onClick: (e) => e.stopPropagation(),
-            className: "relative w-full max-w-md rounded-2xl outline-none [animation:drop-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:[animation:none]",
+            className: "relative w-full max-w-lg rounded-2xl outline-none [animation:drop-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:[animation:none]",
             style: { boxShadow: `0 30px 80px oklch(0% 0 0 / 0.6), 0 0 0 2px ${rarity.edge}, 0 0 0 3px oklch(12% 0.015 265)`, background: SURFACE.base },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
@@ -22261,7 +22302,7 @@
                   children: "\u2715"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[392px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-scene h-[480px]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `mc-flip-inner relative h-full w-full ${flipped ? "flipped" : ""}`, children: [
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFace, { m: metric, rarity, flipped, onFlip: () => setFlipped((v) => !v) }) }),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mc-flip-face mc-flip-back absolute inset-0 overflow-hidden rounded-2xl", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardBack, { m: metric, onFlip: () => setFlipped((v) => !v) }) })
               ] }) })
@@ -22633,12 +22674,12 @@
           z-index: 1;
         }
         .rarity-pile-open-card:hover {
-          transform: translateY(-32px) scale(1.1);
+          transform: translateY(-10px); /* peek\uFF1A\u53EA\u4E0A\u79FB\uFF0C\u4E0D\u653E\u5927\u4E0D\u6D6E\u73B0\uFF0C\u9732\u51FA\u540D\u79F0\u680F */
           z-index: 99;
         }
         @media (prefers-reduced-motion: reduce) {
           .rarity-pile-open-card { transition: none; }
-          .rarity-pile-open-card:hover { transform: translateY(-14px) scale(1.06); }
+          .rarity-pile-open-card:hover { transform: translateY(-4px); }
         }
       ` })
     ] });
