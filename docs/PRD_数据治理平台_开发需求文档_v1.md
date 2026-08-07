@@ -2,8 +2,9 @@
 
 | 项 | 内容 |
 |----|------|
-| 文档版本 | v1.0 |
+| 文档版本 | v1.1 |
 | 创建日期 | 2026-08-07 |
+| 最近更新 | 2026-08-07 |
 | 文档状态 | 基线版（反映当前代码真实状态） |
 | 适用范围 | 后续开发 Agent / 开发团队的需求依据 |
 | 关联仓库 | git@github.com:zhwyyds/zhwyyds.git（分支 dev，本地 /Users/heyuan/DEVELOPMENT/data_go） |
@@ -39,6 +40,7 @@
 - 表血缘必须可查
 - 本地优先：当前阶段平台本地运行，暂不部署服务器
 - 企业级程序规范：API 统一错误处理、请求日志、超时配置、幂等保护、可测试
+- 产品语言统一：全平台术语遵循第 1.5 节隐喻映射（构件/卡盒/卡片），不出现互相冲突的叫法
 
 ### 1.4 用户与角色
 
@@ -48,6 +50,54 @@
 | 数据产品/业务 | 提出指标需求、确认口径 | 指标管理、批量导入 |
 | 开发（后续） | 维护平台代码 | 全部 + API |
 | 管理员（后续） | 模型配置、发布控制 | 配置、发布 |
+
+### 1.5 产品隐喻：卡牌世界 ↔ 数据治理（已确认的产品语言）
+
+> **决策**：平台采用"卡牌收藏"隐喻统一产品语言与 UI 语义。该隐喻与业务结构同构（指标由词根构成 = 卡牌由构件拼成），已由产品确认采用。
+> **用词规范**：说「构件」不说「碎片」；说「卡盒」不说「卡包」（卡包含随机抽取暗示，卡盒是确定性收纳）。
+
+| 卡牌世界 | 数据治理 | 说明 |
+|---------|---------|------|
+| 卡牌（card） | **指标（metric）** | 可展示、可评审、可入册 |
+| 卡牌构件（piece） | **词根（root）** | 指标命名的最小构件，不可再分 |
+| 卡盒/卡册（box） | **主题域（domain）** | 指标的分组容器（14 个主题卡盒） |
+| 合成卡（fusion） | **派生/复合指标** | 由原子指标 + 修饰词组合 |
+| 稀有度 ★ | **质量评分** | 优秀/良好/合格/待改进 |
+| 卡面效果文字 | **口径描述（caliber_desc）** | 写在"卡上"给使用者看 |
+| 卡面属性（攻/防等数值） | **指标属性**（单位/频率/精度/公式） | 卡的数值属性 |
+| 卡组（deck） | **指标树 / 指标体系** | 用于特定分析场景的指标组合 |
+| 卡册收集进度 | **治理覆盖率** | 指标治理完成度 |
+
+**隐喻在 UI 中的承载方式**：
+
+- **主题域 = 卡盒封面**：主页卡盒陈列，点开卡盒进入该主题域指标集
+- **指标 = 卡面**：卡面展示名称、构件（词根组合）、属性、口径、稀有度（评分）
+- **词根 = 构件槽**：卡面可视化显示构成该指标的词根（构件），可点词根跳转词根详情
+- **扇形堆叠/抽出** = 卡盒展开与查看指标（现有交互保留，仅做企业级收敛）
+- **批量导入评审** = 开新盒逐卡验收：抽卡（查看）→ 编辑（修正）→ 入册（进草稿）/ 打回
+
+**⚠️ 隐喻边界（必须守住，产品原则级）**：
+
+> **指标 ≠ 词根拼接。** 词根解决"叫什么"，口径解决"怎么算"。
+> 两个指标构件完全一样（如都用「销售」「额」），但口径不同（含税/不含税），就是**两张不同的卡**。
+> 卡牌游戏中"同名卡不同版本、效果文字不同"正是"口径不一致"的卡牌版解释 —— 这也是评分（稀有度）与口径评审存在的意义。
+> **隐喻任何情况下不得弱化口径治理的地位。**
+
+### 1.6 术语表
+
+| 术语 | 英文 | 定义 |
+|------|------|------|
+| 词根 | Root | 指标命名的最小构件；含中英文名/缩写/类型/同义词；按主题域管理 |
+| 修饰词 | Modifier | 与词根组合生成派生指标的限定词（如"日均""累计"） |
+| 指标 | Metric | 由词根（+修饰词）构成的业务度量；分原子/衍生/复合三类 |
+| 原子指标 | Atomic | 不可再分的指标，直接源于词根 |
+| 派生指标 | Derived | 原子指标 × 修饰词组合而成 |
+| 复合指标 | Composite | 多指标计算而成 |
+| 口径 | Caliber | 指标的计算定义（业务/公式/周期/粒度/边界/来源） |
+| 主题域 | Domain | 指标的业务分组（14 个），即"卡盒" |
+| 血缘 | Lineage | 指标与表、表与表之间的数据流向关系 |
+| 草稿 | Draft | 评审通过但未发布的指标状态 |
+| 发布 | Release | 按域批量发布 approved 指标并分配版本号 |
 
 ---
 
@@ -69,7 +119,7 @@
 | 10 | AI 多路：Mock/Live 双模式，OpenAI/Anthropic/千问/智谱/DeepSeek（当前启用 DeepSeek） | ✅ |
 | 11 | API 企业级基础：统一错误处理（code 字段）、请求日志、LLM 超时配置、process 幂等、CORS 收敛、API Key 认证中间件 | ✅ |
 | 12 | 测试：37 个测试文件 / 196 用例，全量通过（约 4.2s） | ✅ |
-| 13 | UI：14 个页面（仪表盘/指标/指标管理/词根/批量生成/批量导入/评审/血缘/表血缘/命名/口径/评分/口径核查/设置） | ✅（原型级，部分页面待企业级化） |
+| 13 | UI：14 个页面（仪表盘 / 指标 / 指标管理 / 词根 / 批量生成 / 批量导入 / 评审 / 血缘 / 表血缘 / 命名 / 口径 / 评分 / 口径核查 / 设置） | ✅ 原型级，企业级化待办 B6/B7 |
 
 ### 2.2 待办（❌ / 🚧）
 
@@ -80,8 +130,8 @@
 | B3 | 列表分页（metrics/roots/import-tasks） | P2 | 加 page/page_size，默认全量兼容 |
 | B4 | 写操作审计日志 | P2 | 企业级数据治理平台需记录操作者与变更 |
 | B5 | 前端框架化（Vue3 渐进式） | P2 | 当前原生 JS 约 1.4 万行，维护成本高 |
-| B6 | 批量导入评审 UI 企业化（表格+编辑抽屉，卡牌退场或仅展示） | P2 | 待产品决策 |
-| B7 | 全平台 UI 统一企业级视觉 | P3 | 14 页面统一规范 |
+| B6 | 批量导入评审 UI 企业级化 | P2 | **保留卡牌隐喻为产品语言**（构件槽/稀有度），交互形态向生产力收敛：表格+编辑抽屉为主，卡牌作展示态；已装 board-game-ui / impeccable / web-design-guidelines 三件套辅助 |
+| B7 | 全平台 UI 统一企业级视觉 + 隐喻落地 | P3 | 14 页面统一规范，卡盒/构件/稀有度视觉语言一致 |
 | B8 | 存储升级（CSV→SQLite，事务与并发） | P3 | 当前 .lock 进程内锁，单机可用 |
 | B9 | 限流 | P3 | 防滥用 |
 
@@ -92,9 +142,9 @@
 > 状态标记：✅ 已实现 / 🚧 部分实现 / ❌ 未实现
 > 每个功能给出：描述、用户故事、关键接口、验收标准。
 
-### 3.1 词根管理（✅）
+### 3.1 词根管理 = 构件库（✅）
 
-**描述**：词根是指标命名的唯一真源。支持按主题域（14 域）管理，单个维护与批量维护。
+**描述**：词根是指标命名的唯一真源（隐喻：构件）。支持按主题域（14 个卡盒）管理，单个维护与批量维护。
 
 **用户故事**：
 - 作为治理专员，我想新增/修改词根（中英文名、缩写、类型、同义词），以便指标命名有依据
@@ -120,9 +170,9 @@
 - [ ] CSV 导入：缺 domain/root_cn/root_en 的行跳过并计数；同域重复 root_en 跳过
 - [ ] 导入接口性能：循环外加载 catalog（已修，O(n)）
 
-### 3.2 指标管理（✅）
+### 3.2 指标管理 = 卡片库（✅）
 
-**描述**：指标全字段管理（30+ 字段），支持 AI 建议、批量生成派生指标、评审、评分、发布。
+**描述**：指标全字段管理（30+ 字段），支持 AI 建议、批量生成派生指标（合成卡）、评审、评分、发布。
 
 **用户故事**：
 - 作为治理专员，我想查看/新建/编辑指标的全部字段，以便维护指标定义
@@ -150,10 +200,11 @@
 **验收标准**：
 - [ ] PUT /api/metrics/{id} 支持上述全部字段更新（exclude_unset 语义）
 - [ ] 新增指标 ID 格式 M_{DOMAIN}_{XXX}
+- [ ] 指标卡面展示其词根组合（构件槽），词根可点击跳转（隐喻落地，随 B7）
 
-### 3.3 批量导入与评审（✅）
+### 3.3 批量导入与评审 = 开盒验收（✅）
 
-**描述**：CSV 上传 → 每 30 条一组生成待办任务 → 去重比对指标库 → AI 生成指标卡片 → 逐卡人工评审（通过→草稿 / 打回）→ 编辑修正。
+**描述**：CSV 上传 → 每 30 条一组生成待办任务（新卡盒）→ 去重比对指标库 → AI 生成指标卡片 → 逐卡人工评审（通过→草稿入册 / 打回）→ 编辑修正。
 
 **用户故事**：
 - 作为治理专员，我想批量上传历史指标 CSV，自动切分任务，以便分批治理
@@ -200,13 +251,13 @@
 - [ ] 无 Key 时自动降级 mock，不报错
 - [ ] LLM 慢响应在 DATA_GOV_LLM_TIMEOUT 内超时，不长时间占用 worker
 
-### 3.5 口径管理（✅）
+### 3.5 口径管理 = 卡面效果文字（✅）
 
 **描述**：口径起草（AI 产出业务/公式/周期/粒度/边界/来源结构化口径）、口径评审、口径核查。
 
 **接口**：`GET /api/caliber/pending`、口径起草（动态构建 prompt）、`GET /api/prompts/caliber_draft`（查看提示词）
 
-### 3.6 评分体系（✅）
+### 3.6 评分体系 = 稀有度（✅）
 
 **描述**：指标质量规则评分（命名/口径/血缘等维度），等级映射（≥90 优秀 / ≥75 良好 / ≥60 合格 / <60 待改进）。
 
@@ -224,19 +275,19 @@
 
 ### 3.8 发布控制（✅）
 
-**描述**：按域批量发布 approved 指标，自动版本号；支持回滚与版本 diff。
+**描述**：按域批量发布 approved 指标（整盒发布），自动版本号；支持回滚与版本 diff。
 
 **接口**：`POST /api/domains/{domain}/publish`、`GET /api/domains/{domain}/releases`、`POST /api/domains/{domain}/revert`、`GET /api/domains/{domain}/version-diff?from=&to=`、`GET /api/releases/overview`
 
 ### 3.9 配置管理（✅）
 
-**描述**：修饰词规则 CRUD、LLM 模型配置 CRUD、域名管理（domains.csv）。
+**描述**：修饰词规则 CRUD、LLM 模型配置 CRUD、域名管理（domains.csv，即卡盒清单）。
 
 **接口**：`GET/POST /api/modifier-rules`、`PUT/DELETE /api/modifier-rules/{id}`、`GET/POST /api/models`、`PUT/DELETE /api/models/{id}`、`GET /api/domains`
 
-### 3.10 仪表盘与看板（✅）
+### 3.10 仪表盘与看板 = 卡册总览（✅）
 
-**描述**：域级治理红绿灯（词根/指标/评分/血缘/口径/发布）、全局统计、验收报告。
+**描述**：域级治理红绿灯（词根/指标/评分/血缘/口径/发布）、全局统计、验收报告 —— 即各卡盒的收集进度与质量总览。
 
 **接口**：`GET /api/dashboard/domains`、`GET /api/metrics/stats`、`GET /api/acceptance?refresh=true`、`GET /api/metric-tree`
 
@@ -293,6 +344,7 @@
 | AI | httpx + 多厂商 OpenAI 兼容接口 | DeepSeek（当前启用），可扩展 |
 | 测试 | pytest + TestClient | 37 文件 / 196 用例 |
 | 质量 | ruff / mypy（dev 依赖） | 规范约束 |
+| 前端设计 skill | impeccable / board-game-ui / web-design-guidelines | 用户级 skill（~/.workbuddy/skills/），用于 B6/B7 企业级 UI |
 
 ### 5.2 分层
 
@@ -315,10 +367,10 @@ api/（路由薄层）→ services/（业务逻辑）→ io/（CSV/JSON 持久�
 
 ```
 config/    domains.csv / modifier_rules.csv / models.csv / scoring_rules.json / metric_tree.csv
-roots/     {domain}_roots.csv
-metrics/   {domain}_metrics.csv
+roots/     {domain}_roots.csv        # 构件库（按卡盒分文件）
+metrics/   {domain}_metrics.csv      # 卡片库（按卡盒分文件）
 lineage/   {domain}_lineage.json
-tasks/     {task_id}.json（批量导入任务）
+tasks/     {task_id}.json（批量导入任务 = 待验收的新卡盒）
 reviews/   {metric_id}.json（评审记录）
 scores/    {metric_id}.json + _summary.csv
 releases/  发布记录
@@ -328,13 +380,13 @@ releases/  发布记录
 
 ## 6. 数据模型（核心）
 
-### 6.1 词根 root
+### 6.1 词根 root（构件）
 ```
 root_id: R_{DOMAIN}_{seq}  | root_cn: 中文名 | root_en: 英文名 | root_abbr: 缩写
 root_type: noun/verb/adj/... | description | synonyms(;分隔) | source_model | review_status | domain_code
 ```
 
-### 6.2 指标 metric
+### 6.2 指标 metric（卡片）
 ```
 metric_id: M_{DOMAIN}_{XXX} | metric_cn | metric_en | domain_code | root_ids(;分隔)
 metric_type: atomic/derived/composite | caliber_desc | unit | frequency | owner
@@ -342,7 +394,7 @@ category_l1/l2 | value_type | dimensions | scenario | formula | formula_cn | tec
 source_table | data_sources | precision | alert_rules | reports | review_status | version
 ```
 
-### 6.3 批量导入任务 import_task
+### 6.3 批量导入任务 import_task（待验收卡盒）
 ```
 task_id: T{batch}_{seq} | batch_id | group_no | total_rows | status(pending/processing/reviewing/done)
 dedup_result{total,dup_count,suspect_count,new_count} | generated[行] | review_progress{reviewed,approved,rejected,total}
@@ -362,7 +414,7 @@ domain | lineages[{lineage_id, target_table, target_table_cn, target_layer,
 |--------|------|------|------|
 | M1 平台可用 | 核心功能全部落地 + 基线修复（编辑全字段/落盘、卡片布局、API 企业级基础） | 可日常使用 | ✅ 已完成（2026-08-07） |
 | M2 企业级加固 | B1 版本化 / B2 认证默认开 / B3 分页 / B4 审计日志 | 达到内网企业级标准 | 🚧 待启动 |
-| M3 体验升级 | B5 Vue3 框架化 / B6 评审表格化 / B7 全平台 UI 统一 | 生产力优先的成熟 UI | ❌ 待规划 |
+| M3 体验升级 | B5 Vue3 框架化 / B6 评审企业级化 / B7 全平台隐喻视觉统一 | 生产力优先 + 隐喻自洽的成熟 UI | ❌ 待规划 |
 | M4 数据底座 | B8 SQLite 迁移、多用户权限、实时血缘 | 多用户协作 | ❌ 远期 |
 
 **建议顺序**：M2（加固）→ M3（体验）→ M4（底座）。M1 已完成，当前处于 M2 起点。
@@ -378,7 +430,9 @@ domain | lineages[{lineage_id, target_table, target_table_cn, target_layer,
 5. **编辑字段白名单**：批量导入 EDITABLE_FIELDS 增删需前后端同步（routes_import_tasks.py 与 batch-import.js editCardHtml）
 6. **LLM 调用**：必须考虑超时（DATA_GOV_LLM_TIMEOUT）与降级（无 Key → mock）
 7. **环境注意**：本地 `.env` 已配 DEEPSEEK_API_KEY，`DATA_GOV_LLM_MODE=auto` 时 AI 走真实 DeepSeek（单次 30s+ 正常）；调试用 `DATA_GOV_LLM_MODE=mock`
-8. **UI 方向**：产品已确认企业级程序规范，卡牌游戏化元素向生产力形态收敛（表格/抽屉/分栏优先）
+8. **隐喻语言**：UI 文案与产品术语统一使用第 1.5 节映射（构件/卡盒/卡片/稀有度）；说「构件」不说「碎片」，说「卡盒」不说「卡包」；**口径治理的地位不得被隐喻弱化**
+9. **UI 方向**：企业级程序规范优先；卡牌隐喻保留为产品语言，交互形态向生产力收敛（表格/抽屉/分栏为主，卡牌作展示态）；可用 impeccable / board-game-ui / web-design-guidelines 辅助
+10. **第三方依赖**：引入 skill/库前检查许可证与安全（如 board-game-ui 为 restricted 许可，商用需确认上游 fil512/upship）
 
 ---
 
@@ -391,3 +445,27 @@ domain | lineages[{lineage_id, target_table, target_table_cn, target_layer,
 - [ ] 服务日志可见、可配级别；LLM 超时可控
 - [ ] 页面在 mock 与 live 模式下均可正常操作
 - [ ] 所有修改已提交 git，commit 语义清晰
+- [ ] 产品文案统一采用隐喻术语（构件/卡盒/卡片），无"碎片/卡包"等冲突叫法
+- [ ] 指标卡面可回溯其词根组合（构件槽），口径评审链路完整（隐喻边界守得住）
+
+---
+
+## 10. 风险与依赖
+
+| # | 风险 | 级别 | 说明与应对 |
+|---|------|------|-----------|
+| R1 | 隐喻边界被弱化 | 中 | 用户可能误以为"词根拼一拼就是指标"，忽略口径。应对：产品原则 + 验收标准强制（见 1.5/9 章），卡面同时突出"构件"与"口径"两块 |
+| R2 | live 模式依赖外部 LLM | 中 | DeepSeek 响应慢（单次 30s+）、网络抖动会导致 process 等待。应对：60s 超时兜底 + mock 降级 + 异步任务进度 |
+| R3 | 单机文件存储 | 中 | CSV 无事务、进程内锁，多用户并发写会互相覆盖。应对：当前单机可用（B8 升级 SQLite） |
+| R4 | 认证默认关闭 | 高 | 未配 DATA_GOV_API_KEY 时无鉴权，端口暴露即裸奔。应对：B2 待办（未配 Key 拒绝启动） |
+| R5 | 第三方 skill 许可 | 低 | board-game-ui 标注 NOASSERTION/restricted。应对：仅内部原型使用；商用前确认上游许可（已记录） |
+| R6 | 前端技术债 | 中 | 原生 JS 约 1.4 万行、多处 inline onclick。应对：B5 Vue3 渐进式迁移 |
+
+---
+
+## 11. 修订记录
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| v1.0 | 2026-08-07 | 基线版：现状盘点 + 功能需求 + 企业级规范 + 路线图 |
+| v1.1 | 2026-08-07 | 新增 1.5 产品隐喻（卡牌世界↔数据治理，产品确认）、1.6 术语表、第 10 章风险与依赖；B6/B7 更新为"隐喻保留 + 企业级收敛"；开发约束补充隐喻语言与第三方许可条目；验收标准补充隐喻一致性 |
