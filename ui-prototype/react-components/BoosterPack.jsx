@@ -273,14 +273,16 @@ function groupByRarity(cards) {
 function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
   const r = rarityOf(cards[0].score); // 摞的稀有度色
   const n = cards.length;
-  const STACK_STEP = 26; // 错开间距：露出名称栏
-  const pileH = CARD_H + (n - 1) * STACK_STEP;
+  const STACK_STEP = 26;       // 错开间距：露出名称栏
+  const MAX_VISIBLE = 6;       // 最多可见 6 层（含最上层完整卡面），其余用厚度表达
+  const visibleN = Math.min(n, MAX_VISIBLE); // 实际渲染的层数
+  const hiddenN = n - visibleN;              // 隐藏的张数（并入厚度）
+  const pileH = CARD_H + (visibleN - 1) * STACK_STEP + (hiddenN > 0 ? 14 : 0);
 
   return (
     <div className="relative shrink-0" style={{ width: CARD_W, height: pileH }}>
-      {/* 堆叠：每张完整卡面向下错开、zIndex 递增，最上层完整可见
-         cards 已按评分降序传入，反转后让评分最高的渲染在 i 最大（z 最高、最显眼） */}
-      {[...cards].reverse().map((c, i) => {
+      {/* 堆叠：降序卡面，评分最高的渲染在 i 最大（z 最高、最显眼） */}
+      {[...cards].reverse().slice(0, visibleN).map((c, i) => {
         const cardR = rarityOf(c.score);
         return (
           <div
@@ -298,6 +300,26 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           </div>
         );
       })}
+
+      {/* 厚度：超出可见层数的卡并成一条深色底 */}
+      {hiddenN > 0 && (
+        <div
+          className="absolute left-0 rounded-[10px]"
+          style={{
+            top: (visibleN - 1) * STACK_STEP + 4,
+            zIndex: 0,
+            width: CARD_W,
+            height: CARD_H - 8,
+            background: "linear-gradient(180deg, oklch(26% 0.03 265), oklch(20% 0.02 265))",
+            boxShadow: "0 4px 10px oklch(0% 0 0 / 0.35)",
+          }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-2"
+            style={{ background: `linear-gradient(90deg, ${r.gem}, oklch(30% 0.05 265))`, opacity: 0.85 }}
+          />
+        </div>
+      )}
 
       {/* 摞角标：张数（贴最上层） */}
       <div
@@ -323,37 +345,55 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
         className="absolute inset-0 z-[70] cursor-pointer rounded-[10px] border-2 border-transparent bg-transparent p-0 text-left outline-none focus-visible:border-white/60 focus-visible:ring-2"
       />
 
-      {/* 展开态：整摞横向排开（覆盖在堆叠上方，z 最高） */}
+      {/* 展开态：全屏浮层（遮罩点击收起；卡片负 margin 重叠排开，居中展示） */}
       {expanded && (
         <div
-          className="absolute left-0 top-0 z-[80] flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-2"
-          style={{ background: "oklch(15% 0.02 265 / 0.85)", backdropFilter: "blur(6px)", gap: -CARD_W + 88 }}
-          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-[90] flex items-center justify-center"
+          style={{ background: "oklch(10% 0.02 265 / 0.72)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onToggle(); // 点遮罩收起
+          }}
+          role="presentation"
         >
-          {cards.map((c) => {
-            const cardR = rarityOf(c.score);
-            return (
-              <div
-                key={c.metric_id || c.metric_cn}
-                className="rarity-pile-open-card relative shrink-0 cursor-pointer"
-                style={{ width: CARD_W, height: CARD_H }}
-              >
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect && onSelect(c);
-                  }}
-                  aria-label={`指标 ${c.metric_cn}，稀有度 ${cardR.label}，评分 ${c.score ?? "—"}`}
-                  className="block h-full w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-left outline-none focus-visible:ring-2"
+          {/* 顶部提示条 */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px]" style={{ color: "#b8c0cc" }}>
+            {tier.label}摞 · {n} 张 · 点击卡查看完整信息，点击空白处收起
+          </div>
+          {/* 卡片排开（负 margin 重叠） */}
+          <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] p-3">
+            {cards.map((c, i) => {
+              const cardR = rarityOf(c.score);
+              const overlap = n > 8 ? 64 : n > 5 ? 96 : 120; // 每张露出的宽度
+              return (
+                <div
+                  key={c.metric_id || c.metric_cn}
+                  className="rarity-pile-open-card relative shrink-0 cursor-pointer"
+                  style={{ width: CARD_W, height: CARD_H, marginLeft: i === 0 ? 0 : -(CARD_W - overlap) }}
                 >
-                  <div className="h-full w-full overflow-hidden rounded-[10px]" style={{ boxShadow: `0 0 0 2px ${cardR.gem}, 0 0 0 3px #fff, 0 18px 36px oklch(0% 0 0 / 0.55), ${cardR.glow}` }}>
-                    <CardFace m={c} rarity={cardR} />
-                  </div>
-                </button>
-              </div>
-            );
-          })}
+                  <button
+                    type="button"
+                    onClick={() => onSelect && onSelect(c)}
+                    aria-label={`指标 ${c.metric_cn}，稀有度 ${cardR.label}，评分 ${c.score ?? "—"}`}
+                    className="block h-full w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-left outline-none focus-visible:ring-2"
+                  >
+                    <div className="h-full w-full overflow-hidden rounded-[10px]" style={{ boxShadow: `0 0 0 2px ${cardR.gem}, 0 0 0 3px #fff, 0 18px 36px oklch(0% 0 0 / 0.55), ${cardR.glow}` }}>
+                      <CardFace m={c} rarity={cardR} />
+                    </div>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {/* 收起按钮 */}
+          <button
+            type="button"
+            aria-label="收起展开"
+            onClick={onToggle}
+            className="absolute right-5 top-5 z-[99] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[15px] font-black outline-none focus-visible:ring-2"
+            style={{ background: "oklch(45% 0.06 265)", color: "#fff", border: "1px solid oklch(90% 0.02 265 / 0.5)" }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
