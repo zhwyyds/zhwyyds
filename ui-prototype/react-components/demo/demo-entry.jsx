@@ -7,6 +7,7 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useState } from "react";
 import MetricCardLibrary from "../MetricCard.jsx";
+import snapshot from "./metrics-data.json";
 
 const STATUS_LABELS = {
   approved: "已审核",
@@ -15,7 +16,7 @@ const STATUS_LABELS = {
   draft: "草稿",
 };
 
-/** 加载真实指标库数据 */
+/** 加载指标库数据：优先实时 API，失败回退内联快照（离线/静态部署可用） */
 function loadMetrics() {
   return fetch("/api/metrics", { headers: { Accept: "application/json" } })
     .then((r) => {
@@ -25,16 +26,9 @@ function loadMetrics() {
     .then((data) => {
       const list = Array.isArray(data) ? data : data.metrics || data.items || [];
       if (!list.length) throw new Error("empty api data");
-      return list;
+      return { list, fromApi: true };
     })
-    .catch(() =>
-      fetch("./metrics-data.json")
-        .then((r) => r.json())
-        .then((list) => {
-          if (!list || !list.length) throw new Error("snapshot empty");
-          return list;
-        })
-    );
+    .catch(() => ({ list: snapshot, fromApi: false }));
 }
 
 function App() {
@@ -44,9 +38,9 @@ function App() {
 
   useEffect(() => {
     loadMetrics()
-      .then((list) => {
+      .then(({ list, fromApi }) => {
         setMetrics(list);
-        setSource("api");
+        setSource(fromApi ? "api" : "snapshot");
       })
       .catch((e) => {
         setError(String(e.message || e));
@@ -84,7 +78,7 @@ function App() {
           指标卡 · TCG 质感 × 企业可读性（指标库真实数据）
         </h1>
         <p style={{ fontSize: 12.5, color: "#57606a", margin: 0 }}>
-          数据源：{source === "api" ? "指标库 API（/api/metrics）" : "指标库快照（metrics-data.json）"} ·
+          数据源：{source === "api" ? "指标库 API（/api/metrics）" : "指标库快照（内联）"} ·
           {metrics.length} 条指标 · 已审核 {counts.已审核} / 待审核 {counts.待审核} / 异议 {counts.异议}
           {"  "}· 点击卡片查看全部 48 字段（可翻面）
         </p>
