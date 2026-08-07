@@ -22,11 +22,35 @@ from data_governance.io.task_store import (
     dedup_rows,
     get_import_task,
     list_import_tasks,
+    now_iso_cn,
     update_import_task,
 )
 
-# 打回后可编辑字段（人工评审修正范围）
-EDITABLE_FIELDS = ("metric_cn", "caliber_desc", "unit", "frequency", "domain_code")
+# 人工评审可编辑字段（与指标库 MetricUpdateRequest 对齐，评审环节可修正全部指标字段）
+EDITABLE_FIELDS = (
+    "metric_cn",
+    "metric_en",
+    "domain_code",
+    "metric_type",
+    "category_l1",
+    "category_l2",
+    "caliber_desc",
+    "unit",
+    "frequency",
+    "owner",
+    "formula",
+    "formula_cn",
+    "tech_caliber",
+    "precision",
+    "source_table",
+    "physical_table",
+    "data_sources",
+    "dimensions",
+    "scenario",
+    "alert_rules",
+    "value_type",
+    "reports",
+)
 
 # AI 批量生成并发度（env AI_GENERATE_PARALLEL 可覆盖，默认 8 路，实测 8 路比 4 路再快 1.7x）
 AI_GENERATE_PARALLEL = max(1, int(os.environ.get("AI_GENERATE_PARALLEL", "8")))
@@ -129,6 +153,34 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
         assert updated is not None
         return updated
 
+    @app.patch("/api/import-tasks/{task_id}/rows/{row_index}")
+    def import_task_update_row(task_id: str, row_index: int, body: dict | None = None) -> dict:
+        """持久化单行编辑：仅接受 EDITABLE_FIELDS 白名单字段，落盘到任务 JSON。
+
+        body: {edits: {field: value, ...}}
+        返回 applied（实际生效字段）与更新后的行。
+        """
+        task = _safe_task(task_id)
+        body = body or {}
+        edits = body.get("edits") or {}
+        if not isinstance(edits, dict) or not edits:
+            raise HTTPException(400, "edits 必填且为非空对象")
+        if row_index < 0 or row_index >= len(task.get("generated") or []):
+            raise HTTPException(400, "row_index 越界")
+
+        rows = list(task.get("generated") or [])
+        row = dict(rows[row_index])
+        applied: list[str] = []
+        for k, v in edits.items():
+            if k not in EDITABLE_FIELDS:
+                continue  # 非白名单字段静默忽略（与 review 行为一致）
+            row[k] = str(v).strip() if v is not None else ""
+            applied.append(k)
+        rows[row_index] = row
+        updated = update_import_task(base, task_id, generated=rows)
+        assert updated is not None
+        return {"task_id": task_id, "row_index": row_index, "applied": applied, "row": row}
+
     @app.post("/api/import-tasks/{task_id}/review")
     def import_task_review(task_id: str, body: dict | None = None) -> dict:
         """逐卡人工评审：approve → 写入指标库 draft；reject → 标记打回。
@@ -160,7 +212,7 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
                     if k in EDITABLE_FIELDS and v is not None:
                         row[k] = str(v).strip()
             row["_status"] = "draft"
-            row["_approved_at"] = __import__("data_governance.io.task_store", fromlist=["now_iso_cn"]).now_iso_cn()
+            row["_approved_at"] = now_iso_cn()
             rows[row_index] = row
             # 写入指标库（draft 状态）
             payload = {
@@ -168,12 +220,25 @@ def register(app, base: Path, metric_svc, ai_svc) -> None:
                 "metric_cn": row.get("metric_cn", ""),
                 "metric_en": row.get("metric_en", ""),
                 "domain_code": row.get("domain_code", ""),
-                "metric_type": "atomic",
+                "metric_type": row.get("metric_type") or "atomic",
                 "caliber_desc": row.get("caliber_desc", ""),
                 "unit": row.get("unit", ""),
                 "frequency": row.get("frequency", ""),
+                "owner": row.get("owner", ""),
                 "category_l1": row.get("category_l1", ""),
                 "category_l2": row.get("category_l2", ""),
+                "value_type": row.get("value_type", ""),
+                "dimensions": row.get("dimensions", ""),
+                "scenario": row.get("scenario", ""),
+                "formula": row.get("formula", ""),
+                "formula_cn": row.get("formula_cn", ""),
+                "tech_caliber": row.get("tech_caliber", ""),
+                "source_table": row.get("source_table", ""),
+                "physical_table": row.get("physical_table", ""),
+                "data_sources": row.get("data_sources", ""),
+                "precision": row.get("precision", ""),
+                "alert_rules": row.get("alert_rules", ""),
+                "reports": row.get("reports", ""),
                 "review_status": "draft",
                 "source_model": "batch_import",
             }

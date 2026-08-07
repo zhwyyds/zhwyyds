@@ -115,7 +115,15 @@
       owner: row.owner || '—',
       ver: row.version || 'v1.0.0',
       verNote: row.version_note || '',
-      status: st
+      status: st,
+      // 编辑表单用真实字段（展示逻辑保持 formula_cn||formula 不变）
+      metric_en: row.metric_en || '',
+      formula_cn: row.formula_cn || '',
+      formula_raw: row.formula || '',
+      tech_caliber: row.tech_caliber || '',
+      source_table: row.source_table || '',
+      scenario: row.scenario || '',
+      alert_rules: row.alert_rules || ''
     };
   }
 
@@ -275,7 +283,7 @@
     var pack = document.getElementById('mc8pack');
     // 30 张适配：错位 20px / 14 张以内 34px（参考值）
     var step = rows.length > 14 ? 20 : 34;
-    pack.style.setProperty('--fan-w', ((rows.length - 1) * step + 384) + 'px');
+    pack.style.setProperty('--fan-w', ((rows.length - 1) * step + 440) + 'px');
 
     rows.forEach(function (row, i) {
       buildFrame(pack, row, i, rows.length, step);
@@ -388,13 +396,16 @@
   }
 
 
-  /* 抽出卡面：编辑表单（真实 input/textarea/select，保证可见可编辑） */
+  /* 抽出卡面：编辑表单（全字段，真实 input/textarea/select，保证可见可编辑） */
   function editCardHtml(m, i, n) {
     var st = m.status;
     var stLabel = { pending: '待评审', skip: '重复', rejected: '已打回', draft: '已入草稿', error: '生成失败' }[st] || '待评审';
     var r = rarityOf(m.score);
     var themeOpts = Object.keys(THEME_NAMES).map(function (k) {
       return '<option value="' + k + '"' + (m.theme === k ? ' selected' : '') + '>' + THEME_NAMES[k] + '</option>';
+    }).join('');
+    var typeOpts = Object.keys(TYPE_NAMES).map(function (k) {
+      return '<option value="' + k + '"' + (m.type === k ? ' selected' : '') + '>' + TYPE_NAMES[k] + '</option>';
     }).join('');
     return (
       '<div class="edit-form">' +
@@ -404,12 +415,28 @@
           '<span class="ef-status">' + stLabel + '</span>' +
           '<span class="ef-id">' + esc(m.code) + '</span>' +
         '</div>' +
+        '<div class="ef-group">基本</div>' +
         '<label class="ef-row">指标名称' +
           '<input data-field="metric_cn" value="' + esc(m.name) + '" placeholder="指标名称">' +
         '</label>' +
-        '<label class="ef-row">主题域' +
-          '<select data-field="domain_code">' + themeOpts + '</select>' +
-        '</label>' +
+        '<div class="ef-grid2">' +
+          '<label class="ef-row">英文名' +
+            '<input data-field="metric_en" value="' + esc(m.metric_en) + '" placeholder="snake_case">' +
+          '</label>' +
+          '<label class="ef-row">指标类型' +
+            '<select data-field="metric_type">' + typeOpts + '</select>' +
+          '</label>' +
+        '</div>' +
+        '<div class="ef-group">归属与分类</div>' +
+        '<div class="ef-grid2">' +
+          '<label class="ef-row">主题域' +
+            '<select data-field="domain_code">' + themeOpts + '</select>' +
+          '</label>' +
+          '<label class="ef-row">二级分类' +
+            '<input data-field="category_l2" value="' + esc(m.cat) + '" placeholder="概览/报表/明细…">' +
+          '</label>' +
+        '</div>' +
+        '<div class="ef-group">数值属性</div>' +
         '<div class="ef-grid2">' +
           '<label class="ef-row">计量单位' +
             '<input data-field="unit" value="' + esc(m.unit) + '" placeholder="元 / 人次 / %">' +
@@ -418,10 +445,50 @@
             '<input data-field="frequency" value="' + esc(m.cycle) + '" placeholder="日度 / 月度 / 季度">' +
           '</label>' +
         '</div>' +
-        '<label class="ef-row">业务口径' +
-          '<textarea data-field="caliber_desc" rows="5" placeholder="定义口径、计算逻辑、排除项…">' + esc(m.desc) + '</textarea>' +
+        '<label class="ef-row">精度' +
+          '<input data-field="precision" value="' + esc(m.precision) + '" placeholder="如 0.01">' +
         '</label>' +
-        '<div class="ef-note">编辑后点「💾 保存」，再「✓ 进入草稿」写入指标库。</div>' +
+        '<div class="ef-group">口径与公式</div>' +
+        '<label class="ef-row">业务口径' +
+          '<textarea data-field="caliber_desc" rows="4" placeholder="定义口径、计算逻辑、排除项…">' + esc(m.desc) + '</textarea>' +
+        '</label>' +
+        '<label class="ef-row">计算公式（中文）' +
+          '<input data-field="formula_cn" value="' + esc(m.formula_cn) + '" placeholder="如 销售额 / 订单数">' +
+        '</label>' +
+        '<label class="ef-row">计算公式（SQL）' +
+          '<input data-field="formula" value="' + esc(m.formula_raw) + '" placeholder="底层取数逻辑">' +
+        '</label>' +
+        '<label class="ef-row">技术口径' +
+          '<input data-field="tech_caliber" value="' + esc(m.tech_caliber) + '" placeholder="技术口径说明">' +
+        '</label>' +
+        '<div class="ef-group">数据属性</div>' +
+        '<div class="ef-grid2">' +
+          '<label class="ef-row">物理表' +
+            '<input data-field="physical_table" value="' + esc(m.table) + '" placeholder="dwd_xxx">' +
+          '</label>' +
+          '<label class="ef-row">来源表' +
+            '<input data-field="source_table" value="' + esc(m.source_table) + '">' +
+          '</label>' +
+        '</div>' +
+        '<label class="ef-row">数据来源' +
+          '<input data-field="data_sources" value="' + esc(m.source) + '" placeholder="来源系统/表">' +
+        '</label>' +
+        '<label class="ef-row">统计维度' +
+          '<input data-field="dimensions" value="' + esc(m.dims.join('、')) + '" placeholder="维度用顿号分隔">' +
+        '</label>' +
+        '<div class="ef-group">管理属性</div>' +
+        '<div class="ef-grid2">' +
+          '<label class="ef-row">负责人' +
+            '<input data-field="owner" value="' + esc(m.owner) + '">' +
+          '</label>' +
+          '<label class="ef-row">适用场景' +
+            '<input data-field="scenario" value="' + esc(m.scenario) + '">' +
+          '</label>' +
+        '</div>' +
+        '<label class="ef-row">预警规则' +
+          '<input data-field="alert_rules" value="' + esc(m.alert_rules) + '">' +
+        '</label>' +
+        '<div class="ef-note">编辑后点「💾 保存」落盘，再「✓ 进入草稿」写入指标库。</div>' +
       '</div>'
     );
   }
@@ -646,15 +713,27 @@
     }
     return Object.keys(edits).length ? edits : null;
   }
-  /* 把编辑保存到 CURRENT_TASK.generated[activeIdx] */
+  /* 把编辑保存到后端（PATCH 落盘）并同步本地内存行 */
   function saveEdits() {
     if (!CURRENT_TASK || activeIdx < 0) return;
     var edits = collectEdits();
     if (!edits) { if (window.toast) toast('未修改'); return; }
-    var row = CURRENT_TASK.generated[activeIdx];
-    Object.keys(edits).forEach(function (k) { row[k] = edits[k]; });
-    if (window.toast) toast('✓ 已保存（待通过入草稿生效）', 'success');
-    exitEditMode();  // 保存后退出编辑模式，展示更新后的只读卡面
+    var btn = document.getElementById('mc8btn-save');
+    if (btn) btn.disabled = true;
+    api('/api/import-tasks/' + encodeURIComponent(CURRENT_TASK.task_id) + '/rows/' + activeIdx, {
+      method: 'PATCH',
+      body: JSON.stringify({ edits: edits })
+    }).then(function (res) {
+      var row = CURRENT_TASK.generated[activeIdx];
+      Object.keys(edits).forEach(function (k) { row[k] = edits[k]; });
+      if (window.toast) toast('✓ 已保存（' + (res.applied || []).length + ' 个字段生效）', 'success');
+      exitEditMode();  // 保存后退出编辑模式，展示更新后的只读卡面
+    }).catch(function (e) {
+      if (window.toast) toast('保存失败: ' + e.message);
+    }).finally(function () {
+      var b2 = document.getElementById('mc8btn-save');
+      if (b2) b2.disabled = false;
+    });
   }
 
   /* 进入编辑模式：卡面替换为编辑表单 */

@@ -136,3 +136,69 @@ def test_task_path_rejects_unsafe(monkeypatch, mini_project):
 
     with pytest.raises(ValueError):
         task_path(mini_project, "../../etc/passwd")
+
+
+def _pending_task(client) -> tuple[str, int]:
+    """上传→处理，返回 (task_id, 第一个 pending 行的 index)。"""
+    client.post("/api/import-tasks/upload", json={"csv": _csv(("待编辑指标", "原始口径"))})
+    tid = client.get("/api/import-tasks").json()["tasks"][0]["task_id"]
+    client.post(f"/api/import-tasks/{tid}/process")
+    task = client.get(f"/api/import-tasks/{tid}").json()
+    idx = next(i for i, r in enumerate(task["generated"]) if r["_status"] == "pending")
+    return tid, idx
+
+
+def test_update_row_persists_edits(client):
+    """PATCH 单行编辑 → 字段落盘（重新 GET 后仍存在）。"""
+    tid, idx = _pending_task(client)
+    resp = client.patch(
+        f"/api/import-tasks/{tid}/rows/{idx}",
+        json={"edits": {"metric_cn": "编辑后的指标名", "formula": "SUM(x)", "precision": "0.01"}},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert set(data["applied"]) == {"metric_cn", "formula", "precision"}
+    # 落盘验证：重新拉取任务
+    task = client.get(f"/api/import-tasks/{tid}").json()
+    row = task["generated"][idx]
+    assert row["metric_cn"] == "编辑后的指标名"
+    assert row["formula"] == "SUM(x)"
+    assert row["precision"] == "0.01"
+    assert row["_status"] == "pending"  # 编辑不改变评审状态
+
+
+def test_update_row_ignores_non_editable(client):
+    """非白名单字段（如内部标记）静默忽略。"""
+    tid, idx = _pending_task(client)
+    resp = client.patch(
+        f"/api/import-tasks/{tid}/rows/{idx}",
+        json={"edits": {"_status": "draft", "metric_cn": "可编辑字段"}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["applied"] == ["metric_cn"]
+    task = client.get(f"/api/import-tasks/{tid}").json()
+    assert task["generated"][idx]["_status"] == "pending"  # _status 未被篡改
+
+
+def test_update_row_bad_index(client):
+    """row_index 越界 → 400。"""
+    tid, idx = _pending_task(client)
+    resp = client.patch(f"/api/import-tasks/{tid}/rows/999", json={"edits": {"metric_cn": "x"}})
+    assert resp.status_code == 400
+    resp2 = client.patch(f"/api/import-tasks/{tid}/rows/{idx}", json={"edits": {}})
+    assert resp2.status_code == 400  # 空 edits 也拒绝
+
+
+def test_review_approve_carries_extended_edits(client):
+    """approve 时 edits 中的扩展字段（formula 等）随行入库。"""
+    tid, idx = _pending_task(client)
+    resp = client.post(
+        f"/api/import-tasks/{tid}/review",
+        json={"row_index": idx, "action": "approve", "edits": {"formula": "SUM(amount)", "owner": "数据组"}},
+    )
+    assert resp.status_code == 200
+    metrics = client.get("/api/metrics").json()
+    hit = next((m for m in metrics if m["metric_cn"] == "待编辑指标"), None)
+    assert hit is not None, "指标应入库"
+    assert hit.get("formula") == "SUM(amount)"
+    assert hit.get("owner") == "数据组"
