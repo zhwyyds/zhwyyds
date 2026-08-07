@@ -127,6 +127,7 @@ def register(app, base: Path, ai_svc: AiService) -> None:
         if not csv_text.strip():
             raise HTTPException(400, "csv 内容为空")
         rows = list(csv.DictReader(_io.StringIO(csv_text)))
+        existing_roots = load_catalog(base).roots  # 循环外一次性加载，避免 O(n²)
         created, skipped = 0, 0
         errors: list[str] = []
         for row in rows:
@@ -136,7 +137,7 @@ def register(app, base: Path, ai_svc: AiService) -> None:
             if not domain or not root_cn or not root_en:
                 skipped += 1
                 continue
-            if any(r.domain_code == domain and r.root_en == root_en for r in load_catalog(base).roots):
+            if any(r.domain_code == domain and r.root_en == root_en for r in existing_roots):
                 skipped += 1
                 continue
             try:
