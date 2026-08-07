@@ -194,8 +194,8 @@ export function HandFan({ cards, onSelect }) {
       aria-label="开出的指标卡手牌"
       onMouseEnter={() => setSpread(true)}
       onMouseLeave={() => setSpread(false)}
-      className="flex items-end justify-center overflow-x-auto pb-4 pt-8"
-      style={{ minHeight: CARD_H + 70 }}
+      className="flex items-end justify-center overflow-x-auto pt-20 pb-4"
+      style={{ minHeight: CARD_H + 90 }}
     >
       {cards.map((c, i) => {
         const r = rarityOf(c.score);
@@ -233,12 +233,13 @@ export function HandFan({ cards, onSelect }) {
 
       <style>{`
         .card-item:hover {
-          transform: translateY(-56px) scale(1.1) !important;
+          transform: translateY(-36px) scale(1.06) !important;
           z-index: 99;
         }
+        .card-slot:hover { z-index: 50; position: relative; }
         @media (prefers-reduced-motion: reduce) {
           .card-item, .card-slot { transition: none; }
-          .card-item:hover { transform: translateY(-20px) !important; }
+          .card-item:hover { transform: translateY(-12px) !important; }
         }
       `}</style>
     </div>

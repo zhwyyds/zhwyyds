@@ -22412,8 +22412,8 @@
         "aria-label": "\u5F00\u51FA\u7684\u6307\u6807\u5361\u624B\u724C",
         onMouseEnter: () => setSpread(true),
         onMouseLeave: () => setSpread(false),
-        className: "flex items-end justify-center overflow-x-auto pb-4 pt-8",
-        style: { minHeight: CARD_H + 70 },
+        className: "flex items-end justify-center overflow-x-auto pt-20 pb-4",
+        style: { minHeight: CARD_H + 90 },
         children: [
           cards.map((c, i) => {
             const r = rarityOf(c.score);
@@ -22444,12 +22444,13 @@
           }),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
         .card-item:hover {
-          transform: translateY(-56px) scale(1.1) !important;
+          transform: translateY(-36px) scale(1.06) !important;
           z-index: 99;
         }
+        .card-slot:hover { z-index: 50; position: relative; }
         @media (prefers-reduced-motion: reduce) {
           .card-item, .card-slot { transition: none; }
-          .card-item:hover { transform: translateY(-20px) !important; }
+          .card-item:hover { transform: translateY(-12px) !important; }
         }
       ` })
         ]
