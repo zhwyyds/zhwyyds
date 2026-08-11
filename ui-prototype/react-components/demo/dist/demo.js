@@ -22588,6 +22588,7 @@
     const visibleN = Math.min(n, MAX_VISIBLE);
     const hiddenN = n - visibleN;
     const pileH = CARD_H + (visibleN - 1) * STACK_STEP + (hiddenN > 0 ? 14 : 0);
+    const rows = n > 14 ? [cards.slice(0, Math.ceil(n / 2)), cards.slice(Math.ceil(n / 2))] : [cards];
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "relative shrink-0", style: { width: CARD_W, height: pileH }, children: [
       [...cards].reverse().slice(0, visibleN).map((c, i) => {
         const cardR = rarityOf(c.score);
@@ -22669,7 +22670,7 @@
               n,
               " \u5F20 \xB7 \u70B9\u51FB\u5361\u67E5\u770B\u5B8C\u6574\u4FE1\u606F\uFF0C\u70B9\u51FB\u7A7A\u767D\u5904\u6536\u8D77"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-16", children: cards.map((c, i) => {
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-36", children: cards.map((c, i) => {
               const cardR = rarityOf(c.score);
               const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
               const peekDy = n <= 3 ? -60 : n <= 5 ? -70 : n <= 8 ? -90 : n <= 14 ? -110 : -130;

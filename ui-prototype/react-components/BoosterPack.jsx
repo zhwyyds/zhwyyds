@@ -341,6 +341,8 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
   const visibleN = Math.min(n, MAX_VISIBLE); // 实际渲染的层数
   const hiddenN = n - visibleN;              // 隐藏的张数（并入厚度）
   const pileH = CARD_H + (visibleN - 1) * STACK_STEP + (hiddenN > 0 ? 14 : 0);
+  // 展开态排布：>14 张分 2 排（每排约一半），一屏全见；否则单排
+  const rows = n > 14 ? [cards.slice(0, Math.ceil(n / 2)), cards.slice(Math.ceil(n / 2))] : [cards];
 
   return (
     <div className="relative shrink-0" style={{ width: CARD_W, height: pileH }}>
@@ -422,14 +424,13 @@ function RarityPile({ tier, cards, expanded, onToggle, onSelect }) {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px]" style={{ color: "#b8c0cc" }}>
             {tier.label}摞 · {n} 张 · 点击卡查看完整信息，点击空白处收起
           </div>
-          {/* 卡片排开（负 margin 重叠）；pt-16 顶部留白，避免 hover 上浮被 overflow 裁掉名称 */}
-          <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-16">
+          {/* 卡片排开（单排负 margin 重叠）；pt-36 顶部留白足够容纳最大上移 -130px，hover 名称不被裁 */}
+          <div className="flex max-w-[96vw] items-end overflow-x-auto rounded-[10px] px-3 pb-4 pt-36">
             {cards.map((c, i) => {
               const cardR = rarityOf(c.score);
               // overlap 策略：露得足够宽才看得清卡名/构件/口径/评分
               const overlap = n <= 3 ? 220 : n <= 5 ? 200 : n <= 8 ? 160 : n <= 14 ? 110 : 70;
               // peek 上移量：按张数动态 —— 张数越多（露得越窄）上移越多，保证名称栏完整脱离邻卡
-              // 实测：普通摞(露70px)需 -130px，传说摞(露220px)需 -60px
               const peekDy = n <= 3 ? -60 : n <= 5 ? -70 : n <= 8 ? -90 : n <= 14 ? -110 : -130;
               return (
                 <div
