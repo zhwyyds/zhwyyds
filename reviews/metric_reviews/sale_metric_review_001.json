@@ -1,0 +1,62 @@
+{
+  "review_id": "MR_SALE_001",
+  "domain": "sale",
+  "review_type": "metric_review",
+  "created_at": "2026-08-07T11:26:54+08:00",
+  "models_used": [
+    "deepseek-v4-flash"
+  ],
+  "review_source": "live",
+  "items": [
+    {
+      "metric_id": "M_SALE_003",
+      "metric_en": "mtd_ord_cnt",
+      "model_reviews": [
+        {
+          "model": "deepseek-v4-flash",
+          "naming_score": 2,
+          "naming_issues": [
+            "metric_en 中 'mtd' 不是标准词根，且与中文名“本月”不完全一致（MTD通常指月初至今）",
+            "metric_en 中 'cnt' 是 count 的缩写，但未在词根库中定义，建议补充或使用标准词根",
+            "英文名 mtd_ord_cnt 直译为“本月至今订单笔数”，与中文名“本月订单笔数”在月中时口径不一致"
+          ],
+          "caliber_score": 2,
+          "caliber_issues": [
+            "未明确统计时间字段：是订单创建时间还是订单完成时间",
+            "未说明“已完成订单”的状态定义，以及是否排除取消/退款单",
+            "未说明“笔数”是否需要按订单号去重"
+          ],
+          "conflict_risks": [
+            "与“当月订单数”“月度订单量”等指标存在同义异名风险",
+            "与“本月订单金额”名称相似，量纲不同，容易混淆"
+          ],
+          "root_match": false,
+          "suggestions": "建议统一指标命名：若保留时间修饰，应补充 month/mtd 和 count 词根；否则去掉时间前缀，metric_en 改为 ord_cnt，由 frequency 表达“本月”。同时明确口径为按订单完成时间统计的自然月订单数，并说明去重和排除规则。",
+          "revision": {
+            "metric_cn": "订单笔数",
+            "metric_en": "ord_cnt",
+            "caliber_desc": "统计订单完成时间在指定自然月内的已完成订单数量，按订单号去重；不包含已取消、已退款订单。",
+            "unit": null,
+            "frequency": null,
+            "root_ids": null,
+            "summary": "去除非标准词根mtd，metric_en改为ord_cnt，统一中英文名并明确统计口径；root_ids暂保留，待词根库补充count词根后增加关联。"
+          }
+        }
+      ],
+      "comparison": {
+        "naming_score_avg": 2.0,
+        "caliber_score_avg": 2.0,
+        "consistent_issues": [],
+        "conflict_detected": true
+      },
+      "final_decision": {
+        "approved": false,
+        "decision_type": "conflict_review",
+        "action_items": [
+          "建议统一指标命名：若保留时间修饰，应补充 month/mtd 和 count 词根；否则去掉时间前缀，metric_en 改为 ord_cnt，由 frequency 表达“本月”。同时明确口径为按订单完成时间统计的自然月订单数，并说明去重和排除规则。"
+        ],
+        "review_status": "pending"
+      }
+    }
+  ]
+}
